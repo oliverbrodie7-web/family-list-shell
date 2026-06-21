@@ -1,29 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AuthProvider, useAuth } from "@/lib/auth";
+import { LoginScreen } from "@/components/LoginScreen";
+import { AppShell } from "@/components/AppShell";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Your App" },
-      { name: "description", content: "Replace this with a one-sentence description of your app." },
-      { property: "og:title", content: "Your App" },
-      { property: "og:description", content: "Replace this with a one-sentence description of your app." },
+      { title: "Family Shopping" },
+      { name: "description", content: "A simple, fast shopping list for the family." },
     ],
   }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <AuthProvider>
+      <Gate />
+    </AuthProvider>
   );
+}
+
+function Gate() {
+  const { session, loading } = useAuth();
+  if (loading) {
+    return <div className="flex min-h-[100dvh] items-center justify-center bg-white" />;
+  }
+  return session ? <AppShell /> : <LoginScreen />;
 }
