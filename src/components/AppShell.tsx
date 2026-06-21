@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { PlusCircle, ShoppingCart, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth";
+import { useHouseholdId } from "@/lib/household";
+import { InputTab } from "./InputTab";
+import { ListTab } from "./ListTab";
 
 type Tab = "input" | "list";
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>("input");
   const { signOut } = useAuth();
+  const { householdId } = useHouseholdId();
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-white">
@@ -23,19 +27,11 @@ export function AppShell() {
         </button>
       </header>
 
-      <main className="flex flex-1 items-center justify-center px-8 pb-24">
+      <main className="flex flex-1 flex-col pb-24">
         {tab === "input" ? (
-          <EmptyState
-            icon={<PlusCircle size={36} strokeWidth={1.5} />}
-            title="Add your first item"
-            subtitle="Coming soon."
-          />
+          <InputTab householdId={householdId} />
         ) : (
-          <EmptyState
-            icon={<ShoppingCart size={36} strokeWidth={1.5} />}
-            title="Your shopping list will appear here"
-            subtitle="Nothing on the list yet."
-          />
+          <ListTab householdId={householdId} active={tab === "list"} />
         )}
       </main>
 
@@ -82,23 +78,5 @@ function TabButton({
       {icon}
       <span>{label}</span>
     </button>
-  );
-}
-
-function EmptyState({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="flex flex-col items-center text-center">
-      <div className="mb-4 text-neutral-300">{icon}</div>
-      <p className="text-base font-medium text-neutral-700">{title}</p>
-      <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>
-    </div>
   );
 }
