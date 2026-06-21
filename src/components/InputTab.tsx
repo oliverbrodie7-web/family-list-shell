@@ -70,7 +70,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-6">
-      <form onSubmit={submit} className="space-y-3">
+      <form onSubmit={submit} className="space-y-2">
+        {/* Main input row: text + flag + add */}
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -85,7 +86,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             onClick={() => setPriority((p) => !p)}
             aria-label="Toggle priority"
             aria-pressed={priority}
-            className={`flex h-12 w-12 items-center justify-center rounded-xl border transition ${
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition ${
               priority
                 ? "border-amber-300 bg-amber-50 text-amber-500"
                 : "border-neutral-200 bg-white text-neutral-400"
@@ -97,29 +98,32 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             type="submit"
             disabled={!text.trim() || !householdId || submitting}
             aria-label="Add item"
-            className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--accent-green)] text-white transition disabled:opacity-40"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-green)] text-white transition disabled:opacity-40"
           >
             <Plus size={22} />
           </button>
         </div>
 
+        {/* Category chips — wrap naturally, thumb-sized */}
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCategory(c)}
+              className={`min-h-[44px] rounded-full border px-3.5 text-sm font-medium transition ${
+                category === c
+                  ? "border-[var(--accent-green)] bg-[var(--accent-green-soft)] text-[var(--accent-green)]"
+                  : "border-neutral-200 bg-white text-neutral-500"
+              }`}
+            >
+              {CATEGORY_LABELS[c]}
+            </button>
+          ))}
+        </div>
+
+        {/* Quantity — small, secondary, tucked at bottom of the block */}
         <div className="flex items-center gap-2">
-          <div className="flex flex-1 gap-1.5 overflow-x-auto pb-1">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategory(c)}
-                className={`whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition ${
-                  category === c
-                    ? "border-[var(--accent-green)] bg-[var(--accent-green-soft)] text-[var(--accent-green)]"
-                    : "border-neutral-200 bg-white text-neutral-500"
-                }`}
-              >
-                {CATEGORY_LABELS[c]}
-              </button>
-            ))}
-          </div>
           <input
             type="number"
             min={1}
