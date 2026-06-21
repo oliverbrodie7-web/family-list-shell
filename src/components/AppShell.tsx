@@ -54,6 +54,8 @@ export function AppShell() {
           />
         </div>
       </nav>
+      <Toaster position="top-center" />
+
     </div>
   );
 }
