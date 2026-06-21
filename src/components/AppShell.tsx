@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
 import { InputTab } from "./InputTab";
 import { ListTab } from "./ListTab";
+import { Toaster } from "@/components/ui/sonner";
 
 type Tab = "input" | "list";
 
