@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { Flag, Plus, Loader2 } from "lucide-react";
+import { Flag, Plus, Loader2, List } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category } from "@/lib/categories";
+import { BatchConfirmSheet, type BatchRow } from "./BatchConfirmSheet";
+import { BulkAddSheet } from "./BulkAddSheet";
 
 interface RecentItem {
   id: string;
@@ -13,6 +15,14 @@ interface RecentItem {
   categorizing?: boolean;
 }
 
+const MAX_INLINE_BATCH = 10;
+
+const parseCommaList = (s: string): string[] =>
+  s
+    .split(",")
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+
 export function InputTab({ householdId }: { householdId: string | null }) {
   const { session } = useAuth();
   const userId = session?.user?.id;
@@ -22,6 +32,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recent, setRecent] = useState<RecentItem[]>([]);
+  const [batchItems, setBatchItems] = useState<string[] | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -41,28 +53,17 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     }
   };
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = text.trim();
-    if (!trimmed || !householdId || !userId || submitting) return;
-    setSubmitting(true);
-    setError(null);
-    const qty = quantity.trim() === "" ? null : Number(quantity);
-    const isPriority = priority;
-
-    // Reset input immediately for snappy UX
-    setText("");
-    setQuantity("");
-    setPriority(false);
-    inputRef.current?.focus();
-
-    // Optimistic placeholder
+  const insertSingle = async (
+    raw: string,
+    qty: number | null,
+    isPriority: boolean,
+  ) => {
     const tempId = `temp-${Date.now()}`;
     setRecent((r) =>
       [
         {
           id: tempId,
-          display_name: trimmed,
+          display_name: raw,
           quantity: qty,
           is_priority: isPriority,
           category: null,
@@ -71,17 +72,15 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         ...r,
       ].slice(0, 5),
     );
-    setSubmitting(false);
 
-    // Classify, then insert
-    const category = await categorize(trimmed);
+    const category = await categorize(raw);
     const { data, error: insertErr } = await supabase
       .from("shopping_list_items")
       .insert({
         user_id: userId,
         household_id: householdId,
-        raw_input: trimmed,
-        display_name: trimmed,
+        raw_input: raw,
+        display_name: raw,
         category,
         quantity: qty,
         is_priority: isPriority,
@@ -95,12 +94,47 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       setRecent((r) => r.filter((it) => it.id !== tempId));
       return;
     }
-
     setRecent((r) =>
       r.map((it) =>
         it.id === tempId ? { ...(data as RecentItem), categorizing: false } : it,
       ),
     );
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = text.trim();
+    if (!trimmed || !householdId || !userId || submitting) return;
+    setError(null);
+
+    // Detect comma-separated multi-add
+    const parts = parseCommaList(trimmed);
+    const isMulti = parts.length > 1;
+
+    if (isMulti) {
+      if (parts.length > MAX_INLINE_BATCH) {
+        setError(
+          `That's ${parts.length} items. Remove some, or use Bulk add for longer lists.`,
+        );
+        return;
+      }
+      // Route to confirm screen; preserve input until user confirms or cancels
+      setBatchItems(parts);
+      return;
+    }
+
+    // ---- Single-item path: unchanged behaviour ----
+    setSubmitting(true);
+    const qty = quantity.trim() === "" ? null : Number(quantity);
+    const isPriority = priority;
+
+    setText("");
+    setQuantity("");
+    setPriority(false);
+    inputRef.current?.focus();
+    setSubmitting(false);
+
+    await insertSingle(trimmed, qty, isPriority);
   };
 
   const toggleRecentPriority = async (id: string, next: boolean) => {
@@ -109,10 +143,52 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     await supabase.from("shopping_list_items").update({ is_priority: next }).eq("id", id);
   };
 
+  const confirmBatch = async (rows: BatchRow[]) => {
+    if (!householdId || !userId || rows.length === 0) {
+      setBatchItems(null);
+      return;
+    }
+    const payload = rows.map((r) => {
+      const qtyNum =
+        r.quantity.trim() === "" ? null : Math.max(1, parseInt(r.quantity, 10) || 1);
+      return {
+        user_id: userId,
+        household_id: householdId,
+        raw_input: r.raw,
+        display_name: r.display_name.trim() || r.raw,
+        category: r.category,
+        quantity: qtyNum,
+        is_priority: r.is_priority,
+        is_checked: false,
+      };
+    });
+
+    const { data, error: insertErr } = await supabase
+      .from("shopping_list_items")
+      .insert(payload)
+      .select("id, display_name, quantity, is_priority, category");
+
+    if (insertErr) {
+      setError(insertErr.message);
+      return;
+    }
+
+    const added = (data ?? []).map((d) => ({
+      ...(d as RecentItem),
+      categorizing: false,
+    }));
+    setRecent((r) => [...added.reverse(), ...r].slice(0, 5));
+    setBatchItems(null);
+    setBulkOpen(false);
+    // Clear main input if it was source
+    setText("");
+    setQuantity("");
+    setPriority(false);
+  };
+
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-6">
       <form onSubmit={submit} className="space-y-3">
-        {/* Main input row: text + flag + add */}
         <div className="flex items-center gap-2">
           <input
             ref={inputRef}
@@ -145,20 +221,29 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           </button>
         </div>
 
-        {/* Optional quantity — small pill, reads as an optional add-on */}
-        <div className="flex items-center gap-2 pl-1">
-          <label className="text-xs text-neutral-400" htmlFor="qty-input">
-            + qty
-          </label>
-          <input
-            id="qty-input"
-            type="number"
-            min={1}
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            placeholder="1"
-            className="w-14 rounded-full border border-neutral-200 bg-white px-3 py-1 text-center text-sm text-neutral-700 outline-none transition focus:border-[var(--accent-green)]"
-          />
+        <div className="flex items-center justify-between gap-2 pl-1">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-neutral-400" htmlFor="qty-input">
+              + qty
+            </label>
+            <input
+              id="qty-input"
+              type="number"
+              min={1}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="1"
+              className="w-14 rounded-full border border-neutral-200 bg-white px-3 py-1 text-center text-sm text-neutral-700 outline-none transition focus:border-[var(--accent-green)]"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setBulkOpen(true)}
+            className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition active:bg-neutral-50"
+          >
+            <List size={14} />
+            Bulk add
+          </button>
         </div>
       </form>
 
@@ -208,6 +293,24 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             ))}
           </ul>
         </div>
+      )}
+
+      {bulkOpen && !batchItems && (
+        <BulkAddSheet
+          onCancel={() => setBulkOpen(false)}
+          onSubmit={(items) => {
+            if (items.length === 0) return;
+            setBatchItems(items);
+          }}
+        />
+      )}
+
+      {batchItems && (
+        <BatchConfirmSheet
+          rawItems={batchItems}
+          onCancel={() => setBatchItems(null)}
+          onConfirm={confirmBatch}
+        />
       )}
     </div>
   );
