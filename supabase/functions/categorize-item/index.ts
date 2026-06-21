@@ -11,8 +11,10 @@ const ALLOWED = [
   "frozen",
   "pantry",
   "household",
+  "lollies_chocolate",
   "misc",
 ] as const;
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,7 +46,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const prompt = `Classify this shopping list item into exactly one of these categories: produce, bakery, deli, meat, dairy, frozen, pantry, household, misc.
+    const prompt = `Classify this shopping list item into exactly one of these categories: produce, bakery, deli, meat, dairy, frozen, pantry, household, lollies_chocolate, misc.
+
+Route confectionery — chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc. — to lollies_chocolate.
 
 Item: "${input}"
 
