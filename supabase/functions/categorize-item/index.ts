@@ -29,6 +29,21 @@ const isCat = (s: string): s is Category =>
 const titleCaseFallback = (s: string) =>
   s.trim().replace(/\s+/g, " ").replace(/^\w/, (c) => c.toUpperCase());
 
+const extractJsonArray = (text: string) => {
+  const withoutFences = text
+    .replace(/```(?:json)?/gi, "")
+    .replace(/```/g, "")
+    .trim();
+  const start = withoutFences.indexOf("[");
+  const end = withoutFences.lastIndexOf("]");
+  if (start === -1 || end === -1 || end <= start) return null;
+  return withoutFences
+    .slice(start, end + 1)
+    .replace(/,\s*([}\]])/g, "$1")
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "")
+    .trim();
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -66,21 +81,20 @@ Deno.serve(async (req) => {
 
       const prompt = `You clean up and classify shopping list items.
 
-For each input item, return an object with:
+Return ONLY a raw JSON array. Do not include any preamble, explanation, markdown, code fences, or text outside the array.
+
+Every array element must be an object with exactly these keys:
 - "clean_name": fix spelling, punctuation and capitalisation only. Do NOT reword, expand, translate, pluralise, add detail, or change quantities. Keep the user's wording.
-- "category": exactly one of: produce, bakery, deli, meat, dairy, frozen, pantry, household, lollies_chocolate, misc. Route confectionery (chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc.) to lollies_chocolate. If genuinely unsure, use "misc".
+- "category": exactly one of "produce", "bakery", "deli", "meat", "dairy", "frozen", "pantry", "household", "lollies_chocolate", "misc".
+
+The array must contain exactly ${rawItems.length} objects and preserve the input order.
+
+Route confectionery (chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc.) to "lollies_chocolate". If genuinely unsure, use "misc".
 
 Input items (in order):
 ${numbered}
 
-Return ONLY a raw JSON array of length ${rawItems.length}, in the same order as the input. No preamble, no explanation, no markdown code fences.
-
-Example for input:
-1. milk
-2. chocloate
-3. apple
-
-Exact expected output:
+Exact output format example:
 [{"clean_name":"Milk","category":"dairy"},{"clean_name":"Chocolate","category":"lollies_chocolate"},{"clean_name":"Apple","category":"produce"}]`;
 
       const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -93,6 +107,8 @@ Exact expected output:
         body: JSON.stringify({
           model: "claude-haiku-4-5",
           max_tokens: 2048,
+          system:
+            "You return only valid JSON. Never wrap JSON in markdown fences or add prose.",
           messages: [{ role: "user", content: prompt }],
         }),
       });
@@ -106,18 +122,14 @@ Exact expected output:
 
       const data = await res.json();
       const raw: string = data?.content?.[0]?.text ?? "";
+      const jsonText = extractJsonArray(raw);
 
-      // Strip code fences and extract the JSON array substring.
-      const stripped = raw
-        .replace(/^\s*```(?:json)?\s*/i, "")
-        .replace(/\s*```\s*$/i, "")
-        .trim();
-      const start = stripped.indexOf("[");
-      const end = stripped.lastIndexOf("]");
-      const jsonText =
-        start !== -1 && end !== -1 && end > start
-          ? stripped.slice(start, end + 1)
-          : stripped;
+      if (!jsonText) {
+        return Response.json(
+          { results: fallback, error: "parse_failed" },
+          { headers: corsHeaders },
+        );
+      }
 
       let parsed: Array<{
         clean_name?: unknown;
