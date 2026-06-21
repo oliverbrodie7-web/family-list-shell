@@ -124,6 +124,10 @@ Exact output format example:
       const raw: string = data?.content?.[0]?.text ?? "";
       const jsonText = extractJsonArray(raw);
 
+      console.log(
+        `[categorize-item][batch][diag] items=${rawItems.length} stop_reason=${String(data?.stop_reason ?? "n/a")} usage=${JSON.stringify(data?.usage ?? null)} raw_len=${raw.length} extraction_ok=${jsonText !== null} raw=${JSON.stringify(raw)}`,
+      );
+
       if (!jsonText) {
         return Response.json(
           { results: fallback, error: "parse_failed" },
@@ -139,7 +143,10 @@ Exact output format example:
       try {
         const p = JSON.parse(jsonText);
         if (Array.isArray(p)) parsed = p;
-      } catch {
+      } catch (parseErr) {
+        console.log(
+          `[categorize-item][batch][diag] parse_error=${parseErr instanceof Error ? parseErr.message : String(parseErr)} text=${JSON.stringify(jsonText)}`,
+        );
         return Response.json(
           { results: fallback, error: "parse_failed" },
           { headers: corsHeaders },
