@@ -104,6 +104,18 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           </button>
         </div>
 
+        {/* Quantity — small, secondary, tucked directly below the text input */}
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            min={1}
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            placeholder="Qty"
+            className="w-16 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-center text-sm text-neutral-700 outline-none focus:border-[var(--accent-green)]"
+          />
+        </div>
+
         {/* Category chips — wrap naturally, thumb-sized */}
         <div className="flex flex-wrap gap-2">
           {CATEGORIES.map((c) => (
@@ -120,18 +132,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
               {CATEGORY_LABELS[c]}
             </button>
           ))}
-        </div>
-
-        {/* Quantity — small, secondary, tucked at bottom of the block */}
-        <div className="flex items-center gap-2">
-          <input
-            type="number"
-            min={1}
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            placeholder="Qty"
-            className="w-16 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-center text-sm text-neutral-700 outline-none focus:border-[var(--accent-green)]"
-          />
         </div>
       </form>
 
