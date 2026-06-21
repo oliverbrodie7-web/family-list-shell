@@ -1,15 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { Flag, Plus } from "lucide-react";
+import { Flag, Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
+import { CATEGORY_LABELS, type Category } from "@/lib/categories";
 
 interface RecentItem {
   id: string;
   display_name: string;
   quantity: number | null;
   is_priority: boolean;
-  category: Category;
+  category: Category | null;
+  categorizing?: boolean;
 }
 
 export function InputTab({ householdId }: { householdId: string | null }) {
@@ -17,7 +18,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const userId = session?.user?.id;
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [category, setCategory] = useState<Category>("misc");
   const [priority, setPriority] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,6 +28,19 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     inputRef.current?.focus();
   }, []);
 
+  const categorize = async (raw: string): Promise<Category> => {
+    try {
+      const { data, error } = await supabase.functions.invoke("categorize-item", {
+        body: { text: raw },
+      });
+      if (error) return "misc";
+      const cat = (data as { category?: string })?.category;
+      return (cat as Category) ?? "misc";
+    } catch {
+      return "misc";
+    }
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = text.trim();
@@ -35,7 +48,34 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     setSubmitting(true);
     setError(null);
     const qty = quantity.trim() === "" ? null : Number(quantity);
-    const { data, error } = await supabase
+    const isPriority = priority;
+
+    // Reset input immediately for snappy UX
+    setText("");
+    setQuantity("");
+    setPriority(false);
+    inputRef.current?.focus();
+
+    // Optimistic placeholder
+    const tempId = `temp-${Date.now()}`;
+    setRecent((r) =>
+      [
+        {
+          id: tempId,
+          display_name: trimmed,
+          quantity: qty,
+          is_priority: isPriority,
+          category: null,
+          categorizing: true,
+        },
+        ...r,
+      ].slice(0, 5),
+    );
+    setSubmitting(false);
+
+    // Classify, then insert
+    const category = await categorize(trimmed);
+    const { data, error: insertErr } = await supabase
       .from("shopping_list_items")
       .insert({
         user_id: userId,
@@ -44,33 +84,34 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         display_name: trimmed,
         category,
         quantity: qty,
-        is_priority: priority,
+        is_priority: isPriority,
         is_checked: false,
       })
       .select("id, display_name, quantity, is_priority, category")
       .single();
-    setSubmitting(false);
-    if (error) {
-      setError(error.message);
+
+    if (insertErr || !data) {
+      setError(insertErr?.message ?? "Failed to add item");
+      setRecent((r) => r.filter((it) => it.id !== tempId));
       return;
     }
-    if (data) {
-      setRecent((r) => [data as RecentItem, ...r].slice(0, 5));
-    }
-    setText("");
-    setQuantity("");
-    setPriority(false);
-    inputRef.current?.focus();
+
+    setRecent((r) =>
+      r.map((it) =>
+        it.id === tempId ? { ...(data as RecentItem), categorizing: false } : it,
+      ),
+    );
   };
 
   const toggleRecentPriority = async (id: string, next: boolean) => {
+    if (id.startsWith("temp-")) return;
     setRecent((r) => r.map((it) => (it.id === id ? { ...it, is_priority: next } : it)));
     await supabase.from("shopping_list_items").update({ is_priority: next }).eq("id", id);
   };
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-6">
-      <form onSubmit={submit} className="space-y-2">
+      <form onSubmit={submit} className="space-y-3">
         {/* Main input row: text + flag + add */}
         <div className="flex items-center gap-2">
           <input
@@ -104,34 +145,20 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           </button>
         </div>
 
-        {/* Quantity — small, secondary, tucked directly below the text input */}
-        <div className="flex items-center gap-2">
+        {/* Optional quantity — small pill, reads as an optional add-on */}
+        <div className="flex items-center gap-2 pl-1">
+          <label className="text-xs text-neutral-400" htmlFor="qty-input">
+            + qty
+          </label>
           <input
+            id="qty-input"
             type="number"
             min={1}
             value={quantity}
             onChange={(e) => setQuantity(e.target.value)}
-            placeholder="Qty"
-            className="w-16 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-center text-sm text-neutral-700 outline-none focus:border-[var(--accent-green)]"
+            placeholder="1"
+            className="w-14 rounded-full border border-neutral-200 bg-white px-3 py-1 text-center text-sm text-neutral-700 outline-none transition focus:border-[var(--accent-green)]"
           />
-        </div>
-
-        {/* Category chips — wrap naturally, thumb-sized */}
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setCategory(c)}
-              className={`min-h-[44px] rounded-full border px-3.5 text-sm font-medium transition ${
-                category === c
-                  ? "border-[var(--accent-green)] bg-[var(--accent-green-soft)] text-[var(--accent-green)]"
-                  : "border-neutral-200 bg-white text-neutral-500"
-              }`}
-            >
-              {CATEGORY_LABELS[c]}
-            </button>
-          ))}
         </div>
       </form>
 
@@ -156,9 +183,16 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                   {it.quantity != null && (
                     <span className="text-neutral-400">×{it.quantity}</span>
                   )}
-                  <span className="text-[10px] uppercase tracking-wider text-neutral-400">
-                    {CATEGORY_LABELS[it.category] ?? it.category}
-                  </span>
+                  {it.categorizing || !it.category ? (
+                    <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-neutral-400">
+                      <Loader2 size={10} className="animate-spin" />
+                      sorting
+                    </span>
+                  ) : (
+                    <span className="text-[10px] uppercase tracking-wider text-neutral-400">
+                      {CATEGORY_LABELS[it.category] ?? it.category}
+                    </span>
+                  )}
                 </div>
                 <button
                   type="button"
