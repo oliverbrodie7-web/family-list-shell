@@ -124,6 +124,21 @@ Exact output format example:
       const raw: string = data?.content?.[0]?.text ?? "";
       const jsonText = extractJsonArray(raw);
 
+      // TEMP DIAGNOSTIC LOGGING — remove after confirming batch category bug.
+      // Surfaces in Supabase Edge Function logs.
+      console.log(
+        "[categorize-item][batch][diag]",
+        JSON.stringify({
+          item_count: rawItems.length,
+          stop_reason: data?.stop_reason ?? null,
+          usage: data?.usage ?? null,
+          raw_len: raw.length,
+          extract_ok: jsonText !== null,
+          error: jsonText === null ? "parse_failed" : null,
+          raw,
+        }),
+      );
+
       if (!jsonText) {
         return Response.json(
           { results: fallback, error: "parse_failed" },
@@ -139,7 +154,18 @@ Exact output format example:
       try {
         const p = JSON.parse(jsonText);
         if (Array.isArray(p)) parsed = p;
-      } catch {
+      } catch (parseErr) {
+        // TEMP DIAGNOSTIC LOGGING — remove after confirming batch category bug.
+        console.log(
+          "[categorize-item][batch][diag]",
+          JSON.stringify({
+            error: "parse_failed",
+            stage: "JSON.parse",
+            message: String(parseErr),
+            json_text_len: jsonText.length,
+            json_text: jsonText,
+          }),
+        );
         return Response.json(
           { results: fallback, error: "parse_failed" },
           { headers: corsHeaders },
