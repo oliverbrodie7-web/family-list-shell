@@ -80,21 +80,3 @@ function TabButton({
     </button>
   );
 }
-
-function EmptyState({
-  icon,
-  title,
-  subtitle,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-}) {
-  return (
-    <div className="flex flex-col items-center text-center">
-      <div className="mb-4 text-neutral-300">{icon}</div>
-      <p className="text-base font-medium text-neutral-700">{title}</p>
-      <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>
-    </div>
-  );
-}
