@@ -202,15 +202,15 @@ Exact output format example:
 Return ONLY a raw JSON object. No preamble, no explanation, no markdown, no code fences.
 
 The object must have exactly these keys:
-- "clean_name": fix spelling, punctuation and capitalisation only. Do NOT reword, expand, translate, pluralise, add detail, or change quantities. Leave brand names and deliberate wording alone. If you are unsure, return the original text unchanged.
+- "clean_name": fix spelling, punctuation and capitalisation only. Do NOT reword, expand, translate, pluralise, add detail, or change quantities. Correct obvious misspellings. Only leave wording unchanged if it is a brand name or clearly deliberate.
 - "category": exactly one of "produce", "bakery", "deli", "meat", "dairy", "frozen", "pantry", "household", "lollies_chocolate", "misc".
 
 Route confectionery (chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc.) to "lollies_chocolate". If genuinely unsure about category, use "misc".
 
 Item: "${input}"
 
-Exact output format example:
-{"clean_name":"Chocolate","category":"lollies_chocolate"}`;
+Exact output format example (shows a typo being corrected):
+{"clean_name":"Bananas","category":"produce"}`;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
