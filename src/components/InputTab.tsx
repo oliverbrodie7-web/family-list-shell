@@ -240,7 +240,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="1"
-              className="w-14 rounded-full border border-neutral-200 bg-white px-3 py-1 text-center text-sm text-neutral-700 outline-none transition focus:border-[var(--accent-green)]"
+              className="w-14 rounded-full border border-neutral-200 bg-white px-3 py-1 text-center text-base text-neutral-700 outline-none transition focus:border-[var(--accent-green)]"
             />
           </div>
           <button

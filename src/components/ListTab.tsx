@@ -301,7 +301,7 @@ function EditSheet({
             value={qty}
             onChange={(e) => setQty(e.target.value)}
             placeholder="Qty"
-            className="w-20 rounded-full border border-neutral-200 px-3 py-2 text-center text-[15px] text-neutral-900 outline-none focus:border-[var(--accent-green)]"
+            className="w-20 rounded-full border border-neutral-200 px-3 py-2 text-center text-[16px] text-neutral-900 outline-none focus:border-[var(--accent-green)]"
           />
           <button
             type="button"

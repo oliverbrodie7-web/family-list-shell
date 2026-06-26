@@ -170,7 +170,7 @@ export function BatchConfirmSheet({
                       update(r.key, { quantity: e.target.value })
                     }
                     placeholder="Qty"
-                    className="w-16 rounded-full border border-neutral-200 px-3 py-1.5 text-center text-sm text-neutral-700 outline-none focus:border-[var(--accent-green)]"
+                    className="w-16 rounded-full border border-neutral-200 px-3 py-1.5 text-center text-base text-neutral-700 outline-none focus:border-[var(--accent-green)]"
                   />
 
                   <button
