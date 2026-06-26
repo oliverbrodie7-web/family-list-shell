@@ -180,26 +180,37 @@ Exact output format example:
       return Response.json({ results }, { headers: corsHeaders });
     }
 
-    // ---- SINGLE MODE (unchanged contract) ----
+    // ---- SINGLE MODE ----
     const input =
       typeof body?.text === "string" ? body.text.trim() : "";
     if (!input) {
-      return Response.json({ category: "misc" }, { headers: corsHeaders });
+      return Response.json(
+        { display_name: "", category: "misc" },
+        { headers: corsHeaders },
+      );
     }
+    const fallbackName = titleCaseFallback(input);
     if (!apiKey) {
       return Response.json(
-        { category: "misc", error: "missing_api_key" },
+        { display_name: fallbackName, category: "misc", error: "missing_api_key" },
         { headers: corsHeaders },
       );
     }
 
-    const prompt = `Classify this shopping list item into exactly one of these categories: produce, bakery, deli, meat, dairy, frozen, pantry, household, lollies_chocolate, misc.
+    const prompt = `You clean up and classify a single shopping list item.
 
-Route confectionery — chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc. — to lollies_chocolate.
+Return ONLY a raw JSON object. No preamble, no explanation, no markdown, no code fences.
+
+The object must have exactly these keys:
+- "clean_name": fix spelling, punctuation and capitalisation only. Do NOT reword, expand, translate, pluralise, add detail, or change quantities. Leave brand names and deliberate wording alone. If you are unsure, return the original text unchanged.
+- "category": exactly one of "produce", "bakery", "deli", "meat", "dairy", "frozen", "pantry", "household", "lollies_chocolate", "misc".
+
+Route confectionery (chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc.) to "lollies_chocolate". If genuinely unsure about category, use "misc".
 
 Item: "${input}"
 
-Respond with ONLY the single category word, lowercase, no punctuation, no explanation. If you are genuinely unsure, respond with: misc`;
+Exact output format example:
+{"clean_name":"Chocolate","category":"lollies_chocolate"}`;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -210,23 +221,46 @@ Respond with ONLY the single category word, lowercase, no punctuation, no explan
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5",
-        max_tokens: 10,
+        max_tokens: 200,
+        system:
+          "You return only valid JSON. Never wrap JSON in markdown fences or add prose.",
         messages: [{ role: "user", content: prompt }],
       }),
     });
 
     if (!res.ok) {
       return Response.json(
-        { category: "misc", error: `claude_${res.status}` },
+        { display_name: fallbackName, category: "misc", error: `claude_${res.status}` },
         { headers: corsHeaders },
       );
     }
 
     const data = await res.json();
     const raw: string = data?.content?.[0]?.text ?? "";
-    const guess = raw.trim().toLowerCase().replace(/[^a-z_]/g, "");
-    const category = isCat(guess) ? guess : "misc";
-    return Response.json({ category }, { headers: corsHeaders });
+
+    // Extract JSON object
+    const stripped = raw.replace(/```(?:json)?/gi, "").replace(/```/g, "").trim();
+    const start = stripped.indexOf("{");
+    const end = stripped.lastIndexOf("}");
+    let parsed: { clean_name?: unknown; category?: unknown } | null = null;
+    if (start !== -1 && end > start) {
+      try {
+        parsed = JSON.parse(stripped.slice(start, end + 1));
+      } catch {
+        parsed = null;
+      }
+    }
+
+    const nameRaw =
+      parsed && typeof parsed.clean_name === "string" ? parsed.clean_name.trim() : "";
+    const display_name = nameRaw || fallbackName;
+    const catRaw =
+      parsed && typeof parsed.category === "string"
+        ? parsed.category.trim().toLowerCase().replace(/[^a-z_]/g, "")
+        : "";
+    const category: Category = isCat(catRaw) ? catRaw : "misc";
+
+    return Response.json({ display_name, category }, { headers: corsHeaders });
   } catch (e) {
     return Response.json(
       { category: "misc", error: String(e) },
