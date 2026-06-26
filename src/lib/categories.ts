@@ -14,7 +14,7 @@ export const CATEGORIES = [
 export type Category = (typeof CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<Category, string> = {
-  produce: "Produce",
+  produce: "Fruit and Vegetables",
   bakery: "Bakery",
   deli: "Deli",
   meat: "Meat",
