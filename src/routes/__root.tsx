@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { registerPwa } from "../lib/pwa-register";
 
 function NotFoundComponent() {
   return (
@@ -76,21 +77,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { title: "Our Pantry" },
+      { name: "description", content: "A simple, fast shopping list for the family." },
+      { name: "theme-color", content: "#10b981" },
+      { name: "mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-title", content: "Our Pantry" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { property: "og:title", content: "Our Pantry" },
+      { property: "og:description", content: "A simple, fast shopping list for the family." },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "apple-touch-icon", sizes: "180x180", href: "/icons/icon-180.png" },
+      { rel: "icon", type: "image/png", sizes: "192x192", href: "/icons/icon-192.png" },
+      { rel: "icon", type: "image/png", sizes: "64x64", href: "/icons/favicon-64.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -115,6 +119,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    registerPwa();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
