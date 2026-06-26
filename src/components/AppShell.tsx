@@ -15,7 +15,7 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-white">
-      <header className="flex items-center justify-between border-b border-neutral-100 px-5 py-4">
+      <header className="flex items-center justify-between border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <h1 className="text-base font-semibold tracking-tight text-neutral-900">
           {tab === "input" ? "Add items" : "Shopping list"}
         </h1>
