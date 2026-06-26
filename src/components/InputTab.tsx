@@ -40,16 +40,23 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     inputRef.current?.focus();
   }, []);
 
-  const categorize = async (raw: string): Promise<Category> => {
+  const categorize = async (
+    raw: string,
+  ): Promise<{ display_name: string; category: Category }> => {
     try {
       const { data, error } = await supabase.functions.invoke("categorize-item", {
         body: { text: raw },
       });
-      if (error) return "misc";
-      const cat = (data as { category?: string })?.category;
-      return (cat as Category) ?? "misc";
+      if (error) return { display_name: raw, category: "misc" };
+      const d = data as { display_name?: string; category?: string };
+      const name =
+        typeof d?.display_name === "string" && d.display_name.trim()
+          ? d.display_name.trim()
+          : raw;
+      const cat = (d?.category as Category) ?? "misc";
+      return { display_name: name, category: cat };
     } catch {
-      return "misc";
+      return { display_name: raw, category: "misc" };
     }
   };
 
@@ -73,14 +80,14 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       ].slice(0, 5),
     );
 
-    const category = await categorize(raw);
+    const { display_name, category } = await categorize(raw);
     const { data, error: insertErr } = await supabase
       .from("shopping_list_items")
       .insert({
         user_id: userId,
         household_id: householdId,
         raw_input: raw,
-        display_name: raw,
+        display_name,
         category,
         quantity: qty,
         is_priority: isPriority,
