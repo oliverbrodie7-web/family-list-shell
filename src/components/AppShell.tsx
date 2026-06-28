@@ -6,6 +6,7 @@ import { InputTab } from "./InputTab";
 import { ListTab } from "./ListTab";
 import { Toaster } from "@/components/ui/sonner";
 import { NotificationsToggle } from "./NotificationsToggle";
+import { TestPushButton } from "./TestPushButton";
 
 type Tab = "input" | "list";
 
@@ -22,6 +23,7 @@ export function AppShell() {
         </h1>
         <div className="flex items-center gap-2">
           <NotificationsToggle />
+          <TestPushButton />
           <button
             onClick={signOut}
             aria-label="Sign out"
