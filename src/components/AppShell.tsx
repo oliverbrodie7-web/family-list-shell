@@ -5,6 +5,7 @@ import { useHouseholdId } from "@/lib/household";
 import { InputTab } from "./InputTab";
 import { ListTab } from "./ListTab";
 import { Toaster } from "@/components/ui/sonner";
+import { NotificationsToggle } from "./NotificationsToggle";
 
 type Tab = "input" | "list";
 
@@ -15,17 +16,20 @@ export function AppShell() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-white">
-      <header className="flex items-center justify-between border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
+      <header className="flex items-center justify-between gap-2 border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <h1 className="text-base font-semibold tracking-tight text-neutral-900">
           {tab === "input" ? "Add items" : "Shopping list"}
         </h1>
-        <button
-          onClick={signOut}
-          aria-label="Sign out"
-          className="rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
-        >
-          <LogOut size={18} />
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationsToggle />
+          <button
+            onClick={signOut}
+            aria-label="Sign out"
+            className="rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+          >
+            <LogOut size={18} />
+          </button>
+        </div>
       </header>
 
       <main className="flex flex-1 flex-col pb-24">
