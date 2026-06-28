@@ -6,6 +6,7 @@ import { InputTab } from "./InputTab";
 import { ListTab } from "./ListTab";
 import { Toaster } from "@/components/ui/sonner";
 import { NotificationsToggle } from "./NotificationsToggle";
+import { TestPushButton } from "./TestPushButton";
 
 type Tab = "input" | "list";
 
