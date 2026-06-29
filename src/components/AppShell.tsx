@@ -22,7 +22,6 @@ export function AppShell() {
         </h1>
         <div className="flex items-center gap-2">
           <NotificationsToggle />
-          <TestPushButton />
           <button
             onClick={signOut}
             aria-label="Sign out"
