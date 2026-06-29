@@ -30,18 +30,31 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const VAPID_PUBLIC_KEY = Deno.env.get("VAPID_PUBLIC_KEY");
-    const VAPID_PRIVATE_KEY = Deno.env.get("VAPID_PRIVATE_KEY");
-    const VAPID_SUBJECT = Deno.env.get("VAPID_SUBJECT");
+    const rawPub = Deno.env.get("VAPID_PUBLIC_KEY");
+    const rawPriv = Deno.env.get("VAPID_PRIVATE_KEY");
+    const rawSubject = Deno.env.get("VAPID_SUBJECT");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
     const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY || !VAPID_SUBJECT) {
+    if (!rawPub || !rawPriv || !rawSubject) {
       throw new Error("Missing VAPID secrets");
     }
     if (!SUPABASE_URL || !SERVICE_ROLE) {
       throw new Error("Missing Supabase service env");
     }
+
+    // Normalise to URL-safe base64 without padding (what web-push/VAPID requires)
+    const toUrlSafeB64 = (s: string) =>
+      s.trim().replace(/\s+/g, "").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    const VAPID_PUBLIC_KEY = toUrlSafeB64(rawPub);
+    const VAPID_PRIVATE_KEY = toUrlSafeB64(rawPriv);
+    let VAPID_SUBJECT = rawSubject.trim();
+    if (!/^mailto:|^https?:\/\//i.test(VAPID_SUBJECT)) {
+      VAPID_SUBJECT = `mailto:${VAPID_SUBJECT}`;
+    }
+    console.log(
+      `send-push: vapid pub len=${VAPID_PUBLIC_KEY.length} priv len=${VAPID_PRIVATE_KEY.length} subject=${VAPID_SUBJECT}`,
+    );
 
     webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
 
