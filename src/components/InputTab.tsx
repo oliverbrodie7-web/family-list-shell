@@ -195,6 +195,14 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     setRecent((r) => [...added.reverse(), ...r].slice(0, 5));
     setBatchItems(null);
     setBulkOpen(false);
+    const n = added.length;
+    if (householdId && n > 0) {
+      void notifyHousehold({
+        householdId,
+        title: "Our Pantry",
+        body: `${n} ${n === 1 ? "item" : "items"} added`,
+      });
+    }
     // Clear main input if it was source
     setText("");
     setQuantity("");
