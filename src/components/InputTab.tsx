@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { BatchConfirmSheet, type BatchRow } from "./BatchConfirmSheet";
 import { BulkAddSheet } from "./BulkAddSheet";
+import { notifyHousehold } from "@/lib/push";
 
 interface RecentItem {
   id: string;
@@ -106,6 +107,13 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         it.id === tempId ? { ...(data as RecentItem), categorizing: false } : it,
       ),
     );
+    if (householdId) {
+      void notifyHousehold({
+        householdId,
+        title: "Our Pantry",
+        body: `${display_name} added`,
+      });
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -187,6 +195,14 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     setRecent((r) => [...added.reverse(), ...r].slice(0, 5));
     setBatchItems(null);
     setBulkOpen(false);
+    const n = added.length;
+    if (householdId && n > 0) {
+      void notifyHousehold({
+        householdId,
+        title: "Our Pantry",
+        body: `${n} ${n === 1 ? "item" : "items"} added`,
+      });
+    }
     // Clear main input if it was source
     setText("");
     setQuantity("");

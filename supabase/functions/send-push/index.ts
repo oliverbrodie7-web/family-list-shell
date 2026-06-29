@@ -23,6 +23,7 @@ interface Body {
   title?: string;
   body?: string;
   target?: { user_id?: string; household_id?: string };
+  exclude_endpoint?: string;
   subscriptions?: SubRow[];
 }
 
@@ -75,10 +76,14 @@ Deno.serve(async (req) => {
       if (error) throw new Error(`Query failed: ${error.message}`);
       subs = (data ?? []) as SubRow[];
     } else if (payload.target?.household_id) {
-      const { data, error } = await supabase
+      let query = supabase
         .from("shopping_push_subscriptions")
         .select("id, endpoint, p256dh, auth")
         .eq("household_id", payload.target.household_id);
+      if (payload.exclude_endpoint) {
+        query = query.neq("endpoint", payload.exclude_endpoint);
+      }
+      const { data, error } = await query;
       if (error) throw new Error(`Query failed: ${error.message}`);
       subs = (data ?? []) as SubRow[];
     } else {

@@ -108,3 +108,25 @@ export async function unsubscribeAndDelete(): Promise<void> {
   }
   await supabase.from("shopping_push_subscriptions").delete().eq("endpoint", endpoint);
 }
+
+export async function notifyHousehold(args: {
+  householdId: string;
+  title: string;
+  body: string;
+}): Promise<void> {
+  try {
+    const sub = await getCurrentSubscription();
+    const exclude_endpoint = sub?.endpoint;
+    const { error } = await supabase.functions.invoke("send-push", {
+      body: {
+        title: args.title,
+        body: args.body,
+        target: { household_id: args.householdId },
+        ...(exclude_endpoint ? { exclude_endpoint } : {}),
+      },
+    });
+    if (error) console.log("notifyHousehold: invoke error", error.message);
+  } catch (e) {
+    console.log("notifyHousehold: failed", (e as Error).message);
+  }
+}
