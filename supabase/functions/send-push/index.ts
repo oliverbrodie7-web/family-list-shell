@@ -23,6 +23,7 @@ interface Body {
   title?: string;
   body?: string;
   target?: { user_id?: string; household_id?: string };
+  exclude_endpoint?: string;
   subscriptions?: SubRow[];
 }
 
