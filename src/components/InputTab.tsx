@@ -107,6 +107,13 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         it.id === tempId ? { ...(data as RecentItem), categorizing: false } : it,
       ),
     );
+    if (householdId) {
+      void notifyHousehold({
+        householdId,
+        title: "Our Pantry",
+        body: `${display_name} added`,
+      });
+    }
   };
 
   const submit = async (e: React.FormEvent) => {
