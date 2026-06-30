@@ -92,6 +92,22 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     if (active) fetchItems();
   }, [active, fetchItems]);
 
+  // Trigger celebration when active list transitions >0 -> 0
+  useEffect(() => {
+    if (loading) return;
+    const total = items.length;
+    const activeCount = items.filter((i) => !i.is_checked).length;
+    if (total === 0) {
+      prevActiveCount.current = 0;
+      return;
+    }
+    const prev = prevActiveCount.current;
+    if (prev != null && prev > 0 && activeCount === 0) {
+      setCelebrate(true);
+    }
+    prevActiveCount.current = activeCount;
+  }, [items, loading]);
+
   const toggleGroup = async (g: RowGroup) => {
     const next = !g.is_checked;
     if (next) haptic();
