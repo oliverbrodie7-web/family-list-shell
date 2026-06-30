@@ -19,6 +19,7 @@ interface MemberContextValue {
   rememberMember: (m: Member) => void;
   forgetMember: () => void;
   updateCurrentName: (name: string) => Promise<{ error: string | null }>;
+  deleteMember: (id: string) => Promise<{ error: string | null }>;
 }
 
 const MemberContext = createContext<MemberContextValue | undefined>(undefined);
