@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PlusCircle, ShoppingCart, LogOut } from "lucide-react";
+import { PlusCircle, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
 import { InputTab } from "./InputTab";
