@@ -317,10 +317,12 @@ function RowButton({
   label,
   onClick,
   muted,
+  isFirst,
 }: {
   label: string;
   onClick: () => void;
   muted?: boolean;
+  isFirst?: boolean;
 }) {
   return (
     <button
@@ -328,7 +330,7 @@ function RowButton({
       className="flex w-full items-center justify-between px-4 py-3.5 text-left text-[14px] font-medium transition active:bg-[color:var(--clay-bg)]"
       style={{
         color: muted ? "var(--clay-muted)" : "var(--clay-ink)",
-        borderTop: "1px solid var(--clay-border)",
+        borderTop: isFirst ? "none" : "1px solid var(--clay-border)",
       }}
     >
       <span>{label}</span>
