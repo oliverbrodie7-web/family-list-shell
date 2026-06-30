@@ -6,7 +6,6 @@ export const VAPID_PUBLIC_KEY =
 export function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   const mql = window.matchMedia?.("(display-mode: standalone)").matches;
-  // iOS Safari
   const iosStandalone = (window.navigator as unknown as { standalone?: boolean })
     .standalone === true;
   return Boolean(mql || iosStandalone);
@@ -39,10 +38,8 @@ function arrayBufferToBase64(buffer: ArrayBuffer | null): string {
 }
 
 async function getRegistration(): Promise<ServiceWorkerRegistration> {
-  // Try ready first (works if SW already registered & active)
   const existing = await navigator.serviceWorker.getRegistration("/");
   if (existing) return existing;
-  // Otherwise register here (e.g. preview-guarded path didn't register)
   return navigator.serviceWorker.register("/sw.js");
 }
 
@@ -57,9 +54,24 @@ export async function getCurrentSubscription(): Promise<PushSubscription | null>
   }
 }
 
+/** Returns the stored row for this device's endpoint, if any. */
+export async function getStoredSubscriptionRow(): Promise<
+  { id: string; member_id: string | null; household_id: string | null } | null
+> {
+  const sub = await getCurrentSubscription();
+  if (!sub) return null;
+  const { data } = await supabase
+    .from("shopping_push_subscriptions")
+    .select("id, member_id, household_id")
+    .eq("endpoint", sub.endpoint)
+    .maybeSingle();
+  return (data as { id: string; member_id: string | null; household_id: string | null } | null) ?? null;
+}
+
 export async function subscribeAndSave(args: {
   userId: string;
   householdId: string;
+  memberId: string;
 }): Promise<PushSubscription> {
   if (!pushSupported()) throw new Error("Push notifications aren't supported on this device.");
 
@@ -76,17 +88,29 @@ export async function subscribeAndSave(args: {
   const p256dh = arrayBufferToBase64(sub.getKey("p256dh"));
   const auth = arrayBufferToBase64(sub.getKey("auth"));
 
-  // Check for existing row with same endpoint
   const { data: existing } = await supabase
     .from("shopping_push_subscriptions")
     .select("id")
     .eq("endpoint", endpoint)
     .maybeSingle();
 
-  if (!existing) {
+  if (existing) {
+    const { error } = await supabase
+      .from("shopping_push_subscriptions")
+      .update({
+        user_id: args.userId,
+        household_id: args.householdId,
+        member_id: args.memberId,
+        p256dh,
+        auth,
+      })
+      .eq("endpoint", endpoint);
+    if (error) throw new Error(error.message);
+  } else {
     const { error } = await supabase.from("shopping_push_subscriptions").insert({
       user_id: args.userId,
       household_id: args.householdId,
+      member_id: args.memberId,
       endpoint,
       p256dh,
       auth,
@@ -104,13 +128,14 @@ export async function unsubscribeAndDelete(): Promise<void> {
   try {
     await sub.unsubscribe();
   } catch {
-    // ignore unsubscribe errors; still remove the row
+    // ignore
   }
   await supabase.from("shopping_push_subscriptions").delete().eq("endpoint", endpoint);
 }
 
 export async function notifyHousehold(args: {
   householdId: string;
+  memberId: string | null;
   title: string;
   body: string;
 }): Promise<void> {
@@ -122,6 +147,7 @@ export async function notifyHousehold(args: {
         title: args.title,
         body: args.body,
         target: { household_id: args.householdId },
+        ...(args.memberId ? { exclude_member_id: args.memberId } : {}),
         ...(exclude_endpoint ? { exclude_endpoint } : {}),
       },
     });
