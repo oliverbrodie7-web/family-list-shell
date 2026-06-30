@@ -58,6 +58,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<RowGroup | null>(null);
   const [trolleyOpen, setTrolleyOpen] = useState(true);
+  const [celebrate, setCelebrate] = useState(false);
+  const prevActiveCount = useRef<number | null>(null);
   const { members } = useMember();
 
   const memberMap = useMemo(() => {
