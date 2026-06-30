@@ -84,9 +84,20 @@ export function MemberProvider({
     return { error: null };
   };
 
+  const deleteMember = async (id: string) => {
+    const { error } = await supabase.from("shopping_members").delete().eq("id", id);
+    if (error) return { error: error.message };
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+    if (member?.id === id) {
+      localStorage.removeItem(STORAGE_KEY);
+      setMember(null);
+    }
+    return { error: null };
+  };
+
   return (
     <MemberContext.Provider
-      value={{ member, members, loading, refresh, rememberMember, forgetMember, updateCurrentName }}
+      value={{ member, members, loading, refresh, rememberMember, forgetMember, updateCurrentName, deleteMember }}
     >
       {children}
     </MemberContext.Provider>
