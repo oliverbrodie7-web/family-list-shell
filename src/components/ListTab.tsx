@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { useMember } from "@/lib/member";
+import { Celebration } from "./Celebration";
 
 interface Item {
   id: string;
@@ -57,6 +58,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<RowGroup | null>(null);
   const [trolleyOpen, setTrolleyOpen] = useState(true);
+  const [celebrate, setCelebrate] = useState(false);
+  const prevActiveCount = useRef<number | null>(null);
   const { members } = useMember();
 
   const memberMap = useMemo(() => {
@@ -88,6 +91,22 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   useEffect(() => {
     if (active) fetchItems();
   }, [active, fetchItems]);
+
+  // Trigger celebration when active list transitions >0 -> 0
+  useEffect(() => {
+    if (loading) return;
+    const total = items.length;
+    const activeCount = items.filter((i) => !i.is_checked).length;
+    if (total === 0) {
+      prevActiveCount.current = 0;
+      return;
+    }
+    const prev = prevActiveCount.current;
+    if (prev != null && prev > 0 && activeCount === 0) {
+      setCelebrate(true);
+    }
+    prevActiveCount.current = activeCount;
+  }, [items, loading]);
 
   const toggleGroup = async (g: RowGroup) => {
     const next = !g.is_checked;
@@ -351,6 +370,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
       {editing && (
         <EditSheet group={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />
       )}
+
+      {celebrate && <Celebration onDone={() => setCelebrate(false)} />}
     </div>
   );
 }
