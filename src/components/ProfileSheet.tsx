@@ -4,6 +4,13 @@ import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
 import { supabase } from "@/lib/supabase";
 
+const MEMBER_COLORS = ["#C2693F", "#6F8F5E", "#D38A2E", "#8E6E8A", "#A86A4B", "#5E8A8F"];
+function memberColor(id: string) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return MEMBER_COLORS[h % MEMBER_COLORS.length];
+}
+
 export function ProfileSheet({ onClose }: { onClose: () => void }) {
   const { member, updateCurrentName, forgetMember, deleteMember } = useMember();
   const { signOut } = useAuth();
@@ -66,7 +73,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // ignore
+      /* ignore */
     }
   };
 
@@ -83,66 +90,131 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl bg-white p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
+        className="w-full max-w-md rounded-t-2xl p-5 pb-[max(env(safe-area-inset-bottom),1rem)] shadow-xl"
+        style={{ background: "var(--clay-bg)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-200" />
-        <h2 className="text-lg font-semibold text-neutral-900">Profile</h2>
-        <p className="mt-1 text-sm text-neutral-500">Signed in as {member.name}</p>
+        <div
+          className="mx-auto mb-4 h-1 w-10 rounded-full"
+          style={{ background: "var(--clay-border)" }}
+        />
 
-        <form onSubmit={save} className="mt-5 space-y-3">
-          <label className="block text-xs font-medium text-neutral-600">Your name</label>
+        {/* Header */}
+        <div className="mb-4 flex items-center gap-3">
+          <span
+            className="flex h-12 w-12 items-center justify-center rounded-full text-[18px] font-semibold text-white"
+            style={{ background: memberColor(member.id) }}
+          >
+            {(member.name?.[0] ?? "?").toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-[17px] font-semibold" style={{ color: "var(--clay-ink)" }}>
+              {member.name}
+            </h2>
+            <p className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
+              Signed in
+            </p>
+          </div>
+        </div>
+
+        {/* Edit name card */}
+        <form
+          onSubmit={save}
+          className="rounded-[14px] bg-white p-4 space-y-2.5"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <p
+            className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            Your name
+          </p>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={40}
-            className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
+            className="w-full rounded-[10px] bg-white px-3.5 py-3 text-[16px] outline-none"
+            style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
           />
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {savedAt && !error && <p className="text-sm text-[var(--accent-green)]">Saved</p>}
+          {error && (
+            <p className="text-sm" style={{ color: "#B0452A" }}>
+              {error}
+            </p>
+          )}
+          {savedAt && !error && (
+            <p className="text-sm" style={{ color: "var(--clay-success)" }}>
+              Saved
+            </p>
+          )}
           <button
             type="submit"
             disabled={saving || name.trim() === member.name}
-            className="w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-50"
+            className="w-full rounded-[12px] py-2.5 text-[14px] font-semibold text-white transition active:scale-[0.99] disabled:opacity-50"
+            style={{ background: "var(--clay-accent)" }}
           >
             {saving ? "Saving…" : "Save name"}
           </button>
         </form>
 
-        <div className="mt-6 space-y-2 border-t border-neutral-100 pt-4">
+        {/* Invite card */}
+        <div
+          className="mt-3 rounded-[14px] bg-white p-4 space-y-2.5"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
           <button
             onClick={createInvite}
             disabled={inviteLoading || !householdId}
-            className="w-full rounded-xl border border-neutral-200 py-3 text-base font-medium text-neutral-800 transition hover:bg-neutral-50 active:scale-[0.99] disabled:opacity-50"
+            className="w-full rounded-[12px] py-2.5 text-[14px] font-semibold transition active:scale-[0.99] disabled:opacity-50"
+            style={{
+              background: "var(--clay-accent-soft)",
+              color: "var(--clay-accent)",
+            }}
           >
             {inviteLoading ? "Creating link…" : "Invite a family member"}
           </button>
 
-          {inviteError && <p className="text-sm text-red-600">{inviteError}</p>}
+          {inviteError && (
+            <p className="text-sm" style={{ color: "#B0452A" }}>
+              {inviteError}
+            </p>
+          )}
 
           {inviteLink && (
-            <div className="space-y-2 rounded-xl border border-[var(--accent-green-soft)] bg-[var(--accent-green-soft)]/10 p-3">
-              <p className="text-xs text-neutral-600">
-                This link lets someone join your family. Valid for 7 days.
+            <div className="space-y-2">
+              <p className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
+                Valid for 7 days.
               </p>
-              <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2">
-                <span className="flex-1 truncate text-sm text-neutral-700">{inviteLink}</span>
+              <div
+                className="flex items-center gap-2 rounded-[10px] bg-white px-3 py-2"
+                style={{ border: "1px solid var(--clay-border)" }}
+              >
+                <span
+                  className="flex-1 truncate text-[13px]"
+                  style={{ color: "var(--clay-ink)" }}
+                >
+                  {inviteLink}
+                </span>
               </div>
               <div className="flex gap-2">
                 <button
                   onClick={copyLink}
-                  className="flex-1 rounded-lg bg-[var(--accent-green)] py-2 text-sm font-medium text-white transition active:scale-[0.99]"
+                  className="flex-1 rounded-[10px] py-2 text-[13px] font-semibold text-white transition active:scale-[0.99]"
+                  style={{ background: "var(--clay-accent)" }}
                 >
                   {copied ? "Copied!" : "Copy link"}
                 </button>
                 {typeof navigator !== "undefined" && !!navigator.share && (
                   <button
                     onClick={shareLink}
-                    className="flex-1 rounded-lg border border-neutral-200 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 active:scale-[0.99]"
+                    className="flex-1 rounded-[10px] py-2 text-[13px] font-medium transition active:scale-[0.99]"
+                    style={{
+                      border: "1px solid var(--clay-border)",
+                      color: "var(--clay-ink)",
+                    }}
                   >
                     Share
                   </button>
@@ -150,76 +222,116 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
               </div>
             </div>
           )}
+        </div>
 
-          <button
+        {/* Actions list card */}
+        <section
+          className="mt-3 overflow-hidden rounded-[14px] bg-white"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <RowButton
+            label="Switch member"
             onClick={() => {
               forgetMember();
               onClose();
             }}
-            className="w-full rounded-xl border border-neutral-200 py-3 text-base font-medium text-neutral-800 transition hover:bg-neutral-50"
-          >
-            Switch member
-          </button>
-          <button
+          />
+          <RowButton
+            label="Log out"
+            muted
             onClick={async () => {
               forgetMember();
               await signOut();
             }}
-            className="w-full rounded-xl py-3 text-base font-medium text-red-600 transition hover:bg-red-50"
-          >
-            Log out
-          </button>
-          {!confirmDelete ? (
-            <button
-              onClick={() => {
-                setDeleteError(null);
-                setConfirmDelete(true);
-              }}
-              className="w-full rounded-xl py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
-            >
-              Remove this profile
-            </button>
-          ) : (
-            <div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3">
-              <p className="text-sm text-red-900">
-                Remove {member.name} from the family? This can't be undone.
-              </p>
-              {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  disabled={deleting}
-                  className="flex-1 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    setDeleting(true);
-                    const { error } = await deleteMember(member.id);
-                    setDeleting(false);
-                    if (error) {
-                      setDeleteError(error);
-                      return;
-                    }
-                    onClose();
-                  }}
-                  disabled={deleting}
-                  className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-medium text-white disabled:opacity-60"
-                >
-                  {deleting ? "Removing…" : "Remove"}
-                </button>
-              </div>
-            </div>
-          )}
+          />
+        </section>
+
+        {!confirmDelete ? (
           <button
-            onClick={onClose}
-            className="w-full rounded-xl py-3 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
+            onClick={() => {
+              setDeleteError(null);
+              setConfirmDelete(true);
+            }}
+            className="mt-3 w-full rounded-[12px] py-2.5 text-[13px] font-medium"
+            style={{ color: "var(--clay-muted)" }}
           >
-            Close
+            Remove this profile
           </button>
-        </div>
+        ) : (
+          <div
+            className="mt-3 space-y-2 rounded-[14px] p-3"
+            style={{ border: "1px solid #E8C8B8", background: "#FBEDE3" }}
+          >
+            <p className="text-[13px]" style={{ color: "var(--clay-ink)" }}>
+              Remove {member.name} from the family? This can't be undone.
+            </p>
+            {deleteError && (
+              <p className="text-sm" style={{ color: "#B0452A" }}>
+                {deleteError}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="flex-1 rounded-[10px] bg-white py-2 text-[13px] font-medium"
+                style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setDeleting(true);
+                  const { error } = await deleteMember(member.id);
+                  setDeleting(false);
+                  if (error) {
+                    setDeleteError(error);
+                    return;
+                  }
+                  onClose();
+                }}
+                disabled={deleting}
+                className="flex-1 rounded-[10px] py-2 text-[13px] font-semibold text-white disabled:opacity-60"
+                style={{ background: "#B0452A" }}
+              >
+                {deleting ? "Removing…" : "Remove"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <button
+          onClick={onClose}
+          className="mt-3 w-full rounded-[12px] py-2.5 text-[13px] font-medium"
+          style={{ color: "var(--clay-muted)" }}
+        >
+          Close
+        </button>
       </div>
     </div>
+  );
+}
+
+function RowButton({
+  label,
+  onClick,
+  muted,
+}: {
+  label: string;
+  onClick: () => void;
+  muted?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between px-4 py-3.5 text-left text-[14px] font-medium transition active:bg-[color:var(--clay-bg)]"
+      style={{
+        color: muted ? "var(--clay-muted)" : "var(--clay-ink)",
+        borderTop: "1px solid var(--clay-border)",
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ color: "var(--clay-muted)" }}>›</span>
+    </button>
   );
 }
