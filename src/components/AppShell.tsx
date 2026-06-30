@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PlusCircle, ShoppingCart, LogOut } from "lucide-react";
+import { PlusCircle, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
 import { InputTab } from "./InputTab";
@@ -24,10 +24,9 @@ export function AppShell() {
           <NotificationsToggle />
           <button
             onClick={signOut}
-            aria-label="Sign out"
-            className="rounded-lg p-2 text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
           >
-            <LogOut size={18} />
+            Log out
           </button>
         </div>
       </header>
