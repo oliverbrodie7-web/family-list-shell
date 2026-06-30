@@ -5,7 +5,7 @@ import { useHouseholdId } from "@/lib/household";
 import { supabase } from "@/lib/supabase";
 
 export function ProfileSheet({ onClose }: { onClose: () => void }) {
-  const { member, updateCurrentName, forgetMember } = useMember();
+  const { member, updateCurrentName, forgetMember, deleteMember } = useMember();
   const { signOut } = useAuth();
   const { householdId } = useHouseholdId();
   const [name, setName] = useState(member?.name ?? "");
