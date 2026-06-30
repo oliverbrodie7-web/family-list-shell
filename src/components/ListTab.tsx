@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { useMember } from "@/lib/member";
+import { Celebration } from "./Celebration";
 
 interface Item {
   id: string;
