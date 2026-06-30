@@ -7,10 +7,15 @@ import { supabase } from "@/lib/supabase";
 export function ProfileSheet({ onClose }: { onClose: () => void }) {
   const { member, updateCurrentName, forgetMember } = useMember();
   const { signOut } = useAuth();
+  const { householdId } = useHouseholdId();
   const [name, setName] = useState(member?.name ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   if (!member) return null;
 
