@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { useMember } from "@/lib/member";
 import { useAuth } from "@/lib/auth";
+import { useHouseholdId } from "@/lib/household";
+import { supabase } from "@/lib/supabase";
 
 export function ProfileSheet({ onClose }: { onClose: () => void }) {
   const { member, updateCurrentName, forgetMember } = useMember();
