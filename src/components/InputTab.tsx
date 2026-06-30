@@ -6,6 +6,7 @@ import { CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { BatchConfirmSheet, type BatchRow } from "./BatchConfirmSheet";
 import { BulkAddSheet } from "./BulkAddSheet";
 import { notifyHousehold } from "@/lib/push";
+import { useMember } from "@/lib/member";
 
 interface RecentItem {
   id: string;
@@ -26,7 +27,9 @@ const parseCommaList = (s: string): string[] =>
 
 export function InputTab({ householdId }: { householdId: string | null }) {
   const { session } = useAuth();
+  const { member } = useMember();
   const userId = session?.user?.id;
+  const memberName = member?.name ?? "Someone";
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState("");
   const [priority, setPriority] = useState(false);
@@ -110,8 +113,9 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     if (householdId) {
       void notifyHousehold({
         householdId,
+        memberId: member?.id ?? null,
         title: "Our Pantry",
-        body: `${display_name} added`,
+        body: `${memberName} added ${display_name}`,
       });
     }
   };
@@ -199,8 +203,9 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     if (householdId && n > 0) {
       void notifyHousehold({
         householdId,
+        memberId: member?.id ?? null,
         title: "Our Pantry",
-        body: `${n} ${n === 1 ? "item" : "items"} added`,
+        body: `${memberName} added ${n} ${n === 1 ? "item" : "items"}`,
       });
     }
     // Clear main input if it was source

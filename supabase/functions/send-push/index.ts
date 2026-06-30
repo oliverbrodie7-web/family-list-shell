@@ -24,6 +24,7 @@ interface Body {
   body?: string;
   target?: { user_id?: string; household_id?: string };
   exclude_endpoint?: string;
+  exclude_member_id?: string;
   subscriptions?: SubRow[];
 }
 
@@ -78,14 +79,23 @@ Deno.serve(async (req) => {
     } else if (payload.target?.household_id) {
       let query = supabase
         .from("shopping_push_subscriptions")
-        .select("id, endpoint, p256dh, auth")
+        .select("id, endpoint, p256dh, auth, member_id")
         .eq("household_id", payload.target.household_id);
-      if (payload.exclude_endpoint) {
-        query = query.neq("endpoint", payload.exclude_endpoint);
-      }
       const { data, error } = await query;
       if (error) throw new Error(`Query failed: ${error.message}`);
-      subs = (data ?? []) as SubRow[];
+      let rows = (data ?? []) as (SubRow & { member_id: string | null })[];
+      if (payload.exclude_member_id) {
+        // Exclude all subs belonging to this member; for rows with null member_id,
+        // fall back to excluding by endpoint if provided.
+        rows = rows.filter((r) => {
+          if (r.member_id) return r.member_id !== payload.exclude_member_id;
+          if (payload.exclude_endpoint) return r.endpoint !== payload.exclude_endpoint;
+          return true;
+        });
+      } else if (payload.exclude_endpoint) {
+        rows = rows.filter((r) => r.endpoint !== payload.exclude_endpoint);
+      }
+      subs = rows;
     } else {
       throw new Error("Provide target.user_id, target.household_id, or subscriptions[]");
     }
