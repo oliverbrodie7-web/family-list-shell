@@ -203,8 +203,9 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     if (householdId && n > 0) {
       void notifyHousehold({
         householdId,
+        memberId: member?.id ?? null,
         title: "Our Pantry",
-        body: `${n} ${n === 1 ? "item" : "items"} added`,
+        body: `${memberName} added ${n} ${n === 1 ? "item" : "items"}`,
       });
     }
     // Clear main input if it was source
