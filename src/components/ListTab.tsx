@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Flag, Check, ShoppingCart, Trash2, X, Star } from "lucide-react";
+import { Flag, Check, ShoppingCart, Trash2, X, Star, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
@@ -42,10 +42,21 @@ function normName(s: string) {
   return s.trim().toLowerCase().replace(/\s+/g, " ");
 }
 
+function haptic() {
+  try {
+    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+      navigator.vibrate(10);
+    }
+  } catch {
+    /* no-op */
+  }
+}
+
 export function ListTab({ householdId, active }: { householdId: string | null; active: boolean }) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<RowGroup | null>(null);
+  const [trolleyOpen, setTrolleyOpen] = useState(true);
   const { members } = useMember();
 
   const memberMap = useMemo(() => {
@@ -80,6 +91,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
 
   const toggleGroup = async (g: RowGroup) => {
     const next = !g.is_checked;
+    if (next) haptic();
     const ids = g.items.map((i) => i.id);
     setItems((arr) => arr.map((i) => (ids.includes(i.id) ? { ...i, is_checked: next } : i)));
     await supabase.from("shopping_list_items").update({ is_checked: next }).in("id", ids);
@@ -108,6 +120,14 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     }, 4200);
   };
 
+  const clearTrolley = async () => {
+    const checkedIds = items.filter((i) => i.is_checked).map((i) => i.id);
+    if (checkedIds.length === 0) return;
+    if (!window.confirm(`Remove ${checkedIds.length} item${checkedIds.length === 1 ? "" : "s"} from the list?`)) return;
+    setItems((arr) => arr.filter((i) => !i.is_checked));
+    await supabase.from("shopping_list_items").delete().in("id", checkedIds);
+  };
+
   const saveEdit = async (
     g: RowGroup,
     patch: { display_name: string; category: Category; quantity: number | null; is_priority: boolean },
@@ -121,14 +141,12 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
               display_name: patch.display_name,
               category: patch.category,
               is_priority: patch.is_priority,
-              // when grouped, only the first item carries quantity; others stay
               quantity: i.id === ids[0] ? patch.quantity : i.quantity,
             }
           : i,
       ),
     );
     setEditing(null);
-    // Apply name/category/priority to all rows in group; quantity goes to first row.
     await supabase
       .from("shopping_list_items")
       .update({
@@ -147,23 +165,18 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     return <p className="px-5 pt-6 text-sm" style={{ color: "var(--clay-muted)" }}>Loading household…</p>;
   }
 
-  // Group items
+  // Group items by aisle (active only)
   const activeByCat = new Map<Category, RowGroup[]>();
-  const checkedByCat = new Map<Category, RowGroup[]>();
-  for (const c of CATEGORIES) {
-    activeByCat.set(c, []);
-    checkedByCat.set(c, []);
-  }
+  for (const c of CATEGORIES) activeByCat.set(c, []);
 
-  // Merge unchecked items in same category with same normalized name into one group.
   const unmergedActive = new Map<string, Item[]>();
-  const checkedList: Item[] = [];
+  const checkedItems: Item[] = [];
   for (const it of items) {
     const cat = (CATEGORIES as readonly string[]).includes(it.category)
       ? (it.category as Category)
       : "misc";
     if (it.is_checked) {
-      checkedList.push({ ...it, category: cat });
+      checkedItems.push({ ...it, category: cat });
       continue;
     }
     const key = `${cat}::${normName(it.display_name)}`;
@@ -175,7 +188,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     const first = group[0];
     const cat = first.category as Category;
     const totalQty = group.reduce((s, i) => s + (i.quantity ?? 1), 0);
-    const rg: RowGroup = {
+    activeByCat.get(cat)!.push({
       key: group.map((i) => i.id).join(","),
       items: group,
       display_name: first.display_name,
@@ -189,40 +202,35 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
         first.created_at,
       ),
       member_id: first.added_by_member_id,
-    };
-    activeByCat.get(cat)!.push(rg);
-  }
-
-  // Checked items: each item is its own group (no merge needed for ticked).
-  for (const it of checkedList) {
-    const cat = it.category as Category;
-    checkedByCat.get(cat)!.push({
-      key: it.id,
-      items: [it],
-      display_name: it.display_name,
-      category: cat,
-      is_priority: it.is_priority,
-      is_checked: true,
-      totalQty: it.quantity ?? 1,
-      count: 1,
-      earliestCreated: it.created_at,
-      member_id: it.added_by_member_id,
     });
   }
 
-  // Sort active: priority first, then by created.
   for (const arr of activeByCat.values()) {
     arr.sort((a, b) => {
       if (a.is_priority !== b.is_priority) return a.is_priority ? -1 : 1;
       return a.earliestCreated.localeCompare(b.earliestCreated);
     });
   }
-  for (const arr of checkedByCat.values()) {
-    arr.sort((a, b) => a.earliestCreated.localeCompare(b.earliestCreated));
-  }
+
+  const trolleyGroups: RowGroup[] = checkedItems
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map((it) => ({
+      key: it.id,
+      items: [it],
+      display_name: it.display_name,
+      category: it.category as Category,
+      is_priority: it.is_priority,
+      is_checked: true,
+      totalQty: it.quantity ?? 1,
+      count: 1,
+      earliestCreated: it.created_at,
+      member_id: it.added_by_member_id,
+    }));
 
   const totalActive = Array.from(activeByCat.values()).reduce((s, a) => s + a.length, 0);
-  const totalChecked = checkedList.length;
+  const totalChecked = trolleyGroups.length;
+  const totalAll = totalActive + totalChecked;
+  const progressPct = totalAll === 0 ? 0 : Math.round((totalChecked / totalAll) * 100);
 
   if (!loading && items.length === 0) {
     return (
@@ -240,9 +248,31 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-5 pb-8">
-      <p className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--clay-muted)" }}>
-        {totalActive} {totalActive === 1 ? "item" : "items"}
-      </p>
+      {/* Progress bar */}
+      <div className="mb-4 px-1">
+        <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
+          <span>
+            {totalChecked} of {totalAll} in the trolley
+          </span>
+        </div>
+        <div
+          className="h-1.5 w-full overflow-hidden rounded-full"
+          style={{ background: "var(--clay-border)" }}
+          role="progressbar"
+          aria-valuenow={progressPct}
+          aria-valuemin={0}
+          aria-valuemax={100}
+        >
+          <div
+            className="h-full rounded-full"
+            style={{
+              width: `${progressPct}%`,
+              background: "var(--clay-accent)",
+              transition: "width 280ms ease",
+            }}
+          />
+        </div>
+      </div>
 
       <div className="space-y-2.5">
         {CATEGORIES.map((c) => {
@@ -264,29 +294,58 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
       </div>
 
       {totalChecked > 0 && (
-        <>
-          <p className="mt-6 mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--clay-muted)" }}>
-            In the trolley · {totalChecked}
-          </p>
-          <div className="space-y-2.5">
-            {CATEGORIES.map((c) => {
-              const arr = checkedByCat.get(c)!;
-              if (arr.length === 0) return null;
-              return (
-                <AisleCard
-                  key={`c-${c}`}
-                  title={CATEGORY_LABELS[c]}
-                  count={arr.length}
-                  groups={arr}
-                  memberMap={memberMap}
-                  onToggle={toggleGroup}
-                  onEdit={(g) => setEditing(g)}
-                  onDelete={deleteGroup}
+        <section
+          className="mt-5 overflow-hidden rounded-[14px] bg-white"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <header className="flex items-center justify-between px-3.5 pt-2.5 pb-2">
+            <button
+              type="button"
+              onClick={() => setTrolleyOpen((v) => !v)}
+              aria-expanded={trolleyOpen}
+              className="flex flex-1 items-center gap-1.5 text-left"
+            >
+              <ChevronDown
+                size={14}
+                style={{
+                  color: "var(--clay-muted)",
+                  transform: trolleyOpen ? "rotate(0deg)" : "rotate(-90deg)",
+                  transition: "transform 180ms ease",
+                }}
+              />
+              <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--clay-muted)" }}>
+                In the trolley · {totalChecked}
+              </h2>
+            </button>
+            <button
+              type="button"
+              onClick={clearTrolley}
+              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
+              style={{
+                color: "var(--clay-accent)",
+                background: "#FBEFE6",
+              }}
+            >
+              Done — clear
+            </button>
+          </header>
+
+          {trolleyOpen && (
+            <ul>
+              {trolleyGroups.map((g, idx) => (
+                <SwipeRow
+                  key={g.key}
+                  group={g}
+                  isFirst={idx === 0}
+                  member={g.member_id ? memberMap.get(g.member_id) : undefined}
+                  onToggle={() => toggleGroup(g)}
+                  onEdit={() => setEditing(g)}
+                  onDelete={() => deleteGroup(g)}
                 />
-              );
-            })}
-          </div>
-        </>
+              ))}
+            </ul>
+          )}
+        </section>
       )}
 
       {editing && (
@@ -363,6 +422,7 @@ function SwipeRow({
 }) {
   const [offset, setOffset] = useState(0);
   const [open, setOpen] = useState(false);
+  const [bounce, setBounce] = useState(false);
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
   const dragging = useRef(false);
@@ -414,12 +474,21 @@ function SwipeRow({
     setOffset(0);
   };
 
+  const handleToggleClick = () => {
+    if (open) {
+      closeSwipe();
+      return;
+    }
+    setBounce(true);
+    setTimeout(() => setBounce(false), 280);
+    onToggle();
+  };
+
   return (
     <li
       className="relative overflow-hidden"
       style={{ borderTop: isFirst ? "none" : "1px solid var(--clay-border)" }}
     >
-      {/* Delete action revealed on swipe */}
       <button
         type="button"
         onClick={() => {
@@ -436,8 +505,10 @@ function SwipeRow({
       <div
         className="relative flex items-center gap-2.5 bg-white px-3.5 py-2"
         style={{
-          transform: `translateX(${offset}px)`,
-          transition: dragging.current ? "none" : "transform 200ms ease",
+          transform: `translateX(${offset}px) scale(${bounce ? 0.985 : 1})`,
+          transition: dragging.current
+            ? "none"
+            : "transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)",
         }}
         onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
         onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
@@ -454,22 +525,26 @@ function SwipeRow({
 
         <button
           type="button"
-          onClick={() => {
-            if (open) {
-              closeSwipe();
-              return;
-            }
-            onToggle();
-          }}
+          onClick={handleToggleClick}
           aria-label={checked ? "Uncheck" : "Check off"}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
           style={{
             border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
             background: checked ? "var(--clay-accent)" : "transparent",
             color: "#fff",
+            transition: "background 200ms ease, border-color 200ms ease, transform 200ms ease",
+            transform: checked ? "scale(1)" : "scale(1)",
           }}
         >
-          {checked && <Check size={12} strokeWidth={3.5} />}
+          {checked && (
+            <Check
+              size={12}
+              strokeWidth={3.5}
+              style={{
+                animation: "tickDraw 220ms ease-out",
+              }}
+            />
+          )}
         </button>
 
         <button
@@ -487,7 +562,7 @@ function SwipeRow({
             className="text-[14px] leading-tight"
             style={{
               color: checked ? "var(--clay-muted)" : "var(--clay-ink)",
-              opacity: checked ? 0.6 : 1,
+              opacity: checked ? 0.7 : 1,
             }}
           >
             {group.display_name}
