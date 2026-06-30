@@ -3,8 +3,10 @@ import { Bell, BellOff } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
+import { useMember } from "@/lib/member";
 import {
   getCurrentSubscription,
+  getStoredSubscriptionRow,
   isStandalone,
   pushSupported,
   subscribeAndSave,
@@ -14,7 +16,9 @@ import {
 export function NotificationsToggle() {
   const { session } = useAuth();
   const { householdId } = useHouseholdId();
+  const { member } = useMember();
   const [enabled, setEnabled] = useState(false);
+  const [needsReregister, setNeedsReregister] = useState(false);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -26,18 +30,26 @@ export function NotificationsToggle() {
         return;
       }
       const sub = await getCurrentSubscription();
+      const permitted =
+        typeof Notification !== "undefined" && Notification.permission === "granted";
+      const hasSub = Boolean(sub) && permitted;
+
+      let mismatch = false;
+      if (hasSub && member) {
+        const row = await getStoredSubscriptionRow();
+        if (!row || row.member_id !== member.id || row.household_id !== householdId) {
+          mismatch = true;
+        }
+      }
       if (cancelled) return;
-      setEnabled(
-        Boolean(sub) &&
-          typeof Notification !== "undefined" &&
-          Notification.permission === "granted",
-      );
+      setEnabled(hasSub && !mismatch);
+      setNeedsReregister(hasSub && mismatch);
       setReady(true);
     })();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [member, householdId]);
 
   const userId = session?.user?.id ?? null;
 
@@ -46,7 +58,6 @@ export function NotificationsToggle() {
       toast.error("This device doesn't support push notifications.");
       return;
     }
-    // iOS requires the app to be installed/standalone
     const isiOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     if (isiOS && !isStandalone()) {
       toast.message("Add Our Pantry to your Home Screen first", {
@@ -55,7 +66,7 @@ export function NotificationsToggle() {
       });
       return;
     }
-    if (!userId || !householdId) {
+    if (!userId || !householdId || !member) {
       toast.error("Still loading your account — try again in a moment.");
       return;
     }
@@ -71,8 +82,9 @@ export function NotificationsToggle() {
         });
         return;
       }
-      await subscribeAndSave({ userId, householdId });
+      await subscribeAndSave({ userId, householdId, memberId: member.id });
       setEnabled(true);
+      setNeedsReregister(false);
       toast.success("Notifications are on for this device");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Couldn't turn on notifications.";
@@ -87,6 +99,7 @@ export function NotificationsToggle() {
     try {
       await unsubscribeAndDelete();
       setEnabled(false);
+      setNeedsReregister(false);
       toast.success("Notifications turned off for this device");
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Couldn't turn off notifications.";
@@ -98,6 +111,20 @@ export function NotificationsToggle() {
 
   if (!ready) return null;
   if (!pushSupported()) return null;
+
+  if (needsReregister) {
+    return (
+      <button
+        onClick={turnOn}
+        disabled={busy}
+        aria-label="Re-register notifications for this member"
+        className="flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700 transition disabled:opacity-50"
+      >
+        <BellOff size={14} />
+        <span>Re-enable notifications</span>
+      </button>
+    );
+  }
 
   return (
     <button
