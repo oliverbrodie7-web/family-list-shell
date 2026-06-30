@@ -27,7 +27,9 @@ const parseCommaList = (s: string): string[] =>
 
 export function InputTab({ householdId }: { householdId: string | null }) {
   const { session } = useAuth();
+  const { member } = useMember();
   const userId = session?.user?.id;
+  const memberName = member?.name ?? "Someone";
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState("");
   const [priority, setPriority] = useState(false);
