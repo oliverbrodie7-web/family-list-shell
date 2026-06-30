@@ -85,21 +85,55 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     );
 
     const { display_name, category } = await categorize(raw);
-    const { data, error: insertErr } = await supabase
+
+    // Merge: if an UNCHECKED item with the same name+category already exists in
+    // this household, bump its quantity instead of inserting a new row.
+    const normalized = display_name.trim().toLowerCase();
+    const { data: existing } = await supabase
       .from("shopping_list_items")
-      .insert({
-        user_id: userId,
-        household_id: householdId,
-        raw_input: raw,
-        display_name,
-        category,
-        quantity: qty,
-        is_priority: isPriority,
-        is_checked: false,
-        added_by_member_id: member?.id ?? null,
-      })
       .select("id, display_name, quantity, is_priority, category")
-      .single();
+      .eq("household_id", householdId)
+      .eq("category", category)
+      .eq("is_checked", false)
+      .ilike("display_name", normalized);
+
+    const match = (existing ?? []).find(
+      (e) => (e.display_name ?? "").trim().toLowerCase() === normalized,
+    );
+
+    let data: RecentItem | null = null;
+    let insertErr: { message: string } | null = null;
+
+    if (match) {
+      const newQty = (match.quantity ?? 1) + (qty ?? 1);
+      const newPriority = match.is_priority || isPriority;
+      const { data: upd, error: updErr } = await supabase
+        .from("shopping_list_items")
+        .update({ quantity: newQty, is_priority: newPriority })
+        .eq("id", match.id)
+        .select("id, display_name, quantity, is_priority, category")
+        .single();
+      data = (upd as RecentItem) ?? null;
+      insertErr = updErr ?? null;
+    } else {
+      const { data: ins, error: insErr } = await supabase
+        .from("shopping_list_items")
+        .insert({
+          user_id: userId,
+          household_id: householdId,
+          raw_input: raw,
+          display_name,
+          category,
+          quantity: qty,
+          is_priority: isPriority,
+          is_checked: false,
+          added_by_member_id: member?.id ?? null,
+        })
+        .select("id, display_name, quantity, is_priority, category")
+        .single();
+      data = (ins as RecentItem) ?? null;
+      insertErr = insErr ?? null;
+    }
 
     if (insertErr || !data) {
       setError(insertErr?.message ?? "Failed to add item");
