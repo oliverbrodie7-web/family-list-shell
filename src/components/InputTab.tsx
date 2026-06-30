@@ -6,6 +6,7 @@ import { CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { BatchConfirmSheet, type BatchRow } from "./BatchConfirmSheet";
 import { BulkAddSheet } from "./BulkAddSheet";
 import { notifyHousehold } from "@/lib/push";
+import { useMember } from "@/lib/member";
 
 interface RecentItem {
   id: string;
