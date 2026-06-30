@@ -302,13 +302,6 @@ function PickerScreen({
     </Shell>
   );
 }
-        >
-          + Add another person
-        </button>
-      </div>
-    </Shell>
-  );
-}
 
 function PinScreen({
   member,
