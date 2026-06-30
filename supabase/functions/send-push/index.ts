@@ -24,6 +24,7 @@ interface Body {
   body?: string;
   target?: { user_id?: string; household_id?: string };
   exclude_endpoint?: string;
+  exclude_member_id?: string;
   subscriptions?: SubRow[];
 }
 
