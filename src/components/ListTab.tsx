@@ -370,6 +370,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
       {editing && (
         <EditSheet group={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />
       )}
+
+      {celebrate && <Celebration onDone={() => setCelebrate(false)} />}
     </div>
   );
 }
