@@ -231,6 +231,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
         >
           <RowButton
             label="Switch member"
+            isFirst
             onClick={() => {
               forgetMember();
               onClose();
