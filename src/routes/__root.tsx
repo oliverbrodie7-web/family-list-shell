@@ -80,7 +80,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
       { title: "Our Pantry" },
       { name: "description", content: "A simple, fast shopping list for the family." },
-      { name: "theme-color", content: "#10b981" },
+      { name: "theme-color", content: "#C2693F" },
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Our Pantry" },
