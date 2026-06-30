@@ -210,28 +210,95 @@ function PickerScreen({
   onPick: (m: Member) => void;
   onAddAnother: () => void;
 }) {
+  const { deleteMember } = useMember();
+  const [manage, setManage] = useState(false);
+  const [pending, setPending] = useState<Member | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   return (
     <Shell>
-      <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Who's this?</h1>
-      <p className="mt-2 text-sm text-neutral-500">Tap your name to continue.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Who's this?</h1>
+          <p className="mt-2 text-sm text-neutral-500">
+            {manage ? "Tap a name to remove them." : "Tap your name to continue."}
+          </p>
+        </div>
+        <button
+          onClick={() => {
+            setManage((v) => !v);
+            setPending(null);
+            setError(null);
+          }}
+          className="rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--accent-green)]"
+        >
+          {manage ? "Done" : "Manage"}
+        </button>
+      </div>
       <div className="mt-8 space-y-2">
         {members.map((m) => (
           <button
             key={m.id}
-            onClick={() => onPick(m)}
+            onClick={() => (manage ? setPending(m) : onPick(m))}
             className="flex w-full items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-4 text-left text-base font-medium text-neutral-900 transition active:scale-[0.99] hover:border-[var(--accent-green)]"
           >
             <span>{m.name}</span>
-            <span className="text-neutral-400">›</span>
+            <span className={manage ? "text-red-500" : "text-neutral-400"}>
+              {manage ? "Remove" : "›"}
+            </span>
           </button>
         ))}
-        <button
-          onClick={onAddAnother}
-          className="w-full rounded-xl border border-dashed border-neutral-300 px-4 py-4 text-base font-medium text-neutral-600 transition hover:border-[var(--accent-green)] hover:text-[var(--accent-green)]"
-        >
-          + Add another person
-        </button>
+        {!manage && (
+          <button
+            onClick={onAddAnother}
+            className="w-full rounded-xl border border-dashed border-neutral-300 px-4 py-4 text-base font-medium text-neutral-600 transition hover:border-[var(--accent-green)] hover:text-[var(--accent-green)]"
+          >
+            + Add another person
+          </button>
+        )}
       </div>
+
+      {pending && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          onClick={() => !busy && setPending(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-t-2xl bg-white p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-200" />
+            <p className="text-base text-neutral-900">
+              Remove {pending.name} from the family? This can't be undone.
+            </p>
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setPending(null)}
+                disabled={busy}
+                className="flex-1 rounded-xl border border-neutral-200 py-3 text-base font-medium text-neutral-800"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setBusy(true);
+                  setError(null);
+                  const { error } = await deleteMember(pending.id);
+                  setBusy(false);
+                  if (error) return setError(error);
+                  setPending(null);
+                }}
+                disabled={busy}
+                className="flex-1 rounded-xl bg-red-600 py-3 text-base font-medium text-white disabled:opacity-60"
+              >
+                {busy ? "Removing…" : "Remove"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Shell>
   );
 }

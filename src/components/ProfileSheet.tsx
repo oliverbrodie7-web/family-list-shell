@@ -5,7 +5,7 @@ import { useHouseholdId } from "@/lib/household";
 import { supabase } from "@/lib/supabase";
 
 export function ProfileSheet({ onClose }: { onClose: () => void }) {
-  const { member, updateCurrentName, forgetMember } = useMember();
+  const { member, updateCurrentName, forgetMember, deleteMember } = useMember();
   const { signOut } = useAuth();
   const { householdId } = useHouseholdId();
   const [name, setName] = useState(member?.name ?? "");
@@ -16,6 +16,9 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (!member) return null;
 
@@ -166,6 +169,49 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
           >
             Log out
           </button>
+          {!confirmDelete ? (
+            <button
+              onClick={() => {
+                setDeleteError(null);
+                setConfirmDelete(true);
+              }}
+              className="w-full rounded-xl py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
+            >
+              Remove this profile
+            </button>
+          ) : (
+            <div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3">
+              <p className="text-sm text-red-900">
+                Remove {member.name} from the family? This can't be undone.
+              </p>
+              {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  disabled={deleting}
+                  className="flex-1 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={async () => {
+                    setDeleting(true);
+                    const { error } = await deleteMember(member.id);
+                    setDeleting(false);
+                    if (error) {
+                      setDeleteError(error);
+                      return;
+                    }
+                    onClose();
+                  }}
+                  disabled={deleting}
+                  className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-medium text-white disabled:opacity-60"
+                >
+                  {deleting ? "Removing…" : "Remove"}
+                </button>
+              </div>
+            </div>
+          )}
           <button
             onClick={onClose}
             className="w-full rounded-xl py-3 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
