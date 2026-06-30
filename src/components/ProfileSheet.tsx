@@ -29,6 +29,55 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
     else setSavedAt(Date.now());
   };
 
+  const createInvite = async () => {
+    if (!householdId) return;
+    setInviteLoading(true);
+    setInviteError(null);
+    setInviteLink(null);
+    setCopied(false);
+
+    const token = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+    const { error } = await supabase.from("shopping_family_invites").insert({
+      household_id: householdId,
+      token,
+      expires_at: expiresAt,
+    });
+
+    setInviteLoading(false);
+
+    if (error) {
+      setInviteError(error.message);
+      return;
+    }
+
+    const link = `${window.location.origin}/join?token=${token}`;
+    setInviteLink(link);
+  };
+
+  const copyLink = async () => {
+    if (!inviteLink) return;
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
+
+  const shareLink = async () => {
+    if (!inviteLink) return;
+    if (navigator.share) {
+      await navigator.share({
+        title: "Join Our Pantry",
+        text: "Join our family shopping list!",
+        url: inviteLink,
+      });
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
