@@ -113,8 +113,9 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     if (householdId) {
       void notifyHousehold({
         householdId,
+        memberId: member?.id ?? null,
         title: "Our Pantry",
-        body: `${display_name} added`,
+        body: `${memberName} added ${display_name}`,
       });
     }
   };
