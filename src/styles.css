@@ -134,13 +134,92 @@
   --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+/* ============================================================
+ * Warm Clay theme (Pass 1 — visual makeover)
+ * Centralised tokens applied app-wide. Layout untouched.
+ * ============================================================ */
+:root {
+  /* Palette */
+  --clay-bg: #F7F1E8;
+  --clay-surface: #FFFFFF;
+  --clay-ink: #37302B;
+  --clay-muted: #9A8E7F;
+  --clay-border: #EAE0D2;
+  --clay-accent: #C2693F;
+  --clay-accent-soft: #F3E5D9;
+  --clay-success: #6F8F5E;
+  --clay-priority: #D38A2E;
+
+  /* Re-point legacy accent tokens to terracotta so existing
+     [var(--accent-green)] usages adopt the new accent. */
+  --accent-green: var(--clay-accent);
+  --accent-green-soft: rgba(194, 105, 63, 0.18);
+
+  /* Fonts */
+  --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+}
+
 @layer base {
-  * {
-    border-color: var(--color-border);
+  html, body {
+    background-color: var(--clay-bg);
+    color: var(--clay-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
 
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+  * {
+    border-color: var(--clay-border);
   }
 }
+
+/* Wordmark / app-title utility */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.01em;
+}
+
+/* ----- Tailwind utility remaps (theme-only override) -----
+ * Map the project's existing utility classes to the Warm Clay
+ * palette so we don't have to restructure components. */
+
+/* Page wrappers that used bg-white as the screen background
+ * should now show the cream app background. Cards/sheets keep white. */
+.min-h-\[100dvh\].bg-white,
+.fixed.inset-0.bg-white {
+  background-color: var(--clay-bg) !important;
+}
+
+/* Surfaces */
+.bg-white\/95 { background-color: rgba(255, 255, 255, 0.95) !important; }
+.bg-neutral-50 { background-color: var(--clay-accent-soft) !important; }
+.bg-neutral-100 { background-color: var(--clay-border) !important; }
+.bg-neutral-200 { background-color: var(--clay-border) !important; }
+
+/* Text */
+.text-neutral-900 { color: var(--clay-ink) !important; }
+.text-neutral-800 { color: var(--clay-ink) !important; }
+.text-neutral-700 { color: var(--clay-ink) !important; }
+.text-neutral-600 { color: var(--clay-muted) !important; }
+.text-neutral-500 { color: var(--clay-muted) !important; }
+.text-neutral-400 { color: var(--clay-muted) !important; }
+.text-neutral-300 { color: #C9BBA8 !important; }
+
+/* Borders */
+.border-neutral-100,
+.border-neutral-200,
+.border-neutral-300 { border-color: var(--clay-border) !important; }
+
+/* Priority / honey (amber) */
+.text-amber-500,
+.text-amber-600 { color: var(--clay-priority) !important; }
+.bg-amber-50 { background-color: #FBEED9 !important; }
+.border-amber-300,
+.border-amber-500 { border-color: var(--clay-priority) !important; }
+
+/* Success (sage) — emerald utilities if any */
+.text-emerald-500,
+.text-emerald-600 { color: var(--clay-success) !important; }
+.bg-emerald-500 { background-color: var(--clay-success) !important; }
+
