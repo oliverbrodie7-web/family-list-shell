@@ -180,6 +180,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         quantity: qtyNum,
         is_priority: r.is_priority,
         is_checked: false,
+        added_by_member_id: member?.id ?? null,
       };
     });
 
