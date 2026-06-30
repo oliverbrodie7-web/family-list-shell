@@ -112,6 +112,43 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
 
         <div className="mt-6 space-y-2 border-t border-neutral-100 pt-4">
           <button
+            onClick={createInvite}
+            disabled={inviteLoading || !householdId}
+            className="w-full rounded-xl border border-neutral-200 py-3 text-base font-medium text-neutral-800 transition hover:bg-neutral-50 active:scale-[0.99] disabled:opacity-50"
+          >
+            {inviteLoading ? "Creating link…" : "Invite a family member"}
+          </button>
+
+          {inviteError && <p className="text-sm text-red-600">{inviteError}</p>}
+
+          {inviteLink && (
+            <div className="space-y-2 rounded-xl border border-[var(--accent-green-soft)] bg-[var(--accent-green-soft)]/10 p-3">
+              <p className="text-xs text-neutral-600">
+                This link lets someone join your family. Valid for 7 days.
+              </p>
+              <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2">
+                <span className="flex-1 truncate text-sm text-neutral-700">{inviteLink}</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={copyLink}
+                  className="flex-1 rounded-lg bg-[var(--accent-green)] py-2 text-sm font-medium text-white transition active:scale-[0.99]"
+                >
+                  {copied ? "Copied!" : "Copy link"}
+                </button>
+                {typeof navigator !== "undefined" && !!navigator.share && (
+                  <button
+                    onClick={shareLink}
+                    className="flex-1 rounded-lg border border-neutral-200 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 active:scale-[0.99]"
+                  >
+                    Share
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          <button
             onClick={() => {
               forgetMember();
               onClose();
