@@ -21,8 +21,8 @@ export function LoginScreen() {
     <div className="flex min-h-[100dvh] items-center justify-center bg-white px-6">
       <div className="w-full max-w-sm">
         <div className="mb-10 text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">
-            Family Shopping
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-neutral-900">
+            Our Pantry
           </h1>
           <p className="mt-2 text-sm text-neutral-500">Sign in to continue</p>
         </div>
