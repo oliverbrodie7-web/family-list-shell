@@ -96,6 +96,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         quantity: qty,
         is_priority: isPriority,
         is_checked: false,
+        added_by_member_id: member?.id ?? null,
       })
       .select("id, display_name, quantity, is_priority, category")
       .single();
