@@ -1,18 +1,20 @@
 import { useState } from "react";
 import { PlusCircle, ShoppingCart } from "lucide-react";
-import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
+import { useMember } from "@/lib/member";
 import { InputTab } from "./InputTab";
 import { ListTab } from "./ListTab";
 import { Toaster } from "@/components/ui/sonner";
 import { NotificationsToggle } from "./NotificationsToggle";
+import { ProfileSheet } from "./ProfileSheet";
 
 type Tab = "input" | "list";
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>("input");
-  const { signOut } = useAuth();
+  const [profileOpen, setProfileOpen] = useState(false);
   const { householdId } = useHouseholdId();
+  const { member } = useMember();
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-white">
@@ -23,13 +25,14 @@ export function AppShell() {
         <div className="flex items-center gap-2">
           <NotificationsToggle />
           <button
-            onClick={signOut}
-            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900"
+            onClick={() => setProfileOpen(true)}
+            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100"
           >
-            Log out
+            {member?.name ?? "Profile"}
           </button>
         </div>
       </header>
+      {profileOpen && <ProfileSheet onClose={() => setProfileOpen(false)} />}
 
       <main className="flex flex-1 flex-col pb-24">
         {tab === "input" ? (
