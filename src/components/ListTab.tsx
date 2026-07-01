@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { Check, ShoppingCart, Trash2, X, Star, Flag, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { motion, useAnimation, useMotionValue, type PanInfo } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { useMember } from "@/lib/member";
@@ -33,6 +34,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [trolleyOpen, setTrolleyOpen] = useState(true);
   const [confirmClear, setConfirmClear] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const prevActiveRef = useRef<number | null>(null);
   const { members } = useMember();
 
@@ -218,6 +220,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
               onToggle={toggleChecked}
               onEdit={setEditing}
               onDelete={deleteItem}
+              openSwipeId={openSwipeId}
+              setOpenSwipeId={setOpenSwipeId}
             />
           );
         })}
@@ -259,6 +263,8 @@ function AisleCard({
   onToggle,
   onEdit,
   onDelete,
+  openSwipeId,
+  setOpenSwipeId,
 }: {
   label: string;
   count: number;
@@ -267,6 +273,8 @@ function AisleCard({
   onToggle: (i: Item) => void;
   onEdit: (i: Item) => void;
   onDelete: (i: Item) => void;
+  openSwipeId: string | null;
+  setOpenSwipeId: (id: string | null) => void;
 }) {
   return (
     <section
@@ -291,6 +299,11 @@ function AisleCard({
             item={it}
             isFirst={idx === 0}
             member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
+            isOpen={openSwipeId === it.id}
+            onRequestOpen={() => setOpenSwipeId(it.id)}
+            onRequestClose={() => {
+              if (openSwipeId === it.id) setOpenSwipeId(null);
+            }}
             onToggle={() => onToggle(it)}
             onEdit={() => onEdit(it)}
             onDelete={() => onDelete(it)}
@@ -307,6 +320,9 @@ function SwipeRow({
   item,
   isFirst,
   member,
+  isOpen,
+  onRequestOpen,
+  onRequestClose,
   onToggle,
   onEdit,
   onDelete,
@@ -314,82 +330,62 @@ function SwipeRow({
   item: Item;
   isFirst: boolean;
   member?: { name: string; initial: string; color: string };
+  isOpen: boolean;
+  onRequestOpen: () => void;
+  onRequestClose: () => void;
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const [dx, setDx] = useState(0);
-  const [open, setOpen] = useState(false);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const dragging = useRef(false);
-  const decided = useRef(false);
-  const axisHoriz = useRef(false);
-
   const checked = item.is_checked;
   const priority = item.is_priority && !checked;
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    startY.current = e.touches[0].clientY;
-    dragging.current = true;
-    decided.current = false;
-    axisHoriz.current = false;
-  };
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!dragging.current) return;
-    const nx = e.touches[0].clientX - startX.current;
-    const ny = e.touches[0].clientY - startY.current;
-    if (!decided.current) {
-      if (Math.abs(nx) < 6 && Math.abs(ny) < 6) return;
-      axisHoriz.current = Math.abs(nx) > Math.abs(ny);
-      decided.current = true;
-    }
-    if (!axisHoriz.current) return;
-    const base = open ? -SWIPE_MAX : 0;
-    let next = base + nx;
-    if (next > 0) next = 0;
-    if (next < -SWIPE_MAX * 1.2) next = -SWIPE_MAX * 1.2;
-    setDx(next);
-  };
-  const onTouchEnd = () => {
-    dragging.current = false;
-    if (!axisHoriz.current) {
-      setDx(open ? -SWIPE_MAX : 0);
-      return;
-    }
-    if (dx < -SWIPE_MAX / 2) {
-      setOpen(true);
-      setDx(-SWIPE_MAX);
+  const x = useMotionValue(0);
+  const controls = useAnimation();
+  const spring = { type: "spring" as const, stiffness: 500, damping: 42, mass: 0.7 };
+
+  // Sync external open/close state (e.g. another row opened).
+  useEffect(() => {
+    controls.start({ x: isOpen ? -SWIPE_MAX : 0, transition: spring });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    const offset = info.offset.x;
+    const velocity = info.velocity.x;
+    // Flick left OR dragged past threshold → open. Flick right → close.
+    const shouldOpen =
+      offset < -SWIPE_MAX / 2 || velocity < -500 ? true : velocity > 500 ? false : false;
+    if (shouldOpen) {
+      onRequestOpen();
+      controls.start({ x: -SWIPE_MAX, transition: spring });
     } else {
-      setOpen(false);
-      setDx(0);
+      onRequestClose();
+      controls.start({ x: 0, transition: spring });
     }
   };
 
   const handleNameClick = () => {
-    if (open) {
-      setOpen(false);
-      setDx(0);
+    if (isOpen) {
+      onRequestClose();
       return;
     }
     onEdit();
   };
 
   const handleDelete = () => {
-    setOpen(false);
-    setDx(0);
+    onRequestClose();
     onDelete();
   };
 
   return (
     <li
-      className="relative"
+      className="relative overflow-hidden"
       style={{ borderTop: isFirst ? "none" : "1px solid var(--clay-border)" }}
     >
       {/* Swipe delete underlay */}
       <div
-        aria-hidden
+        aria-hidden={!isOpen}
         className="absolute inset-y-0 right-0 flex items-center justify-end"
         style={{ width: SWIPE_MAX, background: "#C2693F" }}
       >
@@ -398,21 +394,23 @@ function SwipeRow({
           onClick={handleDelete}
           className="flex h-full w-full items-center justify-center text-white"
           aria-label="Delete item"
+          tabIndex={isOpen ? 0 : -1}
         >
           <Trash2 size={16} />
           <span className="ml-1.5 text-[13px] font-medium">Delete</span>
         </button>
       </div>
 
-      <div
-        className="relative flex items-center gap-2.5 bg-white px-3.5 py-2"
-        style={{
-          transform: `translateX(${dx}px)`,
-          transition: dragging.current ? "none" : "transform 180ms ease",
-        }}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
+      <motion.div
+        className="relative flex items-center gap-2.5 bg-white px-3.5 py-2 touch-pan-y"
+        style={{ x }}
+        drag="x"
+        dragDirectionLock
+        dragConstraints={{ left: -SWIPE_MAX, right: 0 }}
+        dragElastic={{ left: 0.15, right: 0 }}
+        dragMomentum={false}
+        animate={controls}
+        onDragEnd={handleDragEnd}
       >
         {priority && (
           <span
@@ -471,7 +469,7 @@ function SwipeRow({
             {member.initial}
           </span>
         )}
-      </div>
+      </motion.div>
     </li>
   );
 }
