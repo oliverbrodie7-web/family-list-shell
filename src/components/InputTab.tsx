@@ -731,18 +731,11 @@ function BrowseSheet({
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {aisle.items.map((it) => (
-                    <button
+                    <AddChip
                       key={`${aisle.label}-${it}`}
-                      type="button"
-                      onClick={() => onPick(it)}
-                      className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-[13px] transition active:scale-[0.97]"
-                      style={{
-                        border: "1px solid var(--clay-border)",
-                        color: "var(--clay-ink)",
-                      }}
-                    >
-                      {it}
-                    </button>
+                      label={it}
+                      onAdd={() => onPick(it)}
+                    />
                   ))}
                 </div>
               </div>
