@@ -215,39 +215,51 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
         </div>
       </div>
 
-      <div className="space-y-2">
-        {CATEGORIES.map((c) => {
-          const arr = activeGrouped.get(c)!;
-          if (arr.length === 0) return null;
-          return (
-            <AisleCard
-              key={c}
-              label={CATEGORY_LABELS[c]}
-              count={arr.length}
-              items={arr}
-              memberMap={memberMap}
-              onToggle={toggleChecked}
-              onEdit={setEditing}
-              onDelete={deleteItem}
-              openSwipeId={openSwipeId}
-              setOpenSwipeId={setOpenSwipeId}
-            />
-          );
-        })}
-      </div>
+      <motion.div layout className="space-y-2">
+        <AnimatePresence initial={false}>
+          {CATEGORIES.map((c) => {
+            const arr = activeGrouped.get(c)!;
+            if (arr.length === 0) return null;
+            return (
+              <AisleCard
+                key={c}
+                label={CATEGORY_LABELS[c]}
+                count={arr.length}
+                items={arr}
+                memberMap={memberMap}
+                onToggle={toggleChecked}
+                onEdit={setEditing}
+                onDelete={deleteItem}
+                openSwipeId={openSwipeId}
+                setOpenSwipeId={setOpenSwipeId}
+              />
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
 
-      {trolleyItems.length > 0 && (
-        <div className="mt-4">
-          <TrolleyCard
-            items={trolleyItems}
-            memberMap={memberMap}
-            open={trolleyOpen}
-            onToggleOpen={() => setTrolleyOpen((o) => !o)}
-            onUntick={toggleChecked}
-            onClear={() => setConfirmClear(true)}
-          />
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {trolleyItems.length > 0 && (
+          <motion.div
+            key="trolley"
+            layout
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={softSpring}
+            className="mt-4"
+          >
+            <TrolleyCard
+              items={trolleyItems}
+              memberMap={memberMap}
+              open={trolleyOpen}
+              onToggleOpen={() => setTrolleyOpen((o) => !o)}
+              onUntick={toggleChecked}
+              onClear={() => setConfirmClear(true)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
 
