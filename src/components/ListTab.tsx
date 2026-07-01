@@ -34,6 +34,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [trolleyOpen, setTrolleyOpen] = useState(true);
   const [confirmClear, setConfirmClear] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
+  const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const prevActiveRef = useRef<number | null>(null);
   const { members } = useMember();
 
