@@ -169,6 +169,9 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       setBatchItems(null);
       return;
     }
+    // Mirror the single-add insert exactly (same columns, same types, same
+    // fields including household_id and added_by_member_id) so RLS + schema
+    // accept the bulk insert.
     const payload = rows.map((r) => {
       const qtyNum =
         r.quantity.trim() === "" ? null : Math.max(1, parseInt(r.quantity, 10) || 1);
@@ -191,8 +194,17 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       .select("id, display_name, quantity, is_priority, category");
 
     if (insertErr) {
-      setError(insertErr.message);
-      return;
+      // Surface the real error instead of silently returning to the review sheet.
+      console.error("[bulk-add] insert failed", { insertErr, payload });
+      const msg =
+        insertErr.message ||
+        (insertErr as { hint?: string }).hint ||
+        "Bulk add failed";
+      setError(msg);
+      toast.error(`Bulk add failed: ${msg}`);
+      // Throw so BatchConfirmSheet's saving spinner stops and the sheet stays
+      // open for the user to retry.
+      throw insertErr;
     }
 
     const added = (data ?? []).map((d) => ({
