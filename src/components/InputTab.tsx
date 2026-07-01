@@ -301,15 +301,17 @@ export function InputTab({ householdId }: { householdId: string | null }) {
               autoCapitalize="none"
               spellCheck={false}
             />
-            <button
+            <motion.button
               type="submit"
               disabled={!text.trim() || !householdId || submitting}
+              whileTap={{ scale: 0.9 }}
+              transition={snappySpring}
               aria-label="Add item"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition disabled:opacity-40"
               style={{ background: "var(--clay-accent)" }}
             >
               <Plus size={22} strokeWidth={2.5} />
-            </button>
+            </motion.button>
           </div>
 
           {suggestions.length > 0 && (
