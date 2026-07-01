@@ -316,10 +316,12 @@ function SheetRow({
   label,
   onClick,
   subtle,
+  first,
 }: {
   label: string;
   onClick: () => void;
   subtle?: boolean;
+  first?: boolean;
 }) {
   return (
     <button
@@ -327,7 +329,7 @@ function SheetRow({
       className="flex w-full items-center justify-between px-4 py-3.5 text-left text-[15px] transition active:bg-[var(--clay-accent-soft)]"
       style={{
         color: subtle ? "var(--clay-muted)" : "var(--clay-ink)",
-        borderTop: "1px solid var(--clay-border)",
+        borderTop: first ? "none" : "1px solid var(--clay-border)",
       }}
     >
       <span>{label}</span>
