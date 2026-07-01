@@ -206,9 +206,11 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
           className="mt-1.5 h-1 w-full overflow-hidden rounded-full"
           style={{ background: "var(--clay-border)" }}
         >
-          <div
-            className="h-full rounded-full transition-[width] duration-300 ease-out"
-            style={{ width: `${pct}%`, background: "var(--clay-accent)" }}
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: "var(--clay-accent)" }}
+            animate={{ width: `${pct}%` }}
+            transition={gentleSpring}
           />
         </div>
       </div>
