@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X } from "lucide-react";
+import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
