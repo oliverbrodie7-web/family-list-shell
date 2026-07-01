@@ -416,7 +416,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       )}
 
       {/* ---------- YOUR REGULARS ---------- */}
-      <section className="mt-7">
+      <section className="mt-6 w-full">
         <div className="mb-2 flex items-center gap-1.5 px-1">
           <Sparkles size={12} style={{ color: "var(--clay-accent)" }} />
           <h2
@@ -447,7 +447,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       </section>
 
       {/* ---------- BROWSE COMMON ITEMS ---------- */}
-      <section className="mt-5">
+      <section className="mt-4 w-full">
         <motion.button
           type="button"
           onClick={() => setBrowseOpen(true)}
@@ -565,6 +565,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           </div>
         </section>
       )}
+      <div className="flex-1" />
 
       {bulkOpen && !batchItems && (
         <BulkAddSheet
