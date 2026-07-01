@@ -245,6 +245,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
           onConfirm={clearTrolley}
         />
       )}
+
+      {celebrate && <ShopCelebration onDone={() => setCelebrate(false)} />}
     </div>
   );
 }
