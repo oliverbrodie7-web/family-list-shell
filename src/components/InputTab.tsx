@@ -280,9 +280,18 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
 
   return (
-    <div className="mx-auto w-full max-w-md px-5 pt-5 pb-10">
-      {/* ---------- HERO INPUT ---------- */}
-      <form onSubmit={submit} className="space-y-2.5">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-5 pb-10">
+      {/* ---------- HERO BLOCK ---------- */}
+      <div className="flex flex-col items-center pt-[10vh]">
+        <h1
+          className="font-display mb-5 text-center text-[28px] leading-tight"
+          style={{ color: "var(--clay-ink)" }}
+        >
+          What do you need?
+        </h1>
+
+        {/* ---------- HERO INPUT ---------- */}
+        <form onSubmit={submit} className="w-full space-y-2.5">
         <div className="relative">
           <div
             className="flex items-center gap-2 rounded-[14px] bg-white pl-4 pr-1.5 py-1.5"
