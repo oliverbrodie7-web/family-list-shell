@@ -298,7 +298,12 @@ function AisleCard({
   setOpenSwipeId: (id: string | null) => void;
 }) {
   return (
-    <section
+    <motion.section
+      layout
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+      transition={softSpring}
       className="overflow-hidden rounded-[14px] bg-white"
       style={{ border: "1px solid var(--clay-border)" }}
     >
@@ -314,24 +319,26 @@ function AisleCard({
         </span>
       </header>
       <ul>
-        {items.map((it, idx) => (
-          <SwipeRow
-            key={it.id}
-            item={it}
-            isFirst={idx === 0}
-            member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
-            isOpen={openSwipeId === it.id}
-            onRequestOpen={() => setOpenSwipeId(it.id)}
-            onRequestClose={() => {
-              if (openSwipeId === it.id) setOpenSwipeId(null);
-            }}
-            onToggle={() => onToggle(it)}
-            onEdit={() => onEdit(it)}
-            onDelete={() => onDelete(it)}
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {items.map((it, idx) => (
+            <SwipeRow
+              key={it.id}
+              item={it}
+              isFirst={idx === 0}
+              member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
+              isOpen={openSwipeId === it.id}
+              onRequestOpen={() => setOpenSwipeId(it.id)}
+              onRequestClose={() => {
+                if (openSwipeId === it.id) setOpenSwipeId(null);
+              }}
+              onToggle={() => onToggle(it)}
+              onEdit={() => onEdit(it)}
+              onDelete={() => onDelete(it)}
+            />
+          ))}
+        </AnimatePresence>
       </ul>
-    </section>
+    </motion.section>
   );
 }
 
