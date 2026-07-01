@@ -464,6 +464,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           <ChevronRight size={18} style={{ color: "var(--clay-muted)" }} />
         </motion.button>
       </section>
+      </div>
 
       {/* ---------- JUST ADDED ---------- */}
       {recent.length > 0 && (
