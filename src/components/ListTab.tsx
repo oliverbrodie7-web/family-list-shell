@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { useMember } from "@/lib/member";
+import { ShopCelebration } from "./ShopCelebration";
 
 interface Item {
   id: string;
@@ -31,6 +32,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [editing, setEditing] = useState<Item | null>(null);
   const [trolleyOpen, setTrolleyOpen] = useState(true);
   const [confirmClear, setConfirmClear] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const prevActiveRef = useRef<number | null>(null);
   const { members } = useMember();
 
   const memberMap = useMemo(() => {
@@ -153,6 +156,15 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const done = checkedItems.length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
+  useEffect(() => {
+    if (loading) return;
+    const prev = prevActiveRef.current;
+    if (prev != null && prev > 0 && activeItems.length === 0 && total > 0) {
+      setCelebrate(true);
+    }
+    prevActiveRef.current = activeItems.length;
+  }, [activeItems.length, total, loading]);
+
   if (!loading && items.length === 0) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 pt-20 text-center">
@@ -233,6 +245,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
           onConfirm={clearTrolley}
         />
       )}
+
+      {celebrate && <ShopCelebration onDone={() => setCelebrate(false)} />}
     </div>
   );
 }
