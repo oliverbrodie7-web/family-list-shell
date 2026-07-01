@@ -518,7 +518,7 @@ function SwipeRow({
           </span>
         )}
       </motion.div>
-    </li>
+    </motion.li>
   );
 }
 
