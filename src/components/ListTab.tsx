@@ -1,10 +1,9 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Flag, Check, ShoppingCart, Trash2, X, Star, ChevronDown } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Flag, Check, ShoppingCart, Trash2, X, Star } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { useMember } from "@/lib/member";
-import { Celebration } from "./Celebration";
 
 interface Item {
   id: string;
@@ -17,19 +16,7 @@ interface Item {
   added_by_member_id: string | null;
 }
 
-interface RowGroup {
-  key: string;
-  items: Item[];
-  display_name: string;
-  category: Category;
-  is_priority: boolean;
-  is_checked: boolean;
-  totalQty: number;
-  count: number;
-  earliestCreated: string;
-  member_id: string | null;
-}
-
+// Warm palette for member chips — assigned deterministically by member id.
 const MEMBER_COLORS = ["#C2693F", "#6F8F5E", "#D38A2E", "#8E6E8A", "#A86A4B", "#5E8A8F"];
 
 function memberColor(id: string | null | undefined) {
@@ -39,27 +26,10 @@ function memberColor(id: string | null | undefined) {
   return MEMBER_COLORS[h % MEMBER_COLORS.length];
 }
 
-function normName(s: string) {
-  return s.trim().toLowerCase().replace(/\s+/g, " ");
-}
-
-function haptic() {
-  try {
-    if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-      navigator.vibrate(10);
-    }
-  } catch {
-    /* no-op */
-  }
-}
-
 export function ListTab({ householdId, active }: { householdId: string | null; active: boolean }) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editing, setEditing] = useState<RowGroup | null>(null);
-  const [trolleyOpen, setTrolleyOpen] = useState(true);
-  const [celebrate, setCelebrate] = useState(false);
-  const prevActiveCount = useRef<number | null>(null);
+  const [editing, setEditing] = useState<Item | null>(null);
   const { members } = useMember();
 
   const memberMap = useMemo(() => {
@@ -92,42 +62,22 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     if (active) fetchItems();
   }, [active, fetchItems]);
 
-  // Trigger celebration when active list transitions >0 -> 0
-  useEffect(() => {
-    if (loading) return;
-    const total = items.length;
-    const activeCount = items.filter((i) => !i.is_checked).length;
-    if (total === 0) {
-      prevActiveCount.current = 0;
-      return;
-    }
-    const prev = prevActiveCount.current;
-    if (prev != null && prev > 0 && activeCount === 0) {
-      setCelebrate(true);
-    }
-    prevActiveCount.current = activeCount;
-  }, [items, loading]);
-
-  const toggleGroup = async (g: RowGroup) => {
-    const next = !g.is_checked;
-    if (next) haptic();
-    const ids = g.items.map((i) => i.id);
-    setItems((arr) => arr.map((i) => (ids.includes(i.id) ? { ...i, is_checked: next } : i)));
-    await supabase.from("shopping_list_items").update({ is_checked: next }).in("id", ids);
+  const toggleChecked = async (item: Item) => {
+    const next = !item.is_checked;
+    setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, is_checked: next } : i)));
+    await supabase.from("shopping_list_items").update({ is_checked: next }).eq("id", item.id);
   };
 
-  const deleteGroup = async (g: RowGroup) => {
-    const ids = g.items.map((i) => i.id);
-    const snapshot = g.items;
-    setItems((arr) => arr.filter((i) => !ids.includes(i.id)));
+  const deleteItem = async (item: Item) => {
+    setItems((arr) => arr.filter((i) => i.id !== item.id));
     let undone = false;
-    toast(g.count > 1 ? `${g.count} items deleted` : "Item deleted", {
+    toast("Item deleted", {
       action: {
         label: "Undo",
         onClick: () => {
           undone = true;
           setItems((arr) =>
-            [...arr, ...snapshot].sort((a, b) => a.created_at.localeCompare(b.created_at)),
+            [...arr, item].sort((a, b) => a.created_at.localeCompare(b.created_at)),
           );
         },
       },
@@ -135,121 +85,44 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     });
     setTimeout(async () => {
       if (undone) return;
-      await supabase.from("shopping_list_items").delete().in("id", ids);
+      await supabase.from("shopping_list_items").delete().eq("id", item.id);
     }, 4200);
   };
 
-  const clearTrolley = async () => {
-    const checkedIds = items.filter((i) => i.is_checked).map((i) => i.id);
-    if (checkedIds.length === 0) return;
-    if (!window.confirm(`Remove ${checkedIds.length} item${checkedIds.length === 1 ? "" : "s"} from the list?`)) return;
-    setItems((arr) => arr.filter((i) => !i.is_checked));
-    await supabase.from("shopping_list_items").delete().in("id", checkedIds);
-  };
-
-  const saveEdit = async (
-    g: RowGroup,
-    patch: { display_name: string; category: Category; quantity: number | null; is_priority: boolean },
-  ) => {
-    const ids = g.items.map((i) => i.id);
-    setItems((arr) =>
-      arr.map((i) =>
-        ids.includes(i.id)
-          ? {
-              ...i,
-              display_name: patch.display_name,
-              category: patch.category,
-              is_priority: patch.is_priority,
-              quantity: i.id === ids[0] ? patch.quantity : i.quantity,
-            }
-          : i,
-      ),
-    );
+  const saveEdit = async (updated: Item) => {
+    setItems((arr) => arr.map((i) => (i.id === updated.id ? updated : i)));
     setEditing(null);
     await supabase
       .from("shopping_list_items")
       .update({
-        display_name: patch.display_name,
-        category: patch.category,
-        is_priority: patch.is_priority,
+        display_name: updated.display_name,
+        category: updated.category,
+        quantity: updated.quantity,
+        is_priority: updated.is_priority,
       })
-      .in("id", ids);
-    await supabase
-      .from("shopping_list_items")
-      .update({ quantity: patch.quantity })
-      .eq("id", ids[0]);
+      .eq("id", updated.id);
   };
 
   if (!householdId) {
     return <p className="px-5 pt-6 text-sm" style={{ color: "var(--clay-muted)" }}>Loading household…</p>;
   }
 
-  // Group items by aisle (active only)
-  const activeByCat = new Map<Category, RowGroup[]>();
-  for (const c of CATEGORIES) activeByCat.set(c, []);
-
-  const unmergedActive = new Map<string, Item[]>();
-  const checkedItems: Item[] = [];
+  const grouped = new Map<Category, Item[]>();
+  for (const c of CATEGORIES) grouped.set(c, []);
   for (const it of items) {
-    const cat = (CATEGORIES as readonly string[]).includes(it.category)
+    const key = (CATEGORIES as readonly string[]).includes(it.category)
       ? (it.category as Category)
       : "misc";
-    if (it.is_checked) {
-      checkedItems.push({ ...it, category: cat });
-      continue;
-    }
-    const key = `${cat}::${normName(it.display_name)}`;
-    if (!unmergedActive.has(key)) unmergedActive.set(key, []);
-    unmergedActive.get(key)!.push({ ...it, category: cat });
+    grouped.get(key)!.push(it);
   }
-
-  for (const [, group] of unmergedActive) {
-    const first = group[0];
-    const cat = first.category as Category;
-    const totalQty = group.reduce((s, i) => s + (i.quantity ?? 1), 0);
-    activeByCat.get(cat)!.push({
-      key: group.map((i) => i.id).join(","),
-      items: group,
-      display_name: first.display_name,
-      category: cat,
-      is_priority: group.some((i) => i.is_priority),
-      is_checked: false,
-      totalQty,
-      count: group.length,
-      earliestCreated: group.reduce(
-        (s, i) => (i.created_at < s ? i.created_at : s),
-        first.created_at,
-      ),
-      member_id: first.added_by_member_id,
-    });
-  }
-
-  for (const arr of activeByCat.values()) {
+  // Within each aisle: unchecked first, priority pinned to top of unchecked, then checked at bottom.
+  for (const arr of grouped.values()) {
     arr.sort((a, b) => {
+      if (a.is_checked !== b.is_checked) return a.is_checked ? 1 : -1;
       if (a.is_priority !== b.is_priority) return a.is_priority ? -1 : 1;
-      return a.earliestCreated.localeCompare(b.earliestCreated);
+      return a.created_at.localeCompare(b.created_at);
     });
   }
-
-  const trolleyGroups: RowGroup[] = checkedItems
-    .sort((a, b) => a.created_at.localeCompare(b.created_at))
-    .map((it) => ({
-      key: it.id,
-      items: [it],
-      display_name: it.display_name,
-      category: it.category as Category,
-      is_priority: it.is_priority,
-      is_checked: true,
-      totalQty: it.quantity ?? 1,
-      count: 1,
-      earliestCreated: it.created_at,
-      member_id: it.added_by_member_id,
-    }));
-
-  const totalActive = Array.from(activeByCat.values()).reduce((s, a) => s + a.length, 0);
-  const totalChecked = trolleyGroups.length;
-  const totalAll = totalActive + totalChecked;
-  const progressPct = totalAll === 0 ? 0 : Math.round((totalChecked / totalAll) * 100);
 
   if (!loading && items.length === 0) {
     return (
@@ -265,380 +138,177 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     );
   }
 
+  const totalActive = items.filter((i) => !i.is_checked).length;
+
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-5 pb-8">
-      {/* Progress bar */}
-      <div className="mb-4 px-1">
-        <div className="mb-1.5 flex items-center justify-between text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
-          <span>
-            {totalChecked} of {totalAll} in the trolley
-          </span>
-        </div>
-        <div
-          className="h-1.5 w-full overflow-hidden rounded-full"
-          style={{ background: "var(--clay-border)" }}
-          role="progressbar"
-          aria-valuenow={progressPct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div
-            className="h-full rounded-full"
-            style={{
-              width: `${progressPct}%`,
-              background: "var(--clay-accent)",
-              transition: "width 280ms ease",
-            }}
-          />
-        </div>
-      </div>
+      <p className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--clay-muted)" }}>
+        {totalActive} {totalActive === 1 ? "item" : "items"}
+      </p>
 
       <div className="space-y-2.5">
         {CATEGORIES.map((c) => {
-          const arr = activeByCat.get(c)!;
+          const arr = grouped.get(c)!;
           if (arr.length === 0) return null;
+          const activeCount = arr.filter((i) => !i.is_checked).length;
           return (
-            <AisleCard
+            <section
               key={c}
-              title={CATEGORY_LABELS[c]}
-              count={arr.length}
-              groups={arr}
-              memberMap={memberMap}
-              onToggle={toggleGroup}
-              onEdit={(g) => setEditing(g)}
-              onDelete={deleteGroup}
-            />
+              className="overflow-hidden rounded-[14px] bg-white"
+              style={{ border: "1px solid var(--clay-border)" }}
+            >
+              <header className="flex items-center justify-between px-3.5 pt-2.5 pb-1.5">
+                <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--clay-muted)" }}>
+                  {CATEGORY_LABELS[c]}
+                </h2>
+                <span className="text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
+                  {activeCount}
+                </span>
+              </header>
+              <ul>
+                {arr.map((it, idx) => (
+                  <ItemRow
+                    key={it.id}
+                    item={it}
+                    isFirst={idx === 0}
+                    member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
+                    onToggle={() => toggleChecked(it)}
+                    onEdit={() => setEditing(it)}
+                    onDelete={() => deleteItem(it)}
+                  />
+                ))}
+              </ul>
+            </section>
           );
         })}
       </div>
 
-      {totalChecked > 0 && (
-        <section
-          className="mt-5 overflow-hidden rounded-[14px] bg-white"
-          style={{ border: "1px solid var(--clay-border)" }}
-        >
-          <header className="flex items-center justify-between px-3.5 pt-2.5 pb-2">
-            <button
-              type="button"
-              onClick={() => setTrolleyOpen((v) => !v)}
-              aria-expanded={trolleyOpen}
-              className="flex flex-1 items-center gap-1.5 text-left"
-            >
-              <ChevronDown
-                size={14}
-                style={{
-                  color: "var(--clay-muted)",
-                  transform: trolleyOpen ? "rotate(0deg)" : "rotate(-90deg)",
-                  transition: "transform 180ms ease",
-                }}
-              />
-              <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--clay-muted)" }}>
-                In the trolley · {totalChecked}
-              </h2>
-            </button>
-            <button
-              type="button"
-              onClick={clearTrolley}
-              className="rounded-full px-2.5 py-1 text-[11px] font-semibold"
-              style={{
-                color: "var(--clay-accent)",
-                background: "#FBEFE6",
-              }}
-            >
-              Done — clear
-            </button>
-          </header>
-
-          {trolleyOpen && (
-            <ul>
-              {trolleyGroups.map((g, idx) => (
-                <SwipeRow
-                  key={g.key}
-                  group={g}
-                  isFirst={idx === 0}
-                  member={g.member_id ? memberMap.get(g.member_id) : undefined}
-                  onToggle={() => toggleGroup(g)}
-                  onEdit={() => setEditing(g)}
-                  onDelete={() => deleteGroup(g)}
-                />
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
       {editing && (
-        <EditSheet group={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />
+        <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />
       )}
-
-      {celebrate && <Celebration onDone={() => setCelebrate(false)} />}
     </div>
   );
 }
 
-function AisleCard({
-  title,
-  count,
-  groups,
-  memberMap,
-  onToggle,
-  onEdit,
-  onDelete,
-}: {
-  title: string;
-  count: number;
-  groups: RowGroup[];
-  memberMap: Map<string, { name: string; initial: string; color: string }>;
-  onToggle: (g: RowGroup) => void;
-  onEdit: (g: RowGroup) => void;
-  onDelete: (g: RowGroup) => void;
-}) {
-  return (
-    <section
-      className="overflow-hidden rounded-[14px] bg-white"
-      style={{ border: "1px solid var(--clay-border)" }}
-    >
-      <header className="flex items-center justify-between px-3.5 pt-2.5 pb-1.5">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--clay-muted)" }}>
-          {title}
-        </h2>
-        <span className="text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
-          {count}
-        </span>
-      </header>
-      <ul>
-        {groups.map((g, idx) => (
-          <SwipeRow
-            key={g.key}
-            group={g}
-            isFirst={idx === 0}
-            member={g.member_id ? memberMap.get(g.member_id) : undefined}
-            onToggle={() => onToggle(g)}
-            onEdit={() => onEdit(g)}
-            onDelete={() => onDelete(g)}
-          />
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-const SWIPE_REVEAL = 76;
-const SWIPE_THRESHOLD = 56;
-
-function SwipeRow({
-  group,
+function ItemRow({
+  item,
   isFirst,
   member,
   onToggle,
   onEdit,
   onDelete,
 }: {
-  group: RowGroup;
+  item: Item;
   isFirst: boolean;
   member?: { name: string; initial: string; color: string };
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const [offset, setOffset] = useState(0);
-  const [open, setOpen] = useState(false);
-  const [bounce, setBounce] = useState(false);
-  const startX = useRef<number | null>(null);
-  const startY = useRef<number | null>(null);
-  const dragging = useRef(false);
-  const horizontal = useRef(false);
-
-  const checked = group.is_checked;
-  const priority = group.is_priority && !checked;
-
-  const handleStart = (x: number, y: number) => {
-    startX.current = x;
-    startY.current = y;
-    dragging.current = true;
-    horizontal.current = false;
-  };
-  const handleMove = (x: number, y: number) => {
-    if (!dragging.current || startX.current == null || startY.current == null) return;
-    const dx = x - startX.current;
-    const dy = y - startY.current;
-    if (!horizontal.current) {
-      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy)) {
-        horizontal.current = true;
-      } else if (Math.abs(dy) > 8) {
-        dragging.current = false;
-        return;
-      } else {
-        return;
-      }
-    }
-    const base = open ? -SWIPE_REVEAL : 0;
-    let next = base + dx;
-    if (next > 0) next = 0;
-    if (next < -SWIPE_REVEAL - 20) next = -SWIPE_REVEAL - 20;
-    setOffset(next);
-  };
-  const handleEnd = () => {
-    if (!dragging.current) return;
-    dragging.current = false;
-    if (offset < -SWIPE_THRESHOLD) {
-      setOpen(true);
-      setOffset(-SWIPE_REVEAL);
-    } else {
-      setOpen(false);
-      setOffset(0);
-    }
-  };
-
-  const closeSwipe = () => {
-    setOpen(false);
-    setOffset(0);
-  };
-
-  const handleToggleClick = () => {
-    if (open) {
-      closeSwipe();
-      return;
-    }
-    setBounce(true);
-    setTimeout(() => setBounce(false), 280);
-    onToggle();
-  };
+  const checked = item.is_checked;
+  const priority = item.is_priority && !checked;
 
   return (
     <li
-      className="relative overflow-hidden"
-      style={{ borderTop: isFirst ? "none" : "1px solid var(--clay-border)" }}
+      className="relative flex items-center gap-2.5 px-3.5 py-2"
+      style={{
+        borderTop: isFirst ? "none" : "1px solid var(--clay-border)",
+      }}
     >
+      {priority && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r"
+          style={{ background: "var(--clay-priority)" }}
+        />
+      )}
       <button
         type="button"
-        onClick={() => {
-          closeSwipe();
-          onDelete();
+        onClick={onToggle}
+        aria-label={checked ? "Uncheck" : "Check off"}
+        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition"
+        style={{
+          border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
+          background: checked ? "var(--clay-accent)" : "transparent",
+          color: "#fff",
         }}
-        aria-label="Delete item"
-        className="absolute inset-y-0 right-0 flex items-center justify-center text-white"
-        style={{ width: SWIPE_REVEAL, background: "#C2693F" }}
       >
-        <Trash2 size={18} />
+        {checked && <Check size={12} strokeWidth={3.5} />}
       </button>
 
-      <div
-        className="relative flex items-center gap-2.5 bg-white px-3.5 py-2"
-        style={{
-          transform: `translateX(${offset}px) scale(${bounce ? 0.985 : 1})`,
-          transition: dragging.current
-            ? "none"
-            : "transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-        }}
-        onTouchStart={(e) => handleStart(e.touches[0].clientX, e.touches[0].clientY)}
-        onTouchMove={(e) => handleMove(e.touches[0].clientX, e.touches[0].clientY)}
-        onTouchEnd={handleEnd}
-        onTouchCancel={handleEnd}
+      <button
+        type="button"
+        onClick={onEdit}
+        className="flex min-h-[36px] flex-1 items-center gap-1.5 text-left"
       >
+        <span
+          className="text-[14px] leading-tight"
+          style={{
+            color: checked ? "var(--clay-muted)" : "var(--clay-ink)",
+            opacity: checked ? 0.7 : 1,
+          }}
+        >
+          {item.display_name}
+        </span>
         {priority && (
-          <span
-            aria-hidden
-            className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r"
-            style={{ background: "var(--clay-accent)" }}
+          <Star
+            size={12}
+            fill="currentColor"
+            style={{ color: "var(--clay-priority)" }}
           />
         )}
-
-        <button
-          type="button"
-          onClick={handleToggleClick}
-          aria-label={checked ? "Uncheck" : "Check off"}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-          style={{
-            border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
-            background: checked ? "var(--clay-accent)" : "transparent",
-            color: "#fff",
-            transition: "background 200ms ease, border-color 200ms ease, transform 200ms ease",
-            transform: checked ? "scale(1)" : "scale(1)",
-          }}
-        >
-          {checked && (
-            <Check
-              size={12}
-              strokeWidth={3.5}
-              style={{
-                animation: "tickDraw 220ms ease-out",
-              }}
-            />
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            if (open) {
-              closeSwipe();
-              return;
-            }
-            onEdit();
-          }}
-          className="flex min-h-[28px] flex-1 items-center gap-1.5 text-left"
-        >
-          <span
-            className="text-[14px] leading-tight"
-            style={{
-              color: checked ? "var(--clay-muted)" : "var(--clay-ink)",
-              opacity: checked ? 0.7 : 1,
-            }}
-          >
-            {group.display_name}
-            {group.count > 1 && (
-              <span className="ml-1.5 text-[12px]" style={{ color: "var(--clay-muted)" }}>
-                ×{group.count}
-              </span>
-            )}
-            {group.count === 1 && group.totalQty > 1 && (
-              <span className="ml-1.5 text-[12px]" style={{ color: "var(--clay-muted)" }}>
-                ×{group.totalQty}
-              </span>
-            )}
-          </span>
-          {priority && (
-            <Star size={12} fill="currentColor" style={{ color: "var(--clay-priority)" }} />
-          )}
-        </button>
-
-        {member && (
-          <span
-            title={`Added by ${member.name}`}
-            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-            style={{ background: member.color, opacity: checked ? 0.5 : 1 }}
-          >
-            {member.initial}
+        {item.quantity != null && (
+          <span className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
+            ×{item.quantity}
           </span>
         )}
-      </div>
+      </button>
+
+      {member && (
+        <span
+          title={`Added by ${member.name}`}
+          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+          style={{ background: member.color, opacity: checked ? 0.5 : 1 }}
+        >
+          {member.initial}
+        </span>
+      )}
+
+      <button
+        type="button"
+        onClick={onDelete}
+        aria-label="Delete item"
+        className="-mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition active:bg-[var(--clay-accent-soft)]"
+        style={{ color: "#C9BBA8" }}
+      >
+        <Trash2 size={14} />
+      </button>
     </li>
   );
 }
 
 function EditSheet({
-  group,
+  item,
   onCancel,
   onSave,
 }: {
-  group: RowGroup;
+  item: Item;
   onCancel: () => void;
-  onSave: (
-    g: RowGroup,
-    patch: { display_name: string; category: Category; quantity: number | null; is_priority: boolean },
-  ) => void;
+  onSave: (updated: Item) => void;
 }) {
-  const [name, setName] = useState(group.display_name);
-  const [category, setCategory] = useState<Category>(group.category);
-  const [qty, setQty] = useState<string>(group.totalQty > 1 ? String(group.totalQty) : "");
-  const [priority, setPriority] = useState(group.is_priority);
+  const [name, setName] = useState(item.display_name);
+  const [category, setCategory] = useState<Category>(
+    (CATEGORIES as readonly string[]).includes(item.category) ? (item.category as Category) : "misc",
+  );
+  const [qty, setQty] = useState<string>(item.quantity != null ? String(item.quantity) : "");
+  const [priority, setPriority] = useState(item.is_priority);
 
   const submit = () => {
     const trimmed = name.trim();
     if (!trimmed) return;
     const parsedQty = qty.trim() === "" ? null : Math.max(1, parseInt(qty, 10) || 1);
-    onSave(group, {
+    onSave({
+      ...item,
       display_name: trimmed,
       category,
       quantity: parsedQty,

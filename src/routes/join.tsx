@@ -86,16 +86,8 @@ function JoinPage() {
   if (stage.kind === "loading") {
     return (
       <Shell>
-        <Wordmark />
-        <h1
-          className="mt-6 text-[22px] font-semibold tracking-tight"
-          style={{ color: "var(--clay-ink)" }}
-        >
-          Joining your family…
-        </h1>
-        <p className="mt-1.5 text-[13px]" style={{ color: "var(--clay-muted)" }}>
-          One moment.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Joining your family…</h1>
+        <p className="mt-2 text-sm text-neutral-500">One moment.</p>
       </Shell>
     );
   }
@@ -103,20 +95,11 @@ function JoinPage() {
   if (stage.kind === "error") {
     return (
       <Shell>
-        <Wordmark />
-        <h1
-          className="mt-6 text-[22px] font-semibold tracking-tight"
-          style={{ color: "var(--clay-ink)" }}
-        >
-          Can't join
-        </h1>
-        <p className="mt-3 text-[14px]" style={{ color: "var(--clay-ink)" }}>
-          {stage.message}
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Can't join</h1>
+        <p className="mt-3 text-sm text-neutral-600">{stage.message}</p>
         <button
           onClick={() => navigate({ to: "/" })}
-          className="mt-8 w-full rounded-[12px] bg-white py-3 text-[14px] font-medium transition active:scale-[0.99]"
-          style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
+          className="mt-8 w-full rounded-xl border border-neutral-200 bg-white py-3 text-base font-medium text-neutral-700 transition active:scale-[0.99]"
         >
           Go to app
         </button>
@@ -134,34 +117,9 @@ function JoinPage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="flex min-h-[100dvh] items-start justify-center px-5 pt-[calc(env(safe-area-inset-top)+2.5rem)] pb-8"
-      style={{ background: "var(--clay-bg)" }}
-    >
+    <div className="flex min-h-[100dvh] items-start justify-center bg-white px-6 pt-[calc(env(safe-area-inset-top)+3rem)]">
       <div className="w-full max-w-sm">{children}</div>
     </div>
-  );
-}
-
-function Wordmark() {
-  return (
-    <p
-      className="text-center text-[20px] leading-none"
-      style={{ fontFamily: "Fraunces, serif", color: "var(--clay-ink)" }}
-    >
-      Our Pantry
-    </p>
-  );
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      className="text-[11px] font-semibold uppercase tracking-[0.08em]"
-      style={{ color: "var(--clay-muted)" }}
-    >
-      {children}
-    </p>
   );
 }
 
@@ -188,8 +146,7 @@ function PinInput({
       maxLength={4}
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
-      className="w-full rounded-[12px] bg-white px-4 py-3 text-center text-2xl tracking-[0.6em] outline-none"
-      style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
+      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-2xl tracking-[0.6em] text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
     />
   );
 }
@@ -237,44 +194,34 @@ function SetupNewMember({
 
   return (
     <Shell>
-      <Wordmark />
-      <h1
-        className="mt-6 text-[22px] font-semibold tracking-tight"
-        style={{ color: "var(--clay-ink)" }}
-      >
-        Set up your profile
-      </h1>
-      <p className="mt-1.5 text-[13px]" style={{ color: "var(--clay-muted)" }}>
+      <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Set up your profile</h1>
+      <p className="mt-2 text-sm text-neutral-500">
         You've joined the family. Tell us your name and pick a 4-digit PIN.
       </p>
-      <form
-        onSubmit={onSubmit}
-        className="mt-6 rounded-[14px] bg-white p-5 space-y-3.5"
-        style={{ border: "1px solid var(--clay-border)" }}
-      >
-        <FieldLabel>Name</FieldLabel>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoFocus
-          maxLength={40}
-          className="w-full rounded-[10px] bg-white px-3.5 py-3 text-[16px] outline-none"
-          style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
-        />
-        <FieldLabel>Choose 4-digit PIN</FieldLabel>
-        <PinInput value={pin} onChange={setPin} />
-        <FieldLabel>Confirm PIN</FieldLabel>
-        <PinInput value={confirm} onChange={setConfirm} />
-        {error && (
-          <p className="text-sm" style={{ color: "#B0452A" }}>
-            {error}
-          </p>
-        )}
+      <form onSubmit={onSubmit} className="mt-8 space-y-4">
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            maxLength={40}
+            className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Choose 4-digit PIN</label>
+          <PinInput value={pin} onChange={setPin} />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Confirm PIN</label>
+          <PinInput value={confirm} onChange={setConfirm} />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={submitting}
-          className="mt-1 w-full rounded-[12px] py-3 text-[15px] font-semibold text-white transition active:scale-[0.99] disabled:opacity-60"
-          style={{ background: "var(--clay-accent)" }}
+          className="mt-2 w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Continue"}
         </button>

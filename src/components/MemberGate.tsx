@@ -10,14 +10,6 @@ type Mode =
   | { kind: "pin"; member: Member }
   | { kind: "add-another" };
 
-const MEMBER_COLORS = ["#C2693F", "#6F8F5E", "#D38A2E", "#8E6E8A", "#A86A4B", "#5E8A8F"];
-
-function memberColor(id: string) {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return MEMBER_COLORS[h % MEMBER_COLORS.length];
-}
-
 export function MemberGate({
   householdId,
   children,
@@ -33,7 +25,7 @@ export function MemberGate({
       setMode({ kind: "loading" });
       return;
     }
-    if (member) return;
+    if (member) return; // children render
     if (members.length === 0) setMode({ kind: "setup-first" });
     else setMode((m) => (m.kind === "add-another" || m.kind === "pin" ? m : { kind: "picker" }));
   }, [loading, members, member]);
@@ -41,12 +33,7 @@ export function MemberGate({
   if (member) return <>{children}</>;
 
   if (mode.kind === "loading") {
-    return (
-      <div
-        className="flex min-h-[100dvh] items-center justify-center"
-        style={{ background: "var(--clay-bg)" }}
-      />
-    );
+    return <div className="flex min-h-[100dvh] items-center justify-center bg-white" />;
   }
 
   if (mode.kind === "setup-first" || mode.kind === "add-another") {
@@ -89,23 +76,9 @@ export function MemberGate({
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div
-      className="flex min-h-[100dvh] items-start justify-center px-5 pt-[calc(env(safe-area-inset-top)+2.5rem)] pb-8"
-      style={{ background: "var(--clay-bg)" }}
-    >
+    <div className="flex min-h-[100dvh] items-start justify-center bg-white px-6 pt-[calc(env(safe-area-inset-top)+3rem)]">
       <div className="w-full max-w-sm">{children}</div>
     </div>
-  );
-}
-
-function Wordmark() {
-  return (
-    <p
-      className="text-center text-[20px] leading-none"
-      style={{ fontFamily: "Fraunces, serif", color: "var(--clay-ink)" }}
-    >
-      Our Pantry
-    </p>
   );
 }
 
@@ -132,25 +105,8 @@ function PinInput({
       maxLength={4}
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
-      className="w-full rounded-[12px] bg-white px-4 py-3 text-center text-2xl tracking-[0.6em] outline-none"
-      style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
+      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-2xl tracking-[0.6em] text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
     />
-  );
-}
-
-function Avatar({ name, id, size = 40 }: { name: string; id: string; size?: number }) {
-  return (
-    <span
-      className="flex shrink-0 items-center justify-center rounded-full font-semibold text-white"
-      style={{
-        background: memberColor(id),
-        width: size,
-        height: size,
-        fontSize: size * 0.4,
-      }}
-    >
-      {(name?.[0] ?? "?").toUpperCase()}
-    </span>
   );
 }
 
@@ -202,44 +158,32 @@ function SetupScreen({
 
   return (
     <Shell>
-      <Wordmark />
-      <h1
-        className="mt-6 text-[22px] font-semibold tracking-tight"
-        style={{ color: "var(--clay-ink)" }}
-      >
-        {title}
-      </h1>
-      <p className="mt-1.5 text-[13px]" style={{ color: "var(--clay-muted)" }}>
-        {subtitle}
-      </p>
-      <form
-        onSubmit={onSubmit}
-        className="mt-6 rounded-[14px] bg-white p-5 space-y-3.5"
-        style={{ border: "1px solid var(--clay-border)" }}
-      >
-        <FieldLabel>Name</FieldLabel>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          autoFocus
-          maxLength={40}
-          className="w-full rounded-[10px] bg-white px-3.5 py-3 text-[16px] outline-none"
-          style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
-        />
-        <FieldLabel>Choose 4-digit PIN</FieldLabel>
-        <PinInput value={pin} onChange={setPin} />
-        <FieldLabel>Confirm PIN</FieldLabel>
-        <PinInput value={confirm} onChange={setConfirm} />
-        {error && (
-          <p className="text-sm" style={{ color: "#B0452A" }}>
-            {error}
-          </p>
-        )}
+      <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">{title}</h1>
+      <p className="mt-2 text-sm text-neutral-500">{subtitle}</p>
+      <form onSubmit={onSubmit} className="mt-8 space-y-4">
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Name</label>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+            maxLength={40}
+            className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
+          />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Choose 4-digit PIN</label>
+          <PinInput value={pin} onChange={setPin} />
+        </div>
+        <div>
+          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Confirm PIN</label>
+          <PinInput value={confirm} onChange={setConfirm} />
+        </div>
+        {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={submitting}
-          className="mt-1 w-full rounded-[12px] py-3 text-[15px] font-semibold text-white transition active:scale-[0.99] disabled:opacity-60"
-          style={{ background: "var(--clay-accent)" }}
+          className="mt-2 w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60"
         >
           {submitting ? "Saving…" : "Continue"}
         </button>
@@ -247,25 +191,13 @@ function SetupScreen({
           <button
             type="button"
             onClick={onCancel}
-            className="w-full rounded-[12px] py-2 text-[13px] font-medium"
-            style={{ color: "var(--clay-muted)" }}
+            className="w-full rounded-xl py-2 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
           >
             Cancel
           </button>
         )}
       </form>
     </Shell>
-  );
-}
-
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      className="text-[11px] font-semibold uppercase tracking-[0.08em]"
-      style={{ color: "var(--clay-muted)" }}
-    >
-      {children}
-    </p>
   );
 }
 
@@ -286,16 +218,10 @@ function PickerScreen({
 
   return (
     <Shell>
-      <Wordmark />
-      <div className="mt-6 flex items-start justify-between gap-3">
+      <div className="flex items-start justify-between">
         <div>
-          <h1
-            className="text-[22px] font-semibold tracking-tight"
-            style={{ color: "var(--clay-ink)" }}
-          >
-            Who's this?
-          </h1>
-          <p className="mt-1.5 text-[13px]" style={{ color: "var(--clay-muted)" }}>
+          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Who's this?</h1>
+          <p className="mt-2 text-sm text-neutral-500">
             {manage ? "Tap a name to remove them." : "Tap your name to continue."}
           </p>
         </div>
@@ -305,86 +231,53 @@ function PickerScreen({
             setPending(null);
             setError(null);
           }}
-          className="rounded-full px-3 py-1.5 text-[12px] font-semibold"
-          style={{ color: "var(--clay-accent)", background: "var(--clay-accent-soft)" }}
+          className="rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--accent-green)]"
         >
           {manage ? "Done" : "Manage"}
         </button>
       </div>
-
-      <section
-        className="mt-5 overflow-hidden rounded-[14px] bg-white"
-        style={{ border: "1px solid var(--clay-border)" }}
-      >
-        <ul>
-          {members.map((m, idx) => (
-            <li
-              key={m.id}
-              style={{ borderTop: idx === 0 ? "none" : "1px solid var(--clay-border)" }}
-            >
-              <button
-                onClick={() => (manage ? setPending(m) : onPick(m))}
-                className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-[color:var(--clay-bg)]"
-              >
-                <Avatar name={m.name} id={m.id} />
-                <span
-                  className="flex-1 text-[15px] font-medium"
-                  style={{ color: "var(--clay-ink)" }}
-                >
-                  {m.name}
-                </span>
-                <span
-                  className="text-[12px] font-medium"
-                  style={{ color: manage ? "#B0452A" : "var(--clay-muted)" }}
-                >
-                  {manage ? "Remove" : "›"}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      {!manage && (
-        <button
-          onClick={onAddAnother}
-          className="mt-3 w-full rounded-[14px] bg-white py-3.5 text-[14px] font-medium transition active:scale-[0.99]"
-          style={{
-            border: "1px dashed var(--clay-border)",
-            color: "var(--clay-muted)",
-          }}
-        >
-          + Add another person
-        </button>
-      )}
+      <div className="mt-8 space-y-2">
+        {members.map((m) => (
+          <button
+            key={m.id}
+            onClick={() => (manage ? setPending(m) : onPick(m))}
+            className="flex w-full items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-4 text-left text-base font-medium text-neutral-900 transition active:scale-[0.99] hover:border-[var(--accent-green)]"
+          >
+            <span>{m.name}</span>
+            <span className={manage ? "text-red-500" : "text-neutral-400"}>
+              {manage ? "Remove" : "›"}
+            </span>
+          </button>
+        ))}
+        {!manage && (
+          <button
+            onClick={onAddAnother}
+            className="w-full rounded-xl border border-dashed border-neutral-300 px-4 py-4 text-base font-medium text-neutral-600 transition hover:border-[var(--accent-green)] hover:text-[var(--accent-green)]"
+          >
+            + Add another person
+          </button>
+        )}
+      </div>
 
       {pending && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
           onClick={() => !busy && setPending(null)}
         >
           <div
-            className="w-full max-w-md rounded-t-2xl bg-white p-5 pb-[max(env(safe-area-inset-bottom),1rem)] shadow-xl"
+            className="w-full max-w-md rounded-t-2xl bg-white p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div
-              className="mx-auto mb-4 h-1 w-10 rounded-full"
-              style={{ background: "var(--clay-border)" }}
-            />
-            <p className="text-[15px]" style={{ color: "var(--clay-ink)" }}>
+            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-200" />
+            <p className="text-base text-neutral-900">
               Remove {pending.name} from the family? This can't be undone.
             </p>
-            {error && (
-              <p className="mt-2 text-sm" style={{ color: "#B0452A" }}>
-                {error}
-              </p>
-            )}
+            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => setPending(null)}
                 disabled={busy}
-                className="flex-1 rounded-[12px] py-3 text-[14px] font-medium"
-                style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
+                className="flex-1 rounded-xl border border-neutral-200 py-3 text-base font-medium text-neutral-800"
               >
                 Cancel
               </button>
@@ -398,8 +291,7 @@ function PickerScreen({
                   setPending(null);
                 }}
                 disabled={busy}
-                className="flex-1 rounded-[12px] py-3 text-[14px] font-semibold text-white disabled:opacity-60"
-                style={{ background: "#B0452A" }}
+                className="flex-1 rounded-xl bg-red-600 py-3 text-base font-medium text-white disabled:opacity-60"
               >
                 {busy ? "Removing…" : "Remove"}
               </button>
@@ -441,43 +333,22 @@ function PinScreen({
 
   return (
     <Shell>
-      <Wordmark />
-      <div className="mt-8 flex flex-col items-center text-center">
-        <Avatar name={member.name} id={member.id} size={64} />
-        <h1
-          className="mt-4 text-[22px] font-semibold tracking-tight"
-          style={{ color: "var(--clay-ink)" }}
-        >
-          Hi, {member.name}
-        </h1>
-        <p className="mt-1.5 text-[13px]" style={{ color: "var(--clay-muted)" }}>
-          Enter your 4-digit PIN.
-        </p>
-      </div>
-      <form
-        onSubmit={submit}
-        className="mt-6 rounded-[14px] bg-white p-5 space-y-3"
-        style={{ border: "1px solid var(--clay-border)" }}
-      >
+      <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Hi, {member.name}</h1>
+      <p className="mt-2 text-sm text-neutral-500">Enter your 4-digit PIN.</p>
+      <form onSubmit={submit} className="mt-8 space-y-4">
         <PinInput value={pin} onChange={setPin} autoFocus />
-        {error && (
-          <p className="text-sm" style={{ color: "#B0452A" }}>
-            {error}
-          </p>
-        )}
+        {error && <p className="text-sm text-red-600">{error}</p>}
         <button
           type="submit"
           disabled={pin.length !== 4 || checking}
-          className="w-full rounded-[12px] py-3 text-[15px] font-semibold text-white transition active:scale-[0.99] disabled:opacity-60"
-          style={{ background: "var(--clay-accent)" }}
+          className="w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60"
         >
           {checking ? "Checking…" : "Continue"}
         </button>
         <button
           type="button"
           onClick={onBack}
-          className="w-full rounded-[12px] py-2 text-[13px] font-medium"
-          style={{ color: "var(--clay-muted)" }}
+          className="w-full rounded-xl py-2 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
         >
           Not me
         </button>
