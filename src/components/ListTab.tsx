@@ -29,6 +29,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Item | null>(null);
+  const [trolleyOpen, setTrolleyOpen] = useState(true);
+  const [confirmClear, setConfirmClear] = useState(false);
   const { members } = useMember();
 
   const memberMap = useMemo(() => {
