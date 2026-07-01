@@ -609,10 +609,12 @@ function AddChip({
   };
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={handle}
-      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] transition-colors duration-200 active:scale-[0.97]"
+      whileTap={{ scale: 0.94 }}
+      transition={snappySpring}
+      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] transition-colors duration-200"
       style={{
         border: `1px solid ${added ? "var(--clay-accent)" : "var(--clay-border)"}`,
         background: added ? "var(--clay-accent)" : "#FFFFFF",
@@ -621,7 +623,7 @@ function AddChip({
     >
       {added && <Check size={12} strokeWidth={3} />}
       {label}
-    </button>
+    </motion.button>
   );
 }
 
