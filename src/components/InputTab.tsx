@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X } from "lucide-react";
+import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X, Check } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -267,9 +267,15 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     setPriority(false);
   };
 
-  const browseAdd = (name: string) => {
+  const notifyAdded = (name: string) => {
+    toast.success(`${name} added`, { id: "add-feedback", duration: 2000 });
+  };
+
+  const chipAdd = (name: string) => {
+    notifyAdded(name);
     quickAdd(name);
   };
+
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-5 pb-10">
@@ -316,16 +322,13 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                     className="border-t first:border-t-0"
                     style={{ borderColor: "var(--clay-border)" }}
                   >
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => pickSuggestion(s)}
-                      className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[15px] active:bg-[var(--clay-accent-soft)]"
-                      style={{ color: "var(--clay-ink)" }}
-                    >
-                      <span className="truncate">{s}</span>
-                      <Plus size={14} style={{ color: "var(--clay-accent)" }} />
-                    </button>
+                    <SuggestionRow
+                      label={s}
+                      onAdd={() => {
+                        notifyAdded(s);
+                        pickSuggestion(s);
+                      }}
+                    />
                   </li>
                 ))}
               </ul>
@@ -411,10 +414,10 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         {regulars.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {regulars.map((r) => (
-              <Chip
+              <AddChip
                 key={`reg-${r.name}`}
                 label={r.name}
-                onClick={() => quickAdd(r.name)}
+                onAdd={() => chipAdd(r.name)}
               />
             ))}
           </div>
@@ -555,31 +558,94 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       {browseOpen && (
         <BrowseSheet
           onClose={() => setBrowseOpen(false)}
-          onPick={(name) => browseAdd(name)}
+          onPick={(name) => chipAdd(name)}
         />
       )}
     </div>
   );
 }
 
-function Chip({
+function AddChip({
   label,
-  onClick,
+  onAdd,
 }: {
   label: string;
-  onClick: () => void;
+  onAdd: () => void;
 }) {
+  const [added, setAdded] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
+  const handle = () => {
+    onAdd();
+    setAdded(true);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => setAdded(false), 1000);
+  };
+
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-[13px] transition active:scale-[0.97]"
+      onClick={handle}
+      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] transition-colors duration-200 active:scale-[0.97]"
       style={{
-        border: "1px solid var(--clay-border)",
-        color: "var(--clay-ink)",
+        border: `1px solid ${added ? "var(--clay-accent)" : "var(--clay-border)"}`,
+        background: added ? "var(--clay-accent)" : "#FFFFFF",
+        color: added ? "#FFFFFF" : "var(--clay-ink)",
       }}
     >
+      {added && <Check size={12} strokeWidth={3} />}
       {label}
+    </button>
+  );
+}
+
+function SuggestionRow({
+  label,
+  onAdd,
+}: {
+  label: string;
+  onAdd: () => void;
+}) {
+  const [added, setAdded] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
+  const handle = () => {
+    onAdd();
+    setAdded(true);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => setAdded(false), 1000);
+  };
+
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={handle}
+      className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[15px] transition-colors duration-200"
+      style={{
+        background: added ? "var(--clay-accent)" : "transparent",
+        color: added ? "#FFFFFF" : "var(--clay-ink)",
+      }}
+    >
+      <span className="flex min-w-0 items-center gap-1.5 truncate">
+        {added && <Check size={14} strokeWidth={3} />}
+        <span className="truncate">{label}</span>
+      </span>
+      {!added && <Plus size={14} style={{ color: "var(--clay-accent)" }} />}
     </button>
   );
 }
@@ -665,18 +731,11 @@ function BrowseSheet({
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {aisle.items.map((it) => (
-                    <button
+                    <AddChip
                       key={`${aisle.label}-${it}`}
-                      type="button"
-                      onClick={() => onPick(it)}
-                      className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-[13px] transition active:scale-[0.97]"
-                      style={{
-                        border: "1px solid var(--clay-border)",
-                        color: "var(--clay-ink)",
-                      }}
-                    >
-                      {it}
-                    </button>
+                      label={it}
+                      onAdd={() => onPick(it)}
+                    />
                   ))}
                 </div>
               </div>
