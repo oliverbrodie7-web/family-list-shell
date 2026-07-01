@@ -228,6 +228,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
         >
           <SheetRow
             label="Switch member"
+            first
             onClick={() => {
               forgetMember();
               onClose();
