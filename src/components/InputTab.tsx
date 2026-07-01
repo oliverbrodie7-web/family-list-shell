@@ -362,9 +362,10 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                 color: "var(--clay-ink)",
               }}
             />
-            <button
+            <motion.button
               type="button"
               onClick={() => setPriority((p) => !p)}
+              whileTap={{ scale: 0.94 }}
               aria-label="Toggle priority"
               aria-pressed={priority}
               className="ml-1 flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] transition"
@@ -376,11 +377,12 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             >
               <Flag size={12} fill={priority ? "currentColor" : "none"} />
               priority
-            </button>
+            </motion.button>
           </div>
-          <button
+          <motion.button
             type="button"
             onClick={() => setBulkOpen(true)}
+            whileTap={{ scale: 0.95 }}
             className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium transition"
             style={{
               border: "1px solid var(--clay-border)",
@@ -389,7 +391,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           >
             <List size={13} />
             Bulk add
-          </button>
+          </motion.button>
         </div>
       </form>
 
