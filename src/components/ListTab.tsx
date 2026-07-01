@@ -220,6 +220,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
               onToggle={toggleChecked}
               onEdit={setEditing}
               onDelete={deleteItem}
+              openSwipeId={openSwipeId}
+              setOpenSwipeId={setOpenSwipeId}
             />
           );
         })}
