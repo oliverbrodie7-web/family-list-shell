@@ -407,7 +407,12 @@ function SwipeRow({
   };
 
   return (
-    <li
+    <motion.li
+      layout
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={softSpring}
       className="relative overflow-hidden"
       style={{ borderTop: isFirst ? "none" : "1px solid var(--clay-border)" }}
     >
@@ -448,21 +453,36 @@ function SwipeRow({
           />
         )}
 
-        <button
+        <motion.button
           type="button"
           onClick={onToggle}
           aria-label={checked ? "Uncheck" : "Check off"}
+          whileTap={{ scale: 0.88 }}
+          animate={{ scale: checked ? 1.08 : 1 }}
+          transition={snappySpring}
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
           style={{
             border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
             background: checked ? "var(--clay-accent)" : "transparent",
             color: "#fff",
-            transition: "background 180ms ease, border-color 180ms ease, transform 180ms ease",
-            transform: checked ? "scale(1.08)" : "scale(1)",
+            transition: "background 180ms ease, border-color 180ms ease",
           }}
         >
-          {checked && <Check size={12} strokeWidth={3.5} className="animate-scale-in" />}
-        </button>
+          <AnimatePresence initial={false}>
+            {checked && (
+              <motion.span
+                key="check"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={snappySpring}
+                className="flex items-center justify-center"
+              >
+                <Check size={12} strokeWidth={3.5} />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
 
         <button
           type="button"
