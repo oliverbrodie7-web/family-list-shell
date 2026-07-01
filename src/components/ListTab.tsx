@@ -263,6 +263,8 @@ function AisleCard({
   onToggle,
   onEdit,
   onDelete,
+  openSwipeId,
+  setOpenSwipeId,
 }: {
   label: string;
   count: number;
@@ -271,6 +273,8 @@ function AisleCard({
   onToggle: (i: Item) => void;
   onEdit: (i: Item) => void;
   onDelete: (i: Item) => void;
+  openSwipeId: string | null;
+  setOpenSwipeId: (id: string | null) => void;
 }) {
   return (
     <section
@@ -295,6 +299,11 @@ function AisleCard({
             item={it}
             isFirst={idx === 0}
             member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
+            isOpen={openSwipeId === it.id}
+            onRequestOpen={() => setOpenSwipeId(it.id)}
+            onRequestClose={() => {
+              if (openSwipeId === it.id) setOpenSwipeId(null);
+            }}
             onToggle={() => onToggle(it)}
             onEdit={() => onEdit(it)}
             onDelete={() => onDelete(it)}
