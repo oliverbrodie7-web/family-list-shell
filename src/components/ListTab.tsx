@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { Check, ShoppingCart, Trash2, X, Star, Flag, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { motion, useAnimation, useMotionValue, type PanInfo } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { useMember } from "@/lib/member";
