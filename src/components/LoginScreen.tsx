@@ -18,49 +18,83 @@ export function LoginScreen() {
   };
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-white px-6">
+    <div
+      className="flex min-h-[100dvh] items-center justify-center px-6"
+      style={{ background: "var(--clay-bg)" }}
+    >
       <div className="w-full max-w-sm">
-        <div className="mb-10 text-center">
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-neutral-900">
+        <div className="mb-8 text-center">
+          <h1
+            className="font-display text-[40px] leading-none"
+            style={{ color: "var(--clay-ink)", letterSpacing: "-0.015em" }}
+          >
             Our Pantry
           </h1>
-          <p className="mt-2 text-sm text-neutral-500">Sign in to continue</p>
+          <p className="mt-2 text-sm" style={{ color: "var(--clay-muted)" }}>
+            Sign in to continue
+          </p>
         </div>
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-neutral-600">Email</label>
-            <input
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs font-medium text-neutral-600">Password</label>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="mt-2 w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60"
-          >
-            {submitting ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
+
+        <div
+          className="rounded-[14px] bg-white p-5"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <form onSubmit={onSubmit} className="space-y-3.5">
+            <Field label="Email">
+              <input
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="clay-input"
+              />
+            </Field>
+            <Field label="Password">
+              <input
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="clay-input"
+              />
+            </Field>
+            {error && (
+              <p className="text-sm" style={{ color: "#B4441F" }}>
+                {error}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="clay-btn-primary mt-1"
+            >
+              {submitting ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label
+        className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em]"
+        style={{ color: "var(--clay-muted)" }}
+      >
+        {label}
+      </label>
+      {children}
     </div>
   );
 }
