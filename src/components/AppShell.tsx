@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PlusCircle, ShoppingCart } from "lucide-react";
+import { MotionConfig, motion } from "framer-motion";
 import { useHouseholdId } from "@/lib/household";
 import { useMember } from "@/lib/member";
 import { InputTab } from "./InputTab";
