@@ -470,75 +470,87 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             style={{ border: "1px solid var(--clay-border)" }}
           >
             <ul>
-              {recent.map((it, idx) => (
-                <li
-                  key={it.id}
-                  className="flex items-center justify-between gap-2 px-3.5 py-2.5"
-                  style={{
-                    borderTop:
-                      idx === 0 ? "none" : "1px solid var(--clay-border)",
-                  }}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span
-                      className="truncate text-[14px]"
-                      style={{ color: "var(--clay-ink)" }}
-                    >
-                      {it.display_name}
-                    </span>
-                    {it.quantity != null && (
-                      <span
-                        className="text-[12px]"
-                        style={{ color: "var(--clay-muted)" }}
-                      >
-                        ×{it.quantity}
-                      </span>
-                    )}
-                  </div>
-
-                  {it.categorizing || !it.category ? (
-                    <span
-                      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
-                      style={{
-                        background: "var(--clay-border)",
-                        color: "var(--clay-muted)",
-                      }}
-                    >
-                      <Loader2 size={10} className="animate-spin" />
-                      sorting
-                    </span>
-                  ) : (
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                      style={{
-                        background: "var(--clay-accent-soft)",
-                        color: "var(--clay-accent)",
-                      }}
-                    >
-                      {CATEGORY_LABELS[it.category] ?? it.category}
-                    </span>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleRecentPriority(it.id, !it.is_priority)
-                    }
-                    aria-label="Toggle priority"
-                    className="p-1 transition"
+              <AnimatePresence initial={false}>
+                {recent.map((it, idx) => (
+                  <motion.li
+                    key={it.id}
+                    layout
+                    initial={{ opacity: 0, height: 0, y: -6 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={softSpring}
+                    className="flex items-center justify-between gap-2 overflow-hidden px-3.5 py-2.5"
                     style={{
-                      color: it.is_priority
-                        ? "var(--clay-priority)"
-                        : "#C9BBA8",
+                      borderTop:
+                        idx === 0 ? "none" : "1px solid var(--clay-border)",
                     }}
                   >
-                    <Flag
-                      size={14}
-                      fill={it.is_priority ? "currentColor" : "none"}
-                    />
-                  </button>
-                </li>
-              ))}
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <span
+                        className="truncate text-[14px]"
+                        style={{ color: "var(--clay-ink)" }}
+                      >
+                        {it.display_name}
+                      </span>
+                      {it.quantity != null && (
+                        <span
+                          className="text-[12px]"
+                          style={{ color: "var(--clay-muted)" }}
+                        >
+                          ×{it.quantity}
+                        </span>
+                      )}
+                    </div>
+
+                    {it.categorizing || !it.category ? (
+                      <span
+                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                        style={{
+                          background: "var(--clay-border)",
+                          color: "var(--clay-muted)",
+                        }}
+                      >
+                        <Loader2 size={10} className="animate-spin" />
+                        sorting
+                      </span>
+                    ) : (
+                      <motion.span
+                        key={it.category}
+                        initial={{ scale: 0.85, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={snappySpring}
+                        className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                        style={{
+                          background: "var(--clay-accent-soft)",
+                          color: "var(--clay-accent)",
+                        }}
+                      >
+                        {CATEGORY_LABELS[it.category] ?? it.category}
+                      </motion.span>
+                    )}
+
+                    <motion.button
+                      type="button"
+                      onClick={() =>
+                        toggleRecentPriority(it.id, !it.is_priority)
+                      }
+                      whileTap={{ scale: 0.85 }}
+                      aria-label="Toggle priority"
+                      className="p-1 transition"
+                      style={{
+                        color: it.is_priority
+                          ? "var(--clay-priority)"
+                          : "#C9BBA8",
+                      }}
+                    >
+                      <Flag
+                        size={14}
+                        fill={it.is_priority ? "currentColor" : "none"}
+                      />
+                    </motion.button>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
             </ul>
           </div>
         </section>
