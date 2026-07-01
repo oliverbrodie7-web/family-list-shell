@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X, Check } from "lucide-react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category } from "@/lib/categories";
@@ -10,6 +11,7 @@ import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
 import { COMMON_AISLES, ALL_COMMON_ITEMS } from "@/lib/common-items";
+import { softSpring, snappySpring } from "@/lib/motion";
 
 interface RecentItem {
   id: string;
