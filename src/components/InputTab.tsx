@@ -195,7 +195,11 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
     if (insertErr) {
       // Surface the real error instead of silently returning to the review sheet.
-      console.error("[bulk-add] insert failed", { insertErr, payload });
+      console.log("BULK ERROR message:", insertErr?.message);
+      console.log("BULK ERROR details:", insertErr?.details);
+      console.log("BULK ERROR hint:", insertErr?.hint);
+      console.log("BULK ERROR code:", insertErr?.code);
+      console.log("BULK payload sample:", JSON.stringify(payload?.[0]));
       const msg =
         insertErr.message ||
         (insertErr as { hint?: string }).hint ||
