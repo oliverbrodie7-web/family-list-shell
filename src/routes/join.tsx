@@ -36,7 +36,11 @@ function JoinPage() {
 
     async function run() {
       if (!token) {
-        setStage({ kind: "error", message: "This invite link is invalid or has expired — ask whoever invited you for a new link." });
+        setStage({
+          kind: "error",
+          message:
+            "This invite link is invalid or has expired — ask whoever invited you for a new link.",
+        });
         return;
       }
       try {
@@ -62,14 +66,16 @@ function JoinPage() {
           token_hash,
         });
         if (otpErr) {
-          // fall back: verifyOtp with email + token type "email"
           const { error: otpErr2 } = await supabase.auth.verifyOtp({
             type: "email",
             email,
             token: token_hash,
           });
           if (otpErr2) {
-            setStage({ kind: "error", message: "Could not sign in. Please try the link again." });
+            setStage({
+              kind: "error",
+              message: "Could not sign in. Please try the link again.",
+            });
             return;
           }
         }
@@ -86,8 +92,17 @@ function JoinPage() {
   if (stage.kind === "loading") {
     return (
       <Shell>
-        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Joining your family…</h1>
-        <p className="mt-2 text-sm text-neutral-500">One moment.</p>
+        <Card>
+          <h2
+            className="text-[20px] font-semibold leading-tight"
+            style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
+          >
+            Joining your family…
+          </h2>
+          <p className="mt-1.5 text-sm" style={{ color: "var(--clay-muted)" }}>
+            One moment.
+          </p>
+        </Card>
       </Shell>
     );
   }
@@ -95,14 +110,23 @@ function JoinPage() {
   if (stage.kind === "error") {
     return (
       <Shell>
-        <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Can't join</h1>
-        <p className="mt-3 text-sm text-neutral-600">{stage.message}</p>
-        <button
-          onClick={() => navigate({ to: "/" })}
-          className="mt-8 w-full rounded-xl border border-neutral-200 bg-white py-3 text-base font-medium text-neutral-700 transition active:scale-[0.99]"
-        >
-          Go to app
-        </button>
+        <Card>
+          <h2
+            className="text-[20px] font-semibold leading-tight"
+            style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
+          >
+            Can't join
+          </h2>
+          <p className="mt-2 text-[14px]" style={{ color: "var(--clay-muted)" }}>
+            {stage.message}
+          </p>
+          <button
+            onClick={() => navigate({ to: "/" })}
+            className="clay-btn-secondary mt-5"
+          >
+            Go to app
+          </button>
+        </Card>
       </Shell>
     );
   }
@@ -117,9 +141,49 @@ function JoinPage() {
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-[100dvh] items-start justify-center bg-white px-6 pt-[calc(env(safe-area-inset-top)+3rem)]">
-      <div className="w-full max-w-sm">{children}</div>
+    <div
+      className="flex min-h-[100dvh] items-start justify-center px-6 pt-[calc(env(safe-area-inset-top)+2.5rem)]"
+      style={{ background: "var(--clay-bg)" }}
+    >
+      <div className="w-full max-w-sm">
+        <h1
+          className="mb-6 text-center font-display text-[28px] leading-none"
+          style={{ color: "var(--clay-ink)", letterSpacing: "-0.015em" }}
+        >
+          Our Pantry
+        </h1>
+        {children}
+      </div>
     </div>
+  );
+}
+
+function Card({ children }: { children: React.ReactNode }) {
+  return (
+    <div
+      className="rounded-[14px] bg-white p-5"
+      style={{ border: "1px solid var(--clay-border)" }}
+    >
+      {children}
+    </div>
+  );
+}
+
+function FieldLabel({
+  children,
+  htmlFor,
+}: {
+  children: React.ReactNode;
+  htmlFor?: string;
+}) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="block text-[11px] font-semibold uppercase tracking-[0.08em]"
+      style={{ color: "var(--clay-muted)" }}
+    >
+      {children}
+    </label>
   );
 }
 
@@ -146,7 +210,13 @@ function PinInput({
       maxLength={4}
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
-      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-2xl tracking-[0.6em] text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
+      className="clay-input text-center"
+      style={{
+        fontSize: "28px",
+        letterSpacing: "0.55em",
+        paddingLeft: "0.55em",
+        fontWeight: 600,
+      }}
     />
   );
 }
@@ -194,38 +264,42 @@ function SetupNewMember({
 
   return (
     <Shell>
-      <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Set up your profile</h1>
-      <p className="mt-2 text-sm text-neutral-500">
-        You've joined the family. Tell us your name and pick a 4-digit PIN.
-      </p>
-      <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Name</label>
+      <div className="mb-4 text-center">
+        <h2
+          className="text-[22px] font-semibold leading-tight"
+          style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
+        >
+          Set up your profile
+        </h2>
+        <p className="mt-1.5 text-sm" style={{ color: "var(--clay-muted)" }}>
+          You've joined the family. Tell us your name and pick a 4-digit PIN.
+        </p>
+      </div>
+      <Card>
+        <form onSubmit={onSubmit} className="space-y-4">
+          <FieldLabel htmlFor="join-name">Name</FieldLabel>
           <input
+            id="join-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
             maxLength={40}
-            className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
+            className="clay-input"
           />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Choose 4-digit PIN</label>
+          <FieldLabel>Choose 4-digit PIN</FieldLabel>
           <PinInput value={pin} onChange={setPin} />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Confirm PIN</label>
+          <FieldLabel>Confirm PIN</FieldLabel>
           <PinInput value={confirm} onChange={setConfirm} />
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="mt-2 w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60"
-        >
-          {submitting ? "Saving…" : "Continue"}
-        </button>
-      </form>
+          {error && (
+            <p className="text-sm" style={{ color: "#B4441F" }}>
+              {error}
+            </p>
+          )}
+          <button type="submit" disabled={submitting} className="clay-btn-primary">
+            {submitting ? "Saving…" : "Continue"}
+          </button>
+        </form>
+      </Card>
     </Shell>
   );
 }

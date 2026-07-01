@@ -3,6 +3,19 @@ import { supabase } from "@/lib/supabase";
 import { useMember, type Member } from "@/lib/member";
 import { hashPin, verifyPin } from "@/lib/pin";
 
+const MEMBER_COLORS = ["#C2693F", "#6F8F5E", "#D38A2E", "#8E6E8A", "#A86A4B", "#5E8A8F"];
+
+function memberColor(id: string | null | undefined) {
+  if (!id) return "#C9BBA8";
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return MEMBER_COLORS[h % MEMBER_COLORS.length];
+}
+
+function initialOf(name: string) {
+  return (name?.trim()?.[0] ?? "?").toUpperCase();
+}
+
 type Mode =
   | { kind: "loading" }
   | { kind: "setup-first" }
@@ -25,7 +38,7 @@ export function MemberGate({
       setMode({ kind: "loading" });
       return;
     }
-    if (member) return; // children render
+    if (member) return;
     if (members.length === 0) setMode({ kind: "setup-first" });
     else setMode((m) => (m.kind === "add-another" || m.kind === "pin" ? m : { kind: "picker" }));
   }, [loading, members, member]);
@@ -33,7 +46,12 @@ export function MemberGate({
   if (member) return <>{children}</>;
 
   if (mode.kind === "loading") {
-    return <div className="flex min-h-[100dvh] items-center justify-center bg-white" />;
+    return (
+      <div
+        className="flex min-h-[100dvh] items-center justify-center"
+        style={{ background: "var(--clay-bg)" }}
+      />
+    );
   }
 
   if (mode.kind === "setup-first" || mode.kind === "add-another") {
@@ -74,10 +92,58 @@ export function MemberGate({
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children,
+  showWordmark,
+}: {
+  children: React.ReactNode;
+  showWordmark?: boolean;
+}) {
   return (
-    <div className="flex min-h-[100dvh] items-start justify-center bg-white px-6 pt-[calc(env(safe-area-inset-top)+3rem)]">
-      <div className="w-full max-w-sm">{children}</div>
+    <div
+      className="flex min-h-[100dvh] items-start justify-center px-6 pt-[calc(env(safe-area-inset-top)+2.5rem)]"
+      style={{ background: "var(--clay-bg)" }}
+    >
+      <div className="w-full max-w-sm">
+        {showWordmark && (
+          <h1
+            className="mb-6 text-center font-display text-[28px] leading-none"
+            style={{ color: "var(--clay-ink)", letterSpacing: "-0.015em" }}
+          >
+            Our Pantry
+          </h1>
+        )}
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function ScreenHeader({
+  title,
+  subtitle,
+  right,
+}: {
+  title: string;
+  subtitle?: string;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex-1">
+        <h2
+          className="text-[22px] font-semibold leading-tight"
+          style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
+        >
+          {title}
+        </h2>
+        {subtitle && (
+          <p className="mt-1.5 text-sm" style={{ color: "var(--clay-muted)" }}>
+            {subtitle}
+          </p>
+        )}
+      </div>
+      {right}
     </div>
   );
 }
@@ -105,8 +171,31 @@ function PinInput({
       maxLength={4}
       value={value}
       onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 4))}
-      className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center text-2xl tracking-[0.6em] text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
+      className="clay-input text-center"
+      style={{
+        fontSize: "28px",
+        letterSpacing: "0.55em",
+        paddingLeft: "0.55em",
+        fontWeight: 600,
+      }}
     />
+  );
+}
+
+function PinDots({ length }: { length: number }) {
+  return (
+    <div className="flex justify-center gap-2.5" aria-hidden>
+      {[0, 1, 2, 3].map((i) => (
+        <span
+          key={i}
+          className="h-2.5 w-2.5 rounded-full transition"
+          style={{
+            background:
+              i < length ? "var(--clay-accent)" : "var(--clay-border)",
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -157,47 +246,60 @@ function SetupScreen({
   };
 
   return (
-    <Shell>
-      <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">{title}</h1>
-      <p className="mt-2 text-sm text-neutral-500">{subtitle}</p>
-      <form onSubmit={onSubmit} className="mt-8 space-y-4">
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Name</label>
+    <Shell showWordmark>
+      <ScreenHeader title={title} subtitle={subtitle} />
+      <div
+        className="mt-5 rounded-[14px] bg-white p-5"
+        style={{ border: "1px solid var(--clay-border)" }}
+      >
+        <form onSubmit={onSubmit} className="space-y-4">
+          <FieldLabel htmlFor="setup-name">Name</FieldLabel>
           <input
+            id="setup-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             autoFocus
             maxLength={40}
-            className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
+            className="clay-input"
           />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Choose 4-digit PIN</label>
+          <FieldLabel>Choose 4-digit PIN</FieldLabel>
           <PinInput value={pin} onChange={setPin} />
-        </div>
-        <div>
-          <label className="mb-1.5 block text-xs font-medium text-neutral-600">Confirm PIN</label>
+          <FieldLabel>Confirm PIN</FieldLabel>
           <PinInput value={confirm} onChange={setConfirm} />
-        </div>
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={submitting}
-          className="mt-2 w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60"
-        >
-          {submitting ? "Saving…" : "Continue"}
-        </button>
-        {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="w-full rounded-xl py-2 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
-          >
-            Cancel
+          {error && (
+            <p className="text-sm" style={{ color: "#B4441F" }}>
+              {error}
+            </p>
+          )}
+          <button type="submit" disabled={submitting} className="clay-btn-primary">
+            {submitting ? "Saving…" : "Continue"}
           </button>
-        )}
-      </form>
+          {onCancel && (
+            <button type="button" onClick={onCancel} className="clay-btn-ghost">
+              Cancel
+            </button>
+          )}
+        </form>
+      </div>
     </Shell>
+  );
+}
+
+function FieldLabel({
+  children,
+  htmlFor,
+}: {
+  children: React.ReactNode;
+  htmlFor?: string;
+}) {
+  return (
+    <label
+      htmlFor={htmlFor}
+      className="block text-[11px] font-semibold uppercase tracking-[0.08em]"
+      style={{ color: "var(--clay-muted)" }}
+    >
+      {children}
+    </label>
   );
 }
 
@@ -217,67 +319,115 @@ function PickerScreen({
   const [error, setError] = useState<string | null>(null);
 
   return (
-    <Shell>
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Who's this?</h1>
-          <p className="mt-2 text-sm text-neutral-500">
-            {manage ? "Tap a name to remove them." : "Tap your name to continue."}
-          </p>
-        </div>
+    <Shell showWordmark>
+      <ScreenHeader
+        title="Who's this?"
+        subtitle={manage ? "Tap a name to remove them." : "Tap your name to continue."}
+        right={
+          <button
+            onClick={() => {
+              setManage((v) => !v);
+              setPending(null);
+              setError(null);
+            }}
+            className="rounded-full px-3 py-1.5 text-[13px] font-medium"
+            style={{ color: "var(--clay-accent)" }}
+          >
+            {manage ? "Done" : "Manage"}
+          </button>
+        }
+      />
+
+      <div
+        className="mt-5 overflow-hidden rounded-[14px] bg-white"
+        style={{ border: "1px solid var(--clay-border)" }}
+      >
+        <ul>
+          {members.map((m, idx) => {
+            const color = memberColor(m.id);
+            return (
+              <li
+                key={m.id}
+                style={{
+                  borderTop: idx === 0 ? "none" : "1px solid var(--clay-border)",
+                }}
+              >
+                <button
+                  onClick={() => (manage ? setPending(m) : onPick(m))}
+                  className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition active:bg-[var(--clay-accent-soft)]"
+                >
+                  <span
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[15px] font-semibold text-white"
+                    style={{ background: color }}
+                  >
+                    {initialOf(m.name)}
+                  </span>
+                  <span
+                    className="flex-1 text-[16px] font-medium"
+                    style={{ color: "var(--clay-ink)" }}
+                  >
+                    {m.name}
+                  </span>
+                  {manage ? (
+                    <span
+                      className="text-[13px] font-medium"
+                      style={{ color: "#B4441F" }}
+                    >
+                      Remove
+                    </span>
+                  ) : (
+                    <span className="text-[18px]" style={{ color: "var(--clay-muted)" }}>
+                      ›
+                    </span>
+                  )}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+
+      {!manage && (
         <button
-          onClick={() => {
-            setManage((v) => !v);
-            setPending(null);
-            setError(null);
+          onClick={onAddAnother}
+          className="mt-3 flex w-full items-center justify-center rounded-[14px] px-4 py-3.5 text-[15px] font-medium transition"
+          style={{
+            border: "1px dashed #C9BBA8",
+            color: "var(--clay-muted)",
+            background: "transparent",
           }}
-          className="rounded-lg px-3 py-1.5 text-sm font-medium text-[var(--accent-green)]"
         >
-          {manage ? "Done" : "Manage"}
+          + Add another person
         </button>
-      </div>
-      <div className="mt-8 space-y-2">
-        {members.map((m) => (
-          <button
-            key={m.id}
-            onClick={() => (manage ? setPending(m) : onPick(m))}
-            className="flex w-full items-center justify-between rounded-xl border border-neutral-200 bg-white px-4 py-4 text-left text-base font-medium text-neutral-900 transition active:scale-[0.99] hover:border-[var(--accent-green)]"
-          >
-            <span>{m.name}</span>
-            <span className={manage ? "text-red-500" : "text-neutral-400"}>
-              {manage ? "Remove" : "›"}
-            </span>
-          </button>
-        ))}
-        {!manage && (
-          <button
-            onClick={onAddAnother}
-            className="w-full rounded-xl border border-dashed border-neutral-300 px-4 py-4 text-base font-medium text-neutral-600 transition hover:border-[var(--accent-green)] hover:text-[var(--accent-green)]"
-          >
-            + Add another person
-          </button>
-        )}
-      </div>
+      )}
 
       {pending && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
           onClick={() => !busy && setPending(null)}
         >
           <div
             className="w-full max-w-md rounded-t-2xl bg-white p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
+            style={{ border: "1px solid var(--clay-border)" }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-200" />
-            <p className="text-base text-neutral-900">
+            <div
+              className="mx-auto mb-4 h-1 w-10 rounded-full"
+              style={{ background: "var(--clay-border)" }}
+            />
+            <p className="text-[15px]" style={{ color: "var(--clay-ink)" }}>
               Remove {pending.name} from the family? This can't be undone.
             </p>
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+            {error && (
+              <p className="mt-2 text-sm" style={{ color: "#B4441F" }}>
+                {error}
+              </p>
+            )}
             <div className="mt-4 flex gap-2">
               <button
                 onClick={() => setPending(null)}
                 disabled={busy}
-                className="flex-1 rounded-xl border border-neutral-200 py-3 text-base font-medium text-neutral-800"
+                className="clay-btn-secondary flex-1"
               >
                 Cancel
               </button>
@@ -291,7 +441,8 @@ function PickerScreen({
                   setPending(null);
                 }}
                 disabled={busy}
-                className="flex-1 rounded-xl bg-red-600 py-3 text-base font-medium text-white disabled:opacity-60"
+                className="flex-1 rounded-xl py-3 text-[15px] font-semibold text-white disabled:opacity-60"
+                style={{ background: "#B4441F" }}
               >
                 {busy ? "Removing…" : "Remove"}
               </button>
@@ -315,6 +466,7 @@ function PinScreen({
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const color = memberColor(member.id);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -332,27 +484,49 @@ function PinScreen({
   };
 
   return (
-    <Shell>
-      <h1 className="text-2xl font-semibold tracking-tight text-neutral-900">Hi, {member.name}</h1>
-      <p className="mt-2 text-sm text-neutral-500">Enter your 4-digit PIN.</p>
-      <form onSubmit={submit} className="mt-8 space-y-4">
-        <PinInput value={pin} onChange={setPin} autoFocus />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <button
-          type="submit"
-          disabled={pin.length !== 4 || checking}
-          className="w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-60"
+    <Shell showWordmark>
+      <div className="flex flex-col items-center text-center">
+        <span
+          className="flex h-16 w-16 items-center justify-center rounded-full text-[24px] font-semibold text-white"
+          style={{ background: color }}
         >
-          {checking ? "Checking…" : "Continue"}
-        </button>
-        <button
-          type="button"
-          onClick={onBack}
-          className="w-full rounded-xl py-2 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
+          {initialOf(member.name)}
+        </span>
+        <h2
+          className="mt-4 text-[22px] font-semibold leading-tight"
+          style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
         >
-          Not me
-        </button>
-      </form>
+          Hi, {member.name}
+        </h2>
+        <p className="mt-1.5 text-sm" style={{ color: "var(--clay-muted)" }}>
+          Enter your 4-digit PIN.
+        </p>
+      </div>
+
+      <div
+        className="mt-6 rounded-[14px] bg-white p-5"
+        style={{ border: "1px solid var(--clay-border)" }}
+      >
+        <form onSubmit={submit} className="space-y-4">
+          <PinDots length={pin.length} />
+          <PinInput value={pin} onChange={setPin} autoFocus />
+          {error && (
+            <p className="text-center text-sm" style={{ color: "#B4441F" }}>
+              {error}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={pin.length !== 4 || checking}
+            className="clay-btn-primary"
+          >
+            {checking ? "Checking…" : "Continue"}
+          </button>
+          <button type="button" onClick={onBack} className="clay-btn-ghost">
+            Not me
+          </button>
+        </form>
+      </div>
     </Shell>
   );
 }

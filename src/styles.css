@@ -180,6 +180,70 @@
   letter-spacing: -0.01em;
 }
 
+/* Shared Clay controls */
+.clay-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--clay-border);
+  background: #fff;
+  padding: 12px 14px;
+  font-size: 16px;
+  color: var(--clay-ink);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.clay-input::placeholder { color: var(--clay-muted); opacity: 0.7; }
+.clay-input:focus {
+  border-color: var(--clay-accent);
+  box-shadow: 0 0 0 3px rgba(194, 105, 63, 0.15);
+}
+
+.clay-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border-radius: 12px;
+  background: var(--clay-accent);
+  color: #fff;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: transform 120ms ease, opacity 120ms ease, background 120ms ease;
+}
+.clay-btn-primary:active { transform: scale(0.99); }
+.clay-btn-primary:disabled { opacity: 0.5; }
+
+.clay-btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  border-radius: 12px;
+  background: #fff;
+  color: var(--clay-ink);
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  border: 1px solid var(--clay-border);
+  transition: background 120ms ease;
+}
+.clay-btn-secondary:active { background: var(--clay-accent-soft); }
+
+.clay-btn-ghost {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--clay-muted);
+  background: transparent;
+  transition: color 120ms ease;
+}
+.clay-btn-ghost:hover { color: var(--clay-ink); }
+
 /* ----- Tailwind utility remaps (theme-only override) -----
  * Map the project's existing utility classes to the Warm Clay
  * palette so we don't have to restructure components. */
