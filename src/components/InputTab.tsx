@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Flag, Plus, Loader2, List } from "lucide-react";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category } from "@/lib/categories";
