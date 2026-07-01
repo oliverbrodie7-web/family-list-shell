@@ -652,10 +652,11 @@ function SuggestionRow({
   };
 
   return (
-    <button
+    <motion.button
       type="button"
       onMouseDown={(e) => e.preventDefault()}
       onClick={handle}
+      whileTap={{ scale: 0.98 }}
       className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[15px] transition-colors duration-200"
       style={{
         background: added ? "var(--clay-accent)" : "transparent",
@@ -667,7 +668,7 @@ function SuggestionRow({
         <span className="truncate">{label}</span>
       </span>
       {!added && <Plus size={14} style={{ color: "var(--clay-accent)" }} />}
-    </button>
+    </motion.button>
   );
 }
 
