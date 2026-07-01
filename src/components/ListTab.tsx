@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback, useMemo } from "react";
-import { Flag, Check, ShoppingCart, Trash2, X, Star } from "lucide-react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { Check, ShoppingCart, Trash2, X, Star, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
@@ -16,7 +16,6 @@ interface Item {
   added_by_member_id: string | null;
 }
 
-// Warm palette for member chips — assigned deterministically by member id.
 const MEMBER_COLORS = ["#C2693F", "#6F8F5E", "#D38A2E", "#8E6E8A", "#A86A4B", "#5E8A8F"];
 
 function memberColor(id: string | null | undefined) {
@@ -104,25 +103,37 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   };
 
   if (!householdId) {
-    return <p className="px-5 pt-6 text-sm" style={{ color: "var(--clay-muted)" }}>Loading household…</p>;
+    return (
+      <p className="px-5 pt-6 text-sm" style={{ color: "var(--clay-muted)" }}>
+        Loading household…
+      </p>
+    );
   }
 
-  const grouped = new Map<Category, Item[]>();
-  for (const c of CATEGORIES) grouped.set(c, []);
-  for (const it of items) {
-    const key = (CATEGORIES as readonly string[]).includes(it.category)
-      ? (it.category as Category)
-      : "misc";
-    grouped.get(key)!.push(it);
-  }
-  // Within each aisle: unchecked first, priority pinned to top of unchecked, then checked at bottom.
-  for (const arr of grouped.values()) {
-    arr.sort((a, b) => {
-      if (a.is_checked !== b.is_checked) return a.is_checked ? 1 : -1;
-      if (a.is_priority !== b.is_priority) return a.is_priority ? -1 : 1;
-      return a.created_at.localeCompare(b.created_at);
-    });
-  }
+  // Split into active vs checked; each aisle-card shows only ONE side.
+  const activeItems = items.filter((i) => !i.is_checked);
+  const checkedItems = items.filter((i) => i.is_checked);
+
+  const groupBy = (arr: Item[]) => {
+    const g = new Map<Category, Item[]>();
+    for (const c of CATEGORIES) g.set(c, []);
+    for (const it of arr) {
+      const key = (CATEGORIES as readonly string[]).includes(it.category)
+        ? (it.category as Category)
+        : "misc";
+      g.get(key)!.push(it);
+    }
+    for (const list of g.values()) {
+      list.sort((a, b) => {
+        if (a.is_priority !== b.is_priority) return a.is_priority ? -1 : 1;
+        return a.created_at.localeCompare(b.created_at);
+      });
+    }
+    return g;
+  };
+
+  const activeGrouped = groupBy(activeItems);
+  const checkedGrouped = groupBy(checkedItems);
 
   if (!loading && items.length === 0) {
     return (
@@ -138,59 +149,121 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     );
   }
 
-  const totalActive = items.filter((i) => !i.is_checked).length;
-
   return (
-    <div className="mx-auto w-full max-w-md px-4 pt-5 pb-8">
-      <p className="mb-3 px-1 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--clay-muted)" }}>
-        {totalActive} {totalActive === 1 ? "item" : "items"}
+    <div className="mx-auto w-full max-w-md px-4 pt-4 pb-8">
+      <p
+        className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider"
+        style={{ color: "var(--clay-muted)" }}
+      >
+        {activeItems.length} {activeItems.length === 1 ? "item" : "items"}
       </p>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2">
         {CATEGORIES.map((c) => {
-          const arr = grouped.get(c)!;
+          const arr = activeGrouped.get(c)!;
           if (arr.length === 0) return null;
-          const activeCount = arr.filter((i) => !i.is_checked).length;
           return (
-            <section
+            <AisleCard
               key={c}
-              className="overflow-hidden rounded-[14px] bg-white"
-              style={{ border: "1px solid var(--clay-border)" }}
-            >
-              <header className="flex items-center justify-between px-3.5 pt-2.5 pb-1.5">
-                <h2 className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--clay-muted)" }}>
-                  {CATEGORY_LABELS[c]}
-                </h2>
-                <span className="text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
-                  {activeCount}
-                </span>
-              </header>
-              <ul>
-                {arr.map((it, idx) => (
-                  <ItemRow
-                    key={it.id}
-                    item={it}
-                    isFirst={idx === 0}
-                    member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
-                    onToggle={() => toggleChecked(it)}
-                    onEdit={() => setEditing(it)}
-                    onDelete={() => deleteItem(it)}
-                  />
-                ))}
-              </ul>
-            </section>
+              label={CATEGORY_LABELS[c]}
+              count={arr.length}
+              items={arr}
+              memberMap={memberMap}
+              onToggle={toggleChecked}
+              onEdit={setEditing}
+              onDelete={deleteItem}
+            />
           );
         })}
       </div>
 
-      {editing && (
-        <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />
+      {checkedItems.length > 0 && (
+        <>
+          <p
+            className="mt-6 mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            Checked off · {checkedItems.length}
+          </p>
+          <div className="space-y-2">
+            {CATEGORIES.map((c) => {
+              const arr = checkedGrouped.get(c)!;
+              if (arr.length === 0) return null;
+              return (
+                <AisleCard
+                  key={c}
+                  label={CATEGORY_LABELS[c]}
+                  count={arr.length}
+                  items={arr}
+                  memberMap={memberMap}
+                  onToggle={toggleChecked}
+                  onEdit={setEditing}
+                  onDelete={deleteItem}
+                />
+              );
+            })}
+          </div>
+        </>
       )}
+
+      {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
     </div>
   );
 }
 
-function ItemRow({
+function AisleCard({
+  label,
+  count,
+  items,
+  memberMap,
+  onToggle,
+  onEdit,
+  onDelete,
+}: {
+  label: string;
+  count: number;
+  items: Item[];
+  memberMap: Map<string, { name: string; initial: string; color: string }>;
+  onToggle: (i: Item) => void;
+  onEdit: (i: Item) => void;
+  onDelete: (i: Item) => void;
+}) {
+  return (
+    <section
+      className="overflow-hidden rounded-[14px] bg-white"
+      style={{ border: "1px solid var(--clay-border)" }}
+    >
+      <header className="flex items-center justify-between px-3.5 pt-2 pb-1">
+        <h2
+          className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+          style={{ color: "var(--clay-muted)" }}
+        >
+          {label}
+        </h2>
+        <span className="text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
+          {count}
+        </span>
+      </header>
+      <ul>
+        {items.map((it, idx) => (
+          <SwipeRow
+            key={it.id}
+            item={it}
+            isFirst={idx === 0}
+            member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
+            onToggle={() => onToggle(it)}
+            onEdit={() => onEdit(it)}
+            onDelete={() => onDelete(it)}
+          />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+const SWIPE_MAX = 84;
+
+function SwipeRow({
   item,
   isFirst,
   member,
@@ -205,84 +278,158 @@ function ItemRow({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const [dx, setDx] = useState(0);
+  const [open, setOpen] = useState(false);
+  const startX = useRef(0);
+  const startY = useRef(0);
+  const dragging = useRef(false);
+  const decided = useRef(false);
+  const axisHoriz = useRef(false);
+
   const checked = item.is_checked;
   const priority = item.is_priority && !checked;
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
+    dragging.current = true;
+    decided.current = false;
+    axisHoriz.current = false;
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!dragging.current) return;
+    const nx = e.touches[0].clientX - startX.current;
+    const ny = e.touches[0].clientY - startY.current;
+    if (!decided.current) {
+      if (Math.abs(nx) < 6 && Math.abs(ny) < 6) return;
+      axisHoriz.current = Math.abs(nx) > Math.abs(ny);
+      decided.current = true;
+    }
+    if (!axisHoriz.current) return;
+    const base = open ? -SWIPE_MAX : 0;
+    let next = base + nx;
+    if (next > 0) next = 0;
+    if (next < -SWIPE_MAX * 1.2) next = -SWIPE_MAX * 1.2;
+    setDx(next);
+  };
+  const onTouchEnd = () => {
+    dragging.current = false;
+    if (!axisHoriz.current) {
+      setDx(open ? -SWIPE_MAX : 0);
+      return;
+    }
+    if (dx < -SWIPE_MAX / 2) {
+      setOpen(true);
+      setDx(-SWIPE_MAX);
+    } else {
+      setOpen(false);
+      setDx(0);
+    }
+  };
+
+  const handleNameClick = () => {
+    if (open) {
+      setOpen(false);
+      setDx(0);
+      return;
+    }
+    onEdit();
+  };
+
+  const handleDelete = () => {
+    setOpen(false);
+    setDx(0);
+    onDelete();
+  };
+
   return (
     <li
-      className="relative flex items-center gap-2.5 px-3.5 py-2"
-      style={{
-        borderTop: isFirst ? "none" : "1px solid var(--clay-border)",
-      }}
+      className="relative"
+      style={{ borderTop: isFirst ? "none" : "1px solid var(--clay-border)" }}
     >
-      {priority && (
-        <span
-          aria-hidden
-          className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r"
-          style={{ background: "var(--clay-priority)" }}
-        />
-      )}
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-label={checked ? "Uncheck" : "Check off"}
-        className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition"
-        style={{
-          border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
-          background: checked ? "var(--clay-accent)" : "transparent",
-          color: "#fff",
-        }}
+      {/* Swipe delete underlay */}
+      <div
+        aria-hidden
+        className="absolute inset-y-0 right-0 flex items-center justify-end"
+        style={{ width: SWIPE_MAX, background: "#C2693F" }}
       >
-        {checked && <Check size={12} strokeWidth={3.5} />}
-      </button>
-
-      <button
-        type="button"
-        onClick={onEdit}
-        className="flex min-h-[36px] flex-1 items-center gap-1.5 text-left"
-      >
-        <span
-          className="text-[14px] leading-tight"
-          style={{
-            color: checked ? "var(--clay-muted)" : "var(--clay-ink)",
-            opacity: checked ? 0.7 : 1,
-          }}
+        <button
+          type="button"
+          onClick={handleDelete}
+          className="flex h-full w-full items-center justify-center text-white"
+          aria-label="Delete item"
         >
-          {item.display_name}
-        </span>
+          <Trash2 size={16} />
+          <span className="ml-1.5 text-[13px] font-medium">Delete</span>
+        </button>
+      </div>
+
+      <div
+        className="relative flex items-center gap-2.5 bg-white px-3.5 py-2"
+        style={{
+          transform: `translateX(${dx}px)`,
+          transition: dragging.current ? "none" : "transform 180ms ease",
+        }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {priority && (
-          <Star
-            size={12}
-            fill="currentColor"
-            style={{ color: "var(--clay-priority)" }}
+          <span
+            aria-hidden
+            className="absolute left-0 top-1 bottom-1 w-[3px]"
+            style={{ background: "var(--clay-accent)" }}
           />
         )}
-        {item.quantity != null && (
-          <span className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
-            ×{item.quantity}
+
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label={checked ? "Uncheck" : "Check off"}
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition"
+          style={{
+            border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
+            background: checked ? "var(--clay-accent)" : "transparent",
+            color: "#fff",
+          }}
+        >
+          {checked && <Check size={12} strokeWidth={3.5} />}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleNameClick}
+          className="flex min-h-[28px] flex-1 items-center gap-1.5 text-left"
+        >
+          <span
+            className="text-[14px] leading-tight"
+            style={{
+              color: checked ? "var(--clay-muted)" : "var(--clay-ink)",
+              opacity: checked ? 0.7 : 1,
+            }}
+          >
+            {item.display_name}
+          </span>
+          {priority && (
+            <Star size={12} fill="currentColor" style={{ color: "var(--clay-priority)" }} />
+          )}
+          {item.quantity != null && (
+            <span className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
+              ×{item.quantity}
+            </span>
+          )}
+        </button>
+
+        {member && (
+          <span
+            title={`Added by ${member.name}`}
+            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+            style={{ background: member.color, opacity: checked ? 0.5 : 1 }}
+          >
+            {member.initial}
           </span>
         )}
-      </button>
-
-      {member && (
-        <span
-          title={`Added by ${member.name}`}
-          className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-          style={{ background: member.color, opacity: checked ? 0.5 : 1 }}
-        >
-          {member.initial}
-        </span>
-      )}
-
-      <button
-        type="button"
-        onClick={onDelete}
-        aria-label="Delete item"
-        className="-mr-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition active:bg-[var(--clay-accent-soft)]"
-        style={{ color: "#C9BBA8" }}
-      >
-        <Trash2 size={14} />
-      </button>
+      </div>
     </li>
   );
 }
@@ -298,7 +445,9 @@ function EditSheet({
 }) {
   const [name, setName] = useState(item.display_name);
   const [category, setCategory] = useState<Category>(
-    (CATEGORIES as readonly string[]).includes(item.category) ? (item.category as Category) : "misc",
+    (CATEGORIES as readonly string[]).includes(item.category)
+      ? (item.category as Category)
+      : "misc",
   );
   const [qty, setQty] = useState<string>(item.quantity != null ? String(item.quantity) : "");
   const [priority, setPriority] = useState(item.is_priority);
@@ -326,7 +475,9 @@ function EditSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-semibold" style={{ color: "var(--clay-ink)" }}>Edit item</h3>
+          <h3 className="text-base font-semibold" style={{ color: "var(--clay-ink)" }}>
+            Edit item
+          </h3>
           <button
             type="button"
             onClick={onCancel}
@@ -375,7 +526,10 @@ function EditSheet({
           </button>
         </div>
 
-        <p className="mt-4 mb-2 text-[11px] font-semibold uppercase tracking-wider" style={{ color: "var(--clay-muted)" }}>
+        <p
+          className="mt-4 mb-2 text-[11px] font-semibold uppercase tracking-wider"
+          style={{ color: "var(--clay-muted)" }}
+        >
           Category
         </p>
         <div className="flex flex-wrap gap-1.5">
