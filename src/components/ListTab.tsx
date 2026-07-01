@@ -412,14 +412,16 @@ function SwipeRow({
           type="button"
           onClick={onToggle}
           aria-label={checked ? "Uncheck" : "Check off"}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
           style={{
             border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
             background: checked ? "var(--clay-accent)" : "transparent",
             color: "#fff",
+            transition: "background 180ms ease, border-color 180ms ease, transform 180ms ease",
+            transform: checked ? "scale(1.08)" : "scale(1)",
           }}
         >
-          {checked && <Check size={12} strokeWidth={3.5} />}
+          {checked && <Check size={12} strokeWidth={3.5} className="animate-scale-in" />}
         </button>
 
         <button
