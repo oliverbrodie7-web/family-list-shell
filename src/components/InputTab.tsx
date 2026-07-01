@@ -565,24 +565,87 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   );
 }
 
-function Chip({
+function AddChip({
   label,
-  onClick,
+  onAdd,
 }: {
   label: string;
-  onClick: () => void;
+  onAdd: () => void;
 }) {
+  const [added, setAdded] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
+  const handle = () => {
+    onAdd();
+    setAdded(true);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => setAdded(false), 1000);
+  };
+
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-[13px] transition active:scale-[0.97]"
+      onClick={handle}
+      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] transition-colors duration-200 active:scale-[0.97]"
       style={{
-        border: "1px solid var(--clay-border)",
-        color: "var(--clay-ink)",
+        border: `1px solid ${added ? "var(--clay-accent)" : "var(--clay-border)"}`,
+        background: added ? "var(--clay-accent)" : "#FFFFFF",
+        color: added ? "#FFFFFF" : "var(--clay-ink)",
       }}
     >
+      {added && <Check size={12} strokeWidth={3} />}
       {label}
+    </button>
+  );
+}
+
+function SuggestionRow({
+  label,
+  onAdd,
+}: {
+  label: string;
+  onAdd: () => void;
+}) {
+  const [added, setAdded] = useState(false);
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current) window.clearTimeout(timerRef.current);
+    },
+    [],
+  );
+
+  const handle = () => {
+    onAdd();
+    setAdded(true);
+    if (timerRef.current) window.clearTimeout(timerRef.current);
+    timerRef.current = window.setTimeout(() => setAdded(false), 1000);
+  };
+
+  return (
+    <button
+      type="button"
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={handle}
+      className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[15px] transition-colors duration-200"
+      style={{
+        background: added ? "var(--clay-accent)" : "transparent",
+        color: added ? "#FFFFFF" : "var(--clay-ink)",
+      }}
+    >
+      <span className="flex min-w-0 items-center gap-1.5 truncate">
+        {added && <Check size={14} strokeWidth={3} />}
+        <span className="truncate">{label}</span>
+      </span>
+      {!added && <Plus size={14} style={{ color: "var(--clay-accent)" }} />}
     </button>
   );
 }
