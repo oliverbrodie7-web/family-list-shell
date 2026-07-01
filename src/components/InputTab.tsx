@@ -561,7 +561,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       {browseOpen && (
         <BrowseSheet
           onClose={() => setBrowseOpen(false)}
-          onPick={(name) => browseAdd(name)}
+          onPick={(name) => chipAdd(name)}
         />
       )}
     </div>
