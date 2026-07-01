@@ -85,6 +85,9 @@ export function BatchConfirmSheet({
     setSaving(true);
     try {
       await onConfirm(rows);
+    } catch {
+      // Parent surfaces the error (toast). Keep the sheet open so the user
+      // can retry without losing their reviewed items.
     } finally {
       setSaving(false);
     }
