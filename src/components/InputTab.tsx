@@ -322,16 +322,13 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                     className="border-t first:border-t-0"
                     style={{ borderColor: "var(--clay-border)" }}
                   >
-                    <button
-                      type="button"
-                      onMouseDown={(e) => e.preventDefault()}
-                      onClick={() => pickSuggestion(s)}
-                      className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[15px] active:bg-[var(--clay-accent-soft)]"
-                      style={{ color: "var(--clay-ink)" }}
-                    >
-                      <span className="truncate">{s}</span>
-                      <Plus size={14} style={{ color: "var(--clay-accent)" }} />
-                    </button>
+                    <SuggestionRow
+                      label={s}
+                      onAdd={() => {
+                        notifyAdded(s);
+                        pickSuggestion(s);
+                      }}
+                    />
                   </li>
                 ))}
               </ul>
