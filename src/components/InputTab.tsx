@@ -267,9 +267,15 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     setPriority(false);
   };
 
-  const browseAdd = (name: string) => {
+  const notifyAdded = (name: string) => {
+    toast.success(`${name} added`, { id: "add-feedback", duration: 2000 });
+  };
+
+  const chipAdd = (name: string) => {
+    notifyAdded(name);
     quickAdd(name);
   };
+
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-5 pb-10">
