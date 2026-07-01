@@ -223,3 +223,27 @@
 .text-emerald-600 { color: var(--clay-success) !important; }
 .bg-emerald-500 { background-color: var(--clay-success) !important; }
 
+/* Confetti (end-of-shop) */
+@keyframes clay-confetti-fall {
+  0% { transform: translate3d(0, -20px, 0) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translate3d(var(--cx, 0px), 110vh, 0) rotate(var(--cr, 540deg)); opacity: 0.9; }
+}
+.clay-confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 8px;
+  height: 12px;
+  border-radius: 2px;
+  animation: clay-confetti-fall linear forwards;
+  will-change: transform, opacity;
+}
+@keyframes clay-celebrate-in {
+  0% { opacity: 0; transform: translateY(6px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes clay-celebrate-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
