@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Flag, Plus, Loader2, List, Sparkles } from "lucide-react";
+import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -41,6 +41,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [recent, setRecent] = useState<RecentItem[]>([]);
   const [batchItems, setBatchItems] = useState<string[] | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [browseOpen, setBrowseOpen] = useState(false);
   const [regularsTick, setRegularsTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -149,7 +150,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
   const quickAdd = async (name: string) => {
     if (!householdId || !userId) return;
-    // Fire-and-forget so taps feel instant and multi-tap works.
     void insertSingle(name, null, false);
   };
 
@@ -234,7 +234,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       .select("id, display_name, quantity, is_priority, category");
 
     if (insertErr) {
-      console.log("BULK ERROR message:", insertErr?.message);
       const msg =
         insertErr.message ||
         (insertErr as { hint?: string }).hint ||
@@ -248,7 +247,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       ...(d as RecentItem),
       categorizing: false,
     }));
-    // Bump regulars for every successful bulk add.
     for (const row of added) bumpRegular(row.display_name);
     setRegularsTick((t) => t + 1);
 
@@ -269,8 +267,9 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     setPriority(false);
   };
 
-  // Hide any common item that's already a regular (avoid duplication).
-  const regularsSet = new Set(regulars.map((r) => normalizeName(r.name)));
+  const browseAdd = (name: string) => {
+    quickAdd(name);
+  };
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-5 pb-10">
@@ -311,7 +310,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
               style={{ border: "1px solid var(--clay-border)" }}
             >
               <ul>
-                {suggestions.map((s, idx) => (
+                {suggestions.map((s) => (
                   <li
                     key={s}
                     className="border-t first:border-t-0"
@@ -325,10 +324,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                       style={{ color: "var(--clay-ink)" }}
                     >
                       <span className="truncate">{s}</span>
-                      <Plus
-                        size={14}
-                        style={{ color: "var(--clay-accent)" }}
-                      />
+                      <Plus size={14} style={{ color: "var(--clay-accent)" }} />
                     </button>
                   </li>
                 ))}
@@ -402,78 +398,52 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       )}
 
       {/* ---------- YOUR REGULARS ---------- */}
-      {regulars.length > 0 && (
-        <section className="mt-7">
-          <div className="mb-2 flex items-center gap-1.5 px-1">
-            <Sparkles
-              size={12}
-              style={{ color: "var(--clay-accent)" }}
-            />
-            <h2
-              className="text-[11px] font-semibold uppercase tracking-[0.08em]"
-              style={{ color: "var(--clay-muted)" }}
-            >
-              Your regulars
-            </h2>
-          </div>
+      <section className="mt-7">
+        <div className="mb-2 flex items-center gap-1.5 px-1">
+          <Sparkles size={12} style={{ color: "var(--clay-accent)" }} />
+          <h2
+            className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            Your regulars
+          </h2>
+        </div>
+        {regulars.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {regulars.map((r) => (
               <Chip
                 key={`reg-${r.name}`}
                 label={r.name}
                 onClick={() => quickAdd(r.name)}
-                emphasis
               />
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <p
+            className="px-1 text-[13px]"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            Your most-added items will show up here.
+          </p>
+        )}
+      </section>
 
-      {/* ---------- COMMON ITEMS ---------- */}
-      <section className="mt-7">
-        <h2
-          className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em]"
-          style={{ color: "var(--clay-muted)" }}
-        >
-          Common items
-        </h2>
-        <div
-          className="overflow-hidden rounded-[14px] bg-white"
+      {/* ---------- BROWSE COMMON ITEMS ---------- */}
+      <section className="mt-5">
+        <button
+          type="button"
+          onClick={() => setBrowseOpen(true)}
+          className="flex w-full items-center justify-between rounded-[14px] bg-white px-4 py-3.5 text-left transition active:bg-[var(--clay-accent-soft)]"
           style={{ border: "1px solid var(--clay-border)" }}
         >
-          {COMMON_AISLES.map((aisle, idx) => {
-            const items = aisle.items.filter(
-              (i) => !regularsSet.has(normalizeName(i)),
-            );
-            if (items.length === 0) return null;
-            return (
-              <div
-                key={aisle.label}
-                className="px-3.5 py-3"
-                style={{
-                  borderTop:
-                    idx === 0 ? "none" : "1px solid var(--clay-border)",
-                }}
-              >
-                <p
-                  className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em]"
-                  style={{ color: "var(--clay-muted)" }}
-                >
-                  {aisle.label}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {items.map((it) => (
-                    <Chip
-                      key={`${aisle.label}-${it}`}
-                      label={it}
-                      onClick={() => quickAdd(it)}
-                    />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          <span
+            className="text-[15px]"
+            style={{ color: "var(--clay-ink)" }}
+          >
+            Browse common items
+          </span>
+          <ChevronRight size={18} style={{ color: "var(--clay-muted)" }} />
+        </button>
       </section>
 
       {/* ---------- JUST ADDED ---------- */}
@@ -581,6 +551,13 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           onConfirm={confirmBatch}
         />
       )}
+
+      {browseOpen && (
+        <BrowseSheet
+          onClose={() => setBrowseOpen(false)}
+          onPick={(name) => browseAdd(name)}
+        />
+      )}
     </div>
   );
 }
@@ -588,31 +565,128 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 function Chip({
   label,
   onClick,
-  emphasis = false,
 }: {
   label: string;
   onClick: () => void;
-  emphasis?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] transition active:scale-[0.97]"
+      className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-[13px] transition active:scale-[0.97]"
       style={{
-        background: emphasis ? "var(--clay-accent-soft)" : "#FFFFFF",
-        border: `1px solid ${emphasis ? "var(--clay-accent-soft)" : "var(--clay-border)"}`,
-        color: emphasis ? "var(--clay-accent)" : "var(--clay-ink)",
+        border: "1px solid var(--clay-border)",
+        color: "var(--clay-ink)",
       }}
     >
-      <Plus
-        size={11}
-        strokeWidth={2.5}
-        style={{
-          color: emphasis ? "var(--clay-accent)" : "var(--clay-muted)",
-        }}
-      />
       {label}
     </button>
   );
 }
+
+function BrowseSheet({
+  onClose,
+  onPick,
+}: {
+  onClose: () => void;
+  onPick: (name: string) => void;
+}) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        className="absolute inset-0 bg-black/30"
+        onClick={onClose}
+      />
+      <div
+        className="relative w-full max-w-md rounded-t-[20px] bg-[var(--clay-bg)]"
+        style={{
+          maxHeight: "85vh",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          border: "1px solid var(--clay-border)",
+        }}
+      >
+        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+          <h3
+            className="text-[16px] font-semibold"
+            style={{ color: "var(--clay-ink)" }}
+          >
+            Browse common items
+          </h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white"
+            style={{ border: "1px solid var(--clay-border)" }}
+          >
+            <X size={16} style={{ color: "var(--clay-muted)" }} />
+          </button>
+        </div>
+        <p
+          className="px-5 pb-3 text-[12px]"
+          style={{ color: "var(--clay-muted)" }}
+        >
+          Tap any item to add it.
+        </p>
+        <div
+          className="overflow-y-auto px-5 pb-6"
+          style={{ maxHeight: "calc(85vh - 84px)" }}
+        >
+          <div
+            className="overflow-hidden rounded-[14px] bg-white"
+            style={{ border: "1px solid var(--clay-border)" }}
+          >
+            {COMMON_AISLES.map((aisle, idx) => (
+              <div
+                key={aisle.label}
+                className="px-3.5 py-3"
+                style={{
+                  borderTop:
+                    idx === 0 ? "none" : "1px solid var(--clay-border)",
+                }}
+              >
+                <p
+                  className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em]"
+                  style={{ color: "var(--clay-muted)" }}
+                >
+                  {aisle.label}
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {aisle.items.map((it) => (
+                    <button
+                      key={`${aisle.label}-${it}`}
+                      type="button"
+                      onClick={() => onPick(it)}
+                      className="inline-flex items-center rounded-full bg-white px-3 py-1.5 text-[13px] transition active:scale-[0.97]"
+                      style={{
+                        border: "1px solid var(--clay-border)",
+                        color: "var(--clay-ink)",
+                      }}
+                    >
+                      {it}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Silence unused import in case tree-shaking complains
+void normalizeName;
