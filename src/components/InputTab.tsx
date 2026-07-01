@@ -439,9 +439,10 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
       {/* ---------- BROWSE COMMON ITEMS ---------- */}
       <section className="mt-5">
-        <button
+        <motion.button
           type="button"
           onClick={() => setBrowseOpen(true)}
+          whileTap={{ scale: 0.985 }}
           className="flex w-full items-center justify-between rounded-[14px] bg-white px-4 py-3.5 text-left transition active:bg-[var(--clay-accent-soft)]"
           style={{ border: "1px solid var(--clay-border)" }}
         >
@@ -452,7 +453,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             Browse common items
           </span>
           <ChevronRight size={18} style={{ color: "var(--clay-muted)" }} />
-        </button>
+        </motion.button>
       </section>
 
       {/* ---------- JUST ADDED ---------- */}
