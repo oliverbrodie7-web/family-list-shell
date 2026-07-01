@@ -330,7 +330,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                         style={{ color: "var(--clay-accent)" }}
                       />
                     </button>
-                    {idx}
                   </li>
                 ))}
               </ul>
