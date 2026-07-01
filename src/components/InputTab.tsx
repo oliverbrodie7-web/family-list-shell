@@ -414,10 +414,10 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         {regulars.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {regulars.map((r) => (
-              <Chip
+              <AddChip
                 key={`reg-${r.name}`}
                 label={r.name}
-                onClick={() => quickAdd(r.name)}
+                onAdd={() => chipAdd(r.name)}
               />
             ))}
           </div>
