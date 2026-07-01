@@ -235,42 +235,38 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pt-6">
-      <form onSubmit={submit} className="space-y-3">
-        <div className="flex items-center gap-2">
+      <form onSubmit={submit} className="space-y-2.5">
+        <div
+          className="flex items-center gap-2 rounded-[14px] bg-white pl-4 pr-1.5 py-1.5"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
           <input
             ref={inputRef}
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Add an item…"
-            className="flex-1 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)]"
+            className="flex-1 bg-transparent py-2 text-[16px] outline-none placeholder:opacity-60"
+            style={{ color: "var(--clay-ink)" }}
           />
-          <button
-            type="button"
-            onClick={() => setPriority((p) => !p)}
-            aria-label="Toggle priority"
-            aria-pressed={priority}
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition ${
-              priority
-                ? "border-amber-300 bg-amber-50 text-amber-500"
-                : "border-neutral-200 bg-white text-neutral-400"
-            }`}
-          >
-            <Flag size={20} fill={priority ? "currentColor" : "none"} />
-          </button>
           <button
             type="submit"
             disabled={!text.trim() || !householdId || submitting}
             aria-label="Add item"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-green)] text-white transition disabled:opacity-40"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white transition disabled:opacity-40"
+            style={{ background: "var(--clay-accent)" }}
           >
-            <Plus size={22} />
+            <Plus size={20} strokeWidth={2.5} />
           </button>
         </div>
 
         <div className="flex items-center justify-between gap-2 pl-1">
-          <div className="flex items-center gap-2">
-            <label className="text-xs text-neutral-400" htmlFor="qty-input">
+          <div className="flex items-center gap-1.5">
+            <label
+              htmlFor="qty-input"
+              className="text-[12px]"
+              style={{ color: "var(--clay-muted)" }}
+            >
               + qty
             </label>
             <input
@@ -280,65 +276,136 @@ export function InputTab({ householdId }: { householdId: string | null }) {
               value={quantity}
               onChange={(e) => setQuantity(e.target.value)}
               placeholder="1"
-              className="w-14 rounded-full border border-neutral-200 bg-white px-3 py-1 text-center text-base text-neutral-700 outline-none transition focus:border-[var(--accent-green)]"
+              className="w-14 rounded-full bg-white px-3 py-1 text-center text-[16px] outline-none"
+              style={{
+                border: "1px solid var(--clay-border)",
+                color: "var(--clay-ink)",
+              }}
             />
+            <button
+              type="button"
+              onClick={() => setPriority((p) => !p)}
+              aria-label="Toggle priority"
+              aria-pressed={priority}
+              className="ml-1 flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] transition"
+              style={{
+                border: "1px solid var(--clay-border)",
+                background: priority ? "#FBEED9" : "#FFFFFF",
+                color: priority ? "var(--clay-priority)" : "var(--clay-muted)",
+              }}
+            >
+              <Flag size={12} fill={priority ? "currentColor" : "none"} />
+              priority
+            </button>
           </div>
           <button
             type="button"
             onClick={() => setBulkOpen(true)}
-            className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-medium text-neutral-600 transition active:bg-neutral-50"
+            className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium transition"
+            style={{
+              border: "1px solid var(--clay-border)",
+              color: "var(--clay-muted)",
+            }}
           >
-            <List size={14} />
+            <List size={13} />
             Bulk add
           </button>
         </div>
       </form>
 
-      {error && <p className="mt-3 text-sm text-red-500">{error}</p>}
+      {error && (
+        <p className="mt-3 text-sm" style={{ color: "#B4441F" }}>
+          {error}
+        </p>
+      )}
       {!householdId && (
-        <p className="mt-3 text-sm text-neutral-400">Loading household…</p>
+        <p className="mt-3 text-sm" style={{ color: "var(--clay-muted)" }}>
+          Loading household…
+        </p>
       )}
 
       {recent.length > 0 && (
-        <div className="mt-8">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
+        <div className="mt-7">
+          <p
+            className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--clay-muted)" }}
+          >
             Just added
           </p>
-          <ul className="space-y-1.5">
-            {recent.map((it) => (
-              <li
-                key={it.id}
-                className="flex items-center justify-between rounded-lg border border-neutral-100 bg-neutral-50 px-3 py-2"
-              >
-                <div className="flex items-center gap-2 text-sm text-neutral-800">
-                  <span>{it.display_name}</span>
-                  {it.quantity != null && (
-                    <span className="text-neutral-400">×{it.quantity}</span>
-                  )}
+          <section
+            className="overflow-hidden rounded-[14px] bg-white"
+            style={{ border: "1px solid var(--clay-border)" }}
+          >
+            <ul>
+              {recent.map((it, idx) => (
+                <li
+                  key={it.id}
+                  className="flex items-center justify-between gap-2 px-3.5 py-2.5"
+                  style={{
+                    borderTop:
+                      idx === 0 ? "none" : "1px solid var(--clay-border)",
+                  }}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span
+                      className="truncate text-[14px]"
+                      style={{ color: "var(--clay-ink)" }}
+                    >
+                      {it.display_name}
+                    </span>
+                    {it.quantity != null && (
+                      <span
+                        className="text-[12px]"
+                        style={{ color: "var(--clay-muted)" }}
+                      >
+                        ×{it.quantity}
+                      </span>
+                    )}
+                  </div>
+
                   {it.categorizing || !it.category ? (
-                    <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-neutral-400">
+                    <span
+                      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                      style={{
+                        background: "var(--clay-border)",
+                        color: "var(--clay-muted)",
+                      }}
+                    >
                       <Loader2 size={10} className="animate-spin" />
                       sorting
                     </span>
                   ) : (
-                    <span className="text-[10px] uppercase tracking-wider text-neutral-400">
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                      style={{
+                        background: "var(--clay-accent-soft)",
+                        color: "var(--clay-accent)",
+                      }}
+                    >
                       {CATEGORY_LABELS[it.category] ?? it.category}
                     </span>
                   )}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => toggleRecentPriority(it.id, !it.is_priority)}
-                  aria-label="Toggle priority"
-                  className={`p-1 transition ${
-                    it.is_priority ? "text-amber-500" : "text-neutral-300"
-                  }`}
-                >
-                  <Flag size={16} fill={it.is_priority ? "currentColor" : "none"} />
-                </button>
-              </li>
-            ))}
-          </ul>
+
+                  <button
+                    type="button"
+                    onClick={() => toggleRecentPriority(it.id, !it.is_priority)}
+                    aria-label="Toggle priority"
+                    className="p-1 transition"
+                    style={{
+                      color: it.is_priority
+                        ? "var(--clay-priority)"
+                        : "#C9BBA8",
+                    }}
+                  >
+                    <Flag
+                      size={14}
+                      fill={it.is_priority ? "currentColor" : "none"}
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
         </div>
       )}
 
