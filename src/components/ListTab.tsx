@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Check, ShoppingCart, Trash2, X, Star, Flag } from "lucide-react";
+import { Check, ShoppingCart, Trash2, X, Star, Flag, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
@@ -29,6 +29,8 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Item | null>(null);
+  const [trolleyOpen, setTrolleyOpen] = useState(true);
+  const [confirmClear, setConfirmClear] = useState(false);
   const { members } = useMember();
 
   const memberMap = useMemo(() => {
@@ -63,8 +65,19 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
 
   const toggleChecked = async (item: Item) => {
     const next = !item.is_checked;
+    if (next && typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate?.(10); } catch { /* ignore */ }
+    }
     setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, is_checked: next } : i)));
     await supabase.from("shopping_list_items").update({ is_checked: next }).eq("id", item.id);
+  };
+
+  const clearTrolley = async () => {
+    const checkedIds = items.filter((i) => i.is_checked).map((i) => i.id);
+    if (checkedIds.length === 0) return;
+    setItems((arr) => arr.filter((i) => !i.is_checked));
+    setConfirmClear(false);
+    await supabase.from("shopping_list_items").delete().in("id", checkedIds);
   };
 
   const deleteItem = async (item: Item) => {
@@ -133,7 +146,12 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   };
 
   const activeGrouped = groupBy(activeItems);
-  const checkedGrouped = groupBy(checkedItems);
+  const trolleyItems = [...checkedItems].sort((a, b) =>
+    a.created_at.localeCompare(b.created_at),
+  );
+  const total = items.length;
+  const done = checkedItems.length;
+  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
   if (!loading && items.length === 0) {
     return (
@@ -151,12 +169,28 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-4 pb-8">
-      <p
-        className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider"
-        style={{ color: "var(--clay-muted)" }}
-      >
-        {activeItems.length} {activeItems.length === 1 ? "item" : "items"}
-      </p>
+      <div className="mb-3 px-1">
+        <div className="flex items-center justify-between">
+          <p
+            className="text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            {activeItems.length} {activeItems.length === 1 ? "item" : "items"} left
+          </p>
+          <p className="text-[11px]" style={{ color: "var(--clay-muted)" }}>
+            {done} of {total} in the trolley
+          </p>
+        </div>
+        <div
+          className="mt-1.5 h-1 w-full overflow-hidden rounded-full"
+          style={{ background: "var(--clay-border)" }}
+        >
+          <div
+            className="h-full rounded-full transition-[width] duration-300 ease-out"
+            style={{ width: `${pct}%`, background: "var(--clay-accent)" }}
+          />
+        </div>
+      </div>
 
       <div className="space-y-2">
         {CATEGORIES.map((c) => {
@@ -177,36 +211,28 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
         })}
       </div>
 
-      {checkedItems.length > 0 && (
-        <>
-          <p
-            className="mt-6 mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--clay-muted)" }}
-          >
-            Checked off · {checkedItems.length}
-          </p>
-          <div className="space-y-2">
-            {CATEGORIES.map((c) => {
-              const arr = checkedGrouped.get(c)!;
-              if (arr.length === 0) return null;
-              return (
-                <AisleCard
-                  key={c}
-                  label={CATEGORY_LABELS[c]}
-                  count={arr.length}
-                  items={arr}
-                  memberMap={memberMap}
-                  onToggle={toggleChecked}
-                  onEdit={setEditing}
-                  onDelete={deleteItem}
-                />
-              );
-            })}
-          </div>
-        </>
+      {trolleyItems.length > 0 && (
+        <div className="mt-4">
+          <TrolleyCard
+            items={trolleyItems}
+            memberMap={memberMap}
+            open={trolleyOpen}
+            onToggleOpen={() => setTrolleyOpen((o) => !o)}
+            onUntick={toggleChecked}
+            onClear={() => setConfirmClear(true)}
+          />
+        </div>
       )}
 
       {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
+
+      {confirmClear && (
+        <ConfirmClearDialog
+          count={trolleyItems.length}
+          onCancel={() => setConfirmClear(false)}
+          onConfirm={clearTrolley}
+        />
+      )}
     </div>
   );
 }
@@ -386,14 +412,16 @@ function SwipeRow({
           type="button"
           onClick={onToggle}
           aria-label={checked ? "Uncheck" : "Check off"}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
           style={{
             border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
             background: checked ? "var(--clay-accent)" : "transparent",
             color: "#fff",
+            transition: "background 180ms ease, border-color 180ms ease, transform 180ms ease",
+            transform: checked ? "scale(1.08)" : "scale(1)",
           }}
         >
-          {checked && <Check size={12} strokeWidth={3.5} />}
+          {checked && <Check size={12} strokeWidth={3.5} className="animate-scale-in" />}
         </button>
 
         <button
@@ -569,6 +597,179 @@ function EditSheet({
             style={{ background: "var(--clay-accent)" }}
           >
             Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TrolleyCard({
+  items,
+  memberMap,
+  open,
+  onToggleOpen,
+  onUntick,
+  onClear,
+}: {
+  items: Item[];
+  memberMap: Map<string, { name: string; initial: string; color: string }>;
+  open: boolean;
+  onToggleOpen: () => void;
+  onUntick: (i: Item) => void;
+  onClear: () => void;
+}) {
+  return (
+    <section
+      className="overflow-hidden rounded-[14px] bg-white"
+      style={{ border: "1px solid var(--clay-border)" }}
+    >
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        className="flex w-full items-center justify-between px-3.5 py-2 text-left"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-2">
+          <ShoppingCart size={13} style={{ color: "var(--clay-muted)" }} />
+          <span
+            className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            In the trolley
+          </span>
+          <span className="text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
+            · {items.length}
+          </span>
+        </span>
+        <ChevronDown
+          size={16}
+          style={{
+            color: "var(--clay-muted)",
+            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
+            transition: "transform 180ms ease",
+          }}
+        />
+      </button>
+
+      {open && (
+        <>
+          <ul style={{ borderTop: "1px solid var(--clay-border)" }}>
+            {items.map((it) => {
+              const member = it.added_by_member_id
+                ? memberMap.get(it.added_by_member_id)
+                : undefined;
+              return (
+                <li
+                  key={it.id}
+                  style={{ borderTop: "1px solid var(--clay-border)" }}
+                  className="first:border-t-0"
+                >
+                  <div className="flex items-center gap-2.5 bg-white px-3.5 py-2">
+                    <button
+                      type="button"
+                      onClick={() => onUntick(it)}
+                      aria-label="Return to list"
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        border: "1.8px solid var(--clay-accent)",
+                        background: "var(--clay-accent)",
+                        color: "#fff",
+                      }}
+                    >
+                      <Check size={12} strokeWidth={3.5} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onUntick(it)}
+                      className="flex min-h-[28px] flex-1 items-center gap-1.5 text-left"
+                    >
+                      <span
+                        className="text-[14px] leading-tight"
+                        style={{ color: "var(--clay-muted)", opacity: 0.75 }}
+                      >
+                        {it.display_name}
+                      </span>
+                      {it.quantity != null && (
+                        <span className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
+                          ×{it.quantity}
+                        </span>
+                      )}
+                    </button>
+                    {member && (
+                      <span
+                        title={`Added by ${member.name}`}
+                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                        style={{ background: member.color, opacity: 0.5 }}
+                      >
+                        {member.initial}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div
+            className="px-3.5 py-2"
+            style={{ borderTop: "1px solid var(--clay-border)" }}
+          >
+            <button
+              type="button"
+              onClick={onClear}
+              className="w-full rounded-lg py-2 text-[13px] font-semibold text-white"
+              style={{ background: "var(--clay-accent)" }}
+            >
+              Done — clear trolley
+            </button>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+function ConfirmClearDialog({
+  count,
+  onCancel,
+  onConfirm,
+}: {
+  count: number;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 pb-[max(env(safe-area-inset-bottom),0px)]"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-base font-semibold" style={{ color: "var(--clay-ink)" }}>
+          Clear the trolley?
+        </h3>
+        <p className="mt-1 text-sm" style={{ color: "var(--clay-muted)" }}>
+          This removes {count} bought {count === 1 ? "item" : "items"} from the list. Unticked
+          items stay for next time.
+        </p>
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 rounded-lg py-3 text-[15px] font-medium"
+            style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="flex-1 rounded-lg py-3 text-[15px] font-semibold text-white"
+            style={{ background: "var(--clay-accent)" }}
+          >
+            Clear
           </button>
         </div>
       </div>
