@@ -65,8 +65,19 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
 
   const toggleChecked = async (item: Item) => {
     const next = !item.is_checked;
+    if (next && typeof navigator !== "undefined" && "vibrate" in navigator) {
+      try { navigator.vibrate?.(10); } catch { /* ignore */ }
+    }
     setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, is_checked: next } : i)));
     await supabase.from("shopping_list_items").update({ is_checked: next }).eq("id", item.id);
+  };
+
+  const clearTrolley = async () => {
+    const checkedIds = items.filter((i) => i.is_checked).map((i) => i.id);
+    if (checkedIds.length === 0) return;
+    setItems((arr) => arr.filter((i) => !i.is_checked));
+    setConfirmClear(false);
+    await supabase.from("shopping_list_items").delete().in("id", checkedIds);
   };
 
   const deleteItem = async (item: Item) => {
