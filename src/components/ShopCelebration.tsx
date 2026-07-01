@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 
 const COLORS = ["#C2693F", "#D38A2E", "#6F8F5E"];
 
