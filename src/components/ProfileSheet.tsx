@@ -4,6 +4,14 @@ import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
 import { supabase } from "@/lib/supabase";
 
+const MEMBER_COLORS = ["#C2693F", "#6F8F5E", "#D38A2E", "#8E6E8A", "#A86A4B", "#5E8A8F"];
+function memberColor(id: string | null | undefined) {
+  if (!id) return "#C9BBA8";
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+  return MEMBER_COLORS[h % MEMBER_COLORS.length];
+}
+
 export function ProfileSheet({ onClose }: { onClose: () => void }) {
   const { member, updateCurrentName, forgetMember, deleteMember } = useMember();
   const { signOut } = useAuth();
@@ -21,6 +29,8 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   if (!member) return null;
+  const color = memberColor(member.id);
+  const initial = (member.name?.[0] ?? "?").toUpperCase();
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
@@ -83,143 +93,244 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl bg-white p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
+        className="w-full max-w-md rounded-t-2xl p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
+        style={{
+          background: "var(--clay-bg)",
+          border: "1px solid var(--clay-border)",
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-neutral-200" />
-        <h2 className="text-lg font-semibold text-neutral-900">Profile</h2>
-        <p className="mt-1 text-sm text-neutral-500">Signed in as {member.name}</p>
+        <div
+          className="mx-auto mb-4 h-1 w-10 rounded-full"
+          style={{ background: "var(--clay-border)" }}
+        />
 
-        <form onSubmit={save} className="mt-5 space-y-3">
-          <label className="block text-xs font-medium text-neutral-600">Your name</label>
+        <div className="flex items-center gap-3">
+          <span
+            className="flex h-11 w-11 items-center justify-center rounded-full text-[16px] font-semibold text-white"
+            style={{ background: color }}
+          >
+            {initial}
+          </span>
+          <div className="flex-1">
+            <h2
+              className="text-[18px] font-semibold leading-tight"
+              style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
+            >
+              Profile
+            </h2>
+            <p className="text-[13px]" style={{ color: "var(--clay-muted)" }}>
+              Signed in as {member.name}
+            </p>
+          </div>
+        </div>
+
+        {/* Edit name card */}
+        <form
+          onSubmit={save}
+          className="mt-4 space-y-3 rounded-[14px] bg-white p-4"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <label
+            className="block text-[11px] font-semibold uppercase tracking-[0.08em]"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            Your name
+          </label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={40}
-            className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-base text-neutral-900 outline-none transition focus:border-[var(--accent-green)] focus:ring-2 focus:ring-[var(--accent-green-soft)]"
+            className="clay-input"
           />
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          {savedAt && !error && <p className="text-sm text-[var(--accent-green)]">Saved</p>}
+          {error && (
+            <p className="text-sm" style={{ color: "#B4441F" }}>
+              {error}
+            </p>
+          )}
+          {savedAt && !error && (
+            <p className="text-sm" style={{ color: "var(--clay-success)" }}>
+              Saved
+            </p>
+          )}
           <button
             type="submit"
             disabled={saving || name.trim() === member.name}
-            className="w-full rounded-xl bg-[var(--accent-green)] py-3 text-base font-medium text-white transition active:scale-[0.99] disabled:opacity-50"
+            className="clay-btn-primary"
           >
             {saving ? "Saving…" : "Save name"}
           </button>
         </form>
 
-        <div className="mt-6 space-y-2 border-t border-neutral-100 pt-4">
+        {/* Invite card */}
+        <div
+          className="mt-3 space-y-2 rounded-[14px] bg-white p-4"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
           <button
             onClick={createInvite}
             disabled={inviteLoading || !householdId}
-            className="w-full rounded-xl border border-neutral-200 py-3 text-base font-medium text-neutral-800 transition hover:bg-neutral-50 active:scale-[0.99] disabled:opacity-50"
+            className="clay-btn-secondary"
           >
             {inviteLoading ? "Creating link…" : "Invite a family member"}
           </button>
 
-          {inviteError && <p className="text-sm text-red-600">{inviteError}</p>}
+          {inviteError && (
+            <p className="text-sm" style={{ color: "#B4441F" }}>
+              {inviteError}
+            </p>
+          )}
 
           {inviteLink && (
-            <div className="space-y-2 rounded-xl border border-[var(--accent-green-soft)] bg-[var(--accent-green-soft)]/10 p-3">
-              <p className="text-xs text-neutral-600">
+            <div
+              className="space-y-2 rounded-xl p-3"
+              style={{
+                background: "var(--clay-accent-soft)",
+                border: "1px solid var(--clay-border)",
+              }}
+            >
+              <p className="text-xs" style={{ color: "var(--clay-muted)" }}>
                 This link lets someone join your family. Valid for 7 days.
               </p>
-              <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2">
-                <span className="flex-1 truncate text-sm text-neutral-700">{inviteLink}</span>
+              <div
+                className="flex items-center gap-2 rounded-lg bg-white px-3 py-2"
+                style={{ border: "1px solid var(--clay-border)" }}
+              >
+                <span
+                  className="flex-1 truncate text-[13px]"
+                  style={{ color: "var(--clay-ink)" }}
+                >
+                  {inviteLink}
+                </span>
               </div>
               <div className="flex gap-2">
-                <button
-                  onClick={copyLink}
-                  className="flex-1 rounded-lg bg-[var(--accent-green)] py-2 text-sm font-medium text-white transition active:scale-[0.99]"
-                >
+                <button onClick={copyLink} className="clay-btn-primary flex-1">
                   {copied ? "Copied!" : "Copy link"}
                 </button>
                 {typeof navigator !== "undefined" && !!navigator.share && (
-                  <button
-                    onClick={shareLink}
-                    className="flex-1 rounded-lg border border-neutral-200 py-2 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50 active:scale-[0.99]"
-                  >
+                  <button onClick={shareLink} className="clay-btn-secondary flex-1">
                     Share
                   </button>
                 )}
               </div>
             </div>
           )}
+        </div>
 
-          <button
+        {/* Session card */}
+        <div
+          className="mt-3 overflow-hidden rounded-[14px] bg-white"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <SheetRow
+            label="Switch member"
             onClick={() => {
               forgetMember();
               onClose();
             }}
-            className="w-full rounded-xl border border-neutral-200 py-3 text-base font-medium text-neutral-800 transition hover:bg-neutral-50"
-          >
-            Switch member
-          </button>
-          <button
+          />
+          <SheetRow
+            label="Log out"
+            subtle
             onClick={async () => {
               forgetMember();
               await signOut();
             }}
-            className="w-full rounded-xl py-3 text-base font-medium text-red-600 transition hover:bg-red-50"
-          >
-            Log out
-          </button>
-          {!confirmDelete ? (
-            <button
-              onClick={() => {
-                setDeleteError(null);
-                setConfirmDelete(true);
-              }}
-              className="w-full rounded-xl py-3 text-sm font-medium text-red-600 transition hover:bg-red-50"
-            >
-              Remove this profile
-            </button>
-          ) : (
-            <div className="space-y-2 rounded-xl border border-red-200 bg-red-50 p-3">
-              <p className="text-sm text-red-900">
-                Remove {member.name} from the family? This can't be undone.
-              </p>
-              {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  disabled={deleting}
-                  className="flex-1 rounded-lg border border-neutral-200 bg-white py-2 text-sm font-medium text-neutral-800"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    setDeleting(true);
-                    const { error } = await deleteMember(member.id);
-                    setDeleting(false);
-                    if (error) {
-                      setDeleteError(error);
-                      return;
-                    }
-                    onClose();
-                  }}
-                  disabled={deleting}
-                  className="flex-1 rounded-lg bg-red-600 py-2 text-sm font-medium text-white disabled:opacity-60"
-                >
-                  {deleting ? "Removing…" : "Remove"}
-                </button>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={onClose}
-            className="w-full rounded-xl py-3 text-sm font-medium text-neutral-500 transition hover:text-neutral-900"
-          >
-            Close
-          </button>
+          />
         </div>
+
+        {/* Danger card */}
+        {!confirmDelete ? (
+          <button
+            onClick={() => {
+              setDeleteError(null);
+              setConfirmDelete(true);
+            }}
+            className="mt-3 w-full rounded-[14px] py-3 text-[13px] font-medium transition"
+            style={{
+              color: "var(--clay-muted)",
+              background: "transparent",
+            }}
+          >
+            Remove this profile
+          </button>
+        ) : (
+          <div
+            className="mt-3 space-y-2 rounded-[14px] p-4"
+            style={{
+              background: "#FBEDE5",
+              border: "1px solid #E9C7B5",
+            }}
+          >
+            <p className="text-[14px]" style={{ color: "#7A3520" }}>
+              Remove {member.name} from the family? This can't be undone.
+            </p>
+            {deleteError && (
+              <p className="text-sm" style={{ color: "#B4441F" }}>
+                {deleteError}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmDelete(false)}
+                disabled={deleting}
+                className="clay-btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  setDeleting(true);
+                  const { error } = await deleteMember(member.id);
+                  setDeleting(false);
+                  if (error) {
+                    setDeleteError(error);
+                    return;
+                  }
+                  onClose();
+                }}
+                disabled={deleting}
+                className="flex-1 rounded-xl py-3 text-[15px] font-semibold text-white disabled:opacity-60"
+                style={{ background: "#B4441F" }}
+              >
+                {deleting ? "Removing…" : "Remove"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        <button onClick={onClose} className="clay-btn-ghost mt-3">
+          Close
+        </button>
       </div>
     </div>
+  );
+}
+
+function SheetRow({
+  label,
+  onClick,
+  subtle,
+}: {
+  label: string;
+  onClick: () => void;
+  subtle?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex w-full items-center justify-between px-4 py-3.5 text-left text-[15px] transition active:bg-[var(--clay-accent-soft)]"
+      style={{
+        color: subtle ? "var(--clay-muted)" : "var(--clay-ink)",
+        borderTop: "1px solid var(--clay-border)",
+      }}
+    >
+      <span>{label}</span>
+      <span style={{ color: "var(--clay-muted)" }}>›</span>
+    </button>
   );
 }
