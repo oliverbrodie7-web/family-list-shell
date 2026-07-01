@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 
 const COLORS = ["#C2693F", "#D38A2E", "#6F8F5E"];
 
@@ -65,12 +66,12 @@ export function ShopCelebration({ onDone }: { onDone: () => void }) {
         />
       ))}
       <div className="pointer-events-auto flex h-full items-center justify-center px-8">
-        <div
+        <motion.div
+          initial={{ scale: 0.7, opacity: 0, y: 12 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 380, damping: 22, mass: 0.8 }}
           className="rounded-2xl bg-white/90 px-6 py-5 text-center shadow-lg backdrop-blur"
-          style={{
-            border: "1px solid var(--clay-border)",
-            animation: "clay-celebrate-in 320ms ease-out both",
-          }}
+          style={{ border: "1px solid var(--clay-border)" }}
         >
           <p
             className="font-display text-[26px] leading-tight"
@@ -81,7 +82,7 @@ export function ShopCelebration({ onDone }: { onDone: () => void }) {
           <p className="mt-1 text-[13px]" style={{ color: "var(--clay-muted)" }}>
             Nice one — everything's in the trolley.
           </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

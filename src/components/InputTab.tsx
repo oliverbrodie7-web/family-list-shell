@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X, Check } from "lucide-react";
 import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category } from "@/lib/categories";
@@ -10,6 +11,7 @@ import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
 import { COMMON_AISLES, ALL_COMMON_ITEMS } from "@/lib/common-items";
+import { softSpring, snappySpring } from "@/lib/motion";
 
 interface RecentItem {
   id: string;
@@ -299,15 +301,17 @@ export function InputTab({ householdId }: { householdId: string | null }) {
               autoCapitalize="none"
               spellCheck={false}
             />
-            <button
+            <motion.button
               type="submit"
               disabled={!text.trim() || !householdId || submitting}
+              whileTap={{ scale: 0.9 }}
+              transition={snappySpring}
               aria-label="Add item"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition disabled:opacity-40"
               style={{ background: "var(--clay-accent)" }}
             >
               <Plus size={22} strokeWidth={2.5} />
-            </button>
+            </motion.button>
           </div>
 
           {suggestions.length > 0 && (
@@ -358,9 +362,10 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                 color: "var(--clay-ink)",
               }}
             />
-            <button
+            <motion.button
               type="button"
               onClick={() => setPriority((p) => !p)}
+              whileTap={{ scale: 0.94 }}
               aria-label="Toggle priority"
               aria-pressed={priority}
               className="ml-1 flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] transition"
@@ -372,11 +377,12 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             >
               <Flag size={12} fill={priority ? "currentColor" : "none"} />
               priority
-            </button>
+            </motion.button>
           </div>
-          <button
+          <motion.button
             type="button"
             onClick={() => setBulkOpen(true)}
+            whileTap={{ scale: 0.95 }}
             className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium transition"
             style={{
               border: "1px solid var(--clay-border)",
@@ -385,7 +391,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           >
             <List size={13} />
             Bulk add
-          </button>
+          </motion.button>
         </div>
       </form>
 
@@ -433,9 +439,10 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
       {/* ---------- BROWSE COMMON ITEMS ---------- */}
       <section className="mt-5">
-        <button
+        <motion.button
           type="button"
           onClick={() => setBrowseOpen(true)}
+          whileTap={{ scale: 0.985 }}
           className="flex w-full items-center justify-between rounded-[14px] bg-white px-4 py-3.5 text-left transition active:bg-[var(--clay-accent-soft)]"
           style={{ border: "1px solid var(--clay-border)" }}
         >
@@ -446,7 +453,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             Browse common items
           </span>
           <ChevronRight size={18} style={{ color: "var(--clay-muted)" }} />
-        </button>
+        </motion.button>
       </section>
 
       {/* ---------- JUST ADDED ---------- */}
@@ -463,75 +470,87 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             style={{ border: "1px solid var(--clay-border)" }}
           >
             <ul>
-              {recent.map((it, idx) => (
-                <li
-                  key={it.id}
-                  className="flex items-center justify-between gap-2 px-3.5 py-2.5"
-                  style={{
-                    borderTop:
-                      idx === 0 ? "none" : "1px solid var(--clay-border)",
-                  }}
-                >
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <span
-                      className="truncate text-[14px]"
-                      style={{ color: "var(--clay-ink)" }}
-                    >
-                      {it.display_name}
-                    </span>
-                    {it.quantity != null && (
-                      <span
-                        className="text-[12px]"
-                        style={{ color: "var(--clay-muted)" }}
-                      >
-                        ×{it.quantity}
-                      </span>
-                    )}
-                  </div>
-
-                  {it.categorizing || !it.category ? (
-                    <span
-                      className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
-                      style={{
-                        background: "var(--clay-border)",
-                        color: "var(--clay-muted)",
-                      }}
-                    >
-                      <Loader2 size={10} className="animate-spin" />
-                      sorting
-                    </span>
-                  ) : (
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-                      style={{
-                        background: "var(--clay-accent-soft)",
-                        color: "var(--clay-accent)",
-                      }}
-                    >
-                      {CATEGORY_LABELS[it.category] ?? it.category}
-                    </span>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleRecentPriority(it.id, !it.is_priority)
-                    }
-                    aria-label="Toggle priority"
-                    className="p-1 transition"
+              <AnimatePresence initial={false}>
+                {recent.map((it, idx) => (
+                  <motion.li
+                    key={it.id}
+                    layout
+                    initial={{ opacity: 0, height: 0, y: -6 }}
+                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={softSpring}
+                    className="flex items-center justify-between gap-2 overflow-hidden px-3.5 py-2.5"
                     style={{
-                      color: it.is_priority
-                        ? "var(--clay-priority)"
-                        : "#C9BBA8",
+                      borderTop:
+                        idx === 0 ? "none" : "1px solid var(--clay-border)",
                     }}
                   >
-                    <Flag
-                      size={14}
-                      fill={it.is_priority ? "currentColor" : "none"}
-                    />
-                  </button>
-                </li>
-              ))}
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <span
+                        className="truncate text-[14px]"
+                        style={{ color: "var(--clay-ink)" }}
+                      >
+                        {it.display_name}
+                      </span>
+                      {it.quantity != null && (
+                        <span
+                          className="text-[12px]"
+                          style={{ color: "var(--clay-muted)" }}
+                        >
+                          ×{it.quantity}
+                        </span>
+                      )}
+                    </div>
+
+                    {it.categorizing || !it.category ? (
+                      <span
+                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                        style={{
+                          background: "var(--clay-border)",
+                          color: "var(--clay-muted)",
+                        }}
+                      >
+                        <Loader2 size={10} className="animate-spin" />
+                        sorting
+                      </span>
+                    ) : (
+                      <motion.span
+                        key={it.category}
+                        initial={{ scale: 0.85, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={snappySpring}
+                        className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                        style={{
+                          background: "var(--clay-accent-soft)",
+                          color: "var(--clay-accent)",
+                        }}
+                      >
+                        {CATEGORY_LABELS[it.category] ?? it.category}
+                      </motion.span>
+                    )}
+
+                    <motion.button
+                      type="button"
+                      onClick={() =>
+                        toggleRecentPriority(it.id, !it.is_priority)
+                      }
+                      whileTap={{ scale: 0.85 }}
+                      aria-label="Toggle priority"
+                      className="p-1 transition"
+                      style={{
+                        color: it.is_priority
+                          ? "var(--clay-priority)"
+                          : "#C9BBA8",
+                      }}
+                    >
+                      <Flag
+                        size={14}
+                        fill={it.is_priority ? "currentColor" : "none"}
+                      />
+                    </motion.button>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
             </ul>
           </div>
         </section>
@@ -590,10 +609,12 @@ function AddChip({
   };
 
   return (
-    <button
+    <motion.button
       type="button"
       onClick={handle}
-      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] transition-colors duration-200 active:scale-[0.97]"
+      whileTap={{ scale: 0.94 }}
+      transition={snappySpring}
+      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] transition-colors duration-200"
       style={{
         border: `1px solid ${added ? "var(--clay-accent)" : "var(--clay-border)"}`,
         background: added ? "var(--clay-accent)" : "#FFFFFF",
@@ -602,7 +623,7 @@ function AddChip({
     >
       {added && <Check size={12} strokeWidth={3} />}
       {label}
-    </button>
+    </motion.button>
   );
 }
 
@@ -631,10 +652,11 @@ function SuggestionRow({
   };
 
   return (
-    <button
+    <motion.button
       type="button"
       onMouseDown={(e) => e.preventDefault()}
       onClick={handle}
+      whileTap={{ scale: 0.98 }}
       className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[15px] transition-colors duration-200"
       style={{
         background: added ? "var(--clay-accent)" : "transparent",
@@ -646,7 +668,7 @@ function SuggestionRow({
         <span className="truncate">{label}</span>
       </span>
       {!added && <Plus size={14} style={{ color: "var(--clay-accent)" }} />}
-    </button>
+    </motion.button>
   );
 }
 

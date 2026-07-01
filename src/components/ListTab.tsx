@@ -1,10 +1,17 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { Check, ShoppingCart, Trash2, X, Star, Flag, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { motion, useAnimation, useMotionValue, type PanInfo } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useAnimation,
+  useMotionValue,
+  type PanInfo,
+} from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { useMember } from "@/lib/member";
+import { softSpring, snappySpring, gentleSpring } from "@/lib/motion";
 import { ShopCelebration } from "./ShopCelebration";
 
 interface Item {
@@ -199,46 +206,60 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
           className="mt-1.5 h-1 w-full overflow-hidden rounded-full"
           style={{ background: "var(--clay-border)" }}
         >
-          <div
-            className="h-full rounded-full transition-[width] duration-300 ease-out"
-            style={{ width: `${pct}%`, background: "var(--clay-accent)" }}
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: "var(--clay-accent)" }}
+            animate={{ width: `${pct}%` }}
+            transition={gentleSpring}
           />
         </div>
       </div>
 
-      <div className="space-y-2">
-        {CATEGORIES.map((c) => {
-          const arr = activeGrouped.get(c)!;
-          if (arr.length === 0) return null;
-          return (
-            <AisleCard
-              key={c}
-              label={CATEGORY_LABELS[c]}
-              count={arr.length}
-              items={arr}
+      <motion.div layout className="space-y-2">
+        <AnimatePresence initial={false}>
+          {CATEGORIES.map((c) => {
+            const arr = activeGrouped.get(c)!;
+            if (arr.length === 0) return null;
+            return (
+              <AisleCard
+                key={c}
+                label={CATEGORY_LABELS[c]}
+                count={arr.length}
+                items={arr}
+                memberMap={memberMap}
+                onToggle={toggleChecked}
+                onEdit={setEditing}
+                onDelete={deleteItem}
+                openSwipeId={openSwipeId}
+                setOpenSwipeId={setOpenSwipeId}
+              />
+            );
+          })}
+        </AnimatePresence>
+      </motion.div>
+
+      <AnimatePresence initial={false}>
+        {trolleyItems.length > 0 && (
+          <motion.div
+            key="trolley"
+            layout
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={softSpring}
+            className="mt-4"
+          >
+            <TrolleyCard
+              items={trolleyItems}
               memberMap={memberMap}
-              onToggle={toggleChecked}
-              onEdit={setEditing}
-              onDelete={deleteItem}
-              openSwipeId={openSwipeId}
-              setOpenSwipeId={setOpenSwipeId}
+              open={trolleyOpen}
+              onToggleOpen={() => setTrolleyOpen((o) => !o)}
+              onUntick={toggleChecked}
+              onClear={() => setConfirmClear(true)}
             />
-          );
-        })}
-      </div>
-
-      {trolleyItems.length > 0 && (
-        <div className="mt-4">
-          <TrolleyCard
-            items={trolleyItems}
-            memberMap={memberMap}
-            open={trolleyOpen}
-            onToggleOpen={() => setTrolleyOpen((o) => !o)}
-            onUntick={toggleChecked}
-            onClear={() => setConfirmClear(true)}
-          />
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
 
@@ -277,7 +298,12 @@ function AisleCard({
   setOpenSwipeId: (id: string | null) => void;
 }) {
   return (
-    <section
+    <motion.section
+      layout
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, height: 0, marginTop: 0 }}
+      transition={softSpring}
       className="overflow-hidden rounded-[14px] bg-white"
       style={{ border: "1px solid var(--clay-border)" }}
     >
@@ -293,24 +319,26 @@ function AisleCard({
         </span>
       </header>
       <ul>
-        {items.map((it, idx) => (
-          <SwipeRow
-            key={it.id}
-            item={it}
-            isFirst={idx === 0}
-            member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
-            isOpen={openSwipeId === it.id}
-            onRequestOpen={() => setOpenSwipeId(it.id)}
-            onRequestClose={() => {
-              if (openSwipeId === it.id) setOpenSwipeId(null);
-            }}
-            onToggle={() => onToggle(it)}
-            onEdit={() => onEdit(it)}
-            onDelete={() => onDelete(it)}
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {items.map((it, idx) => (
+            <SwipeRow
+              key={it.id}
+              item={it}
+              isFirst={idx === 0}
+              member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
+              isOpen={openSwipeId === it.id}
+              onRequestOpen={() => setOpenSwipeId(it.id)}
+              onRequestClose={() => {
+                if (openSwipeId === it.id) setOpenSwipeId(null);
+              }}
+              onToggle={() => onToggle(it)}
+              onEdit={() => onEdit(it)}
+              onDelete={() => onDelete(it)}
+            />
+          ))}
+        </AnimatePresence>
       </ul>
-    </section>
+    </motion.section>
   );
 }
 
@@ -379,7 +407,12 @@ function SwipeRow({
   };
 
   return (
-    <li
+    <motion.li
+      layout
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      exit={{ opacity: 0, height: 0 }}
+      transition={softSpring}
       className="relative overflow-hidden"
       style={{ borderTop: isFirst ? "none" : "1px solid var(--clay-border)" }}
     >
@@ -420,21 +453,36 @@ function SwipeRow({
           />
         )}
 
-        <button
+        <motion.button
           type="button"
           onClick={onToggle}
           aria-label={checked ? "Uncheck" : "Check off"}
+          whileTap={{ scale: 0.88 }}
+          animate={{ scale: checked ? 1.08 : 1 }}
+          transition={snappySpring}
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
           style={{
             border: checked ? "1.8px solid var(--clay-accent)" : "1.8px solid #C9BBA8",
             background: checked ? "var(--clay-accent)" : "transparent",
             color: "#fff",
-            transition: "background 180ms ease, border-color 180ms ease, transform 180ms ease",
-            transform: checked ? "scale(1.08)" : "scale(1)",
+            transition: "background 180ms ease, border-color 180ms ease",
           }}
         >
-          {checked && <Check size={12} strokeWidth={3.5} className="animate-scale-in" />}
-        </button>
+          <AnimatePresence initial={false}>
+            {checked && (
+              <motion.span
+                key="check"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={snappySpring}
+                className="flex items-center justify-center"
+              >
+                <Check size={12} strokeWidth={3.5} />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
 
         <button
           type="button"
@@ -470,7 +518,7 @@ function SwipeRow({
           </span>
         )}
       </motion.div>
-    </li>
+    </motion.li>
   );
 }
 
@@ -632,13 +680,15 @@ function TrolleyCard({
   onClear: () => void;
 }) {
   return (
-    <section
+    <motion.section
+      layout
       className="overflow-hidden rounded-[14px] bg-white"
       style={{ border: "1px solid var(--clay-border)" }}
     >
-      <button
+      <motion.button
         type="button"
         onClick={onToggleOpen}
+        whileTap={{ scale: 0.98 }}
         className="flex w-full items-center justify-between px-3.5 py-2 text-left"
         aria-expanded={open}
       >
@@ -654,90 +704,106 @@ function TrolleyCard({
             · {items.length}
           </span>
         </span>
-        <ChevronDown
-          size={16}
-          style={{
-            color: "var(--clay-muted)",
-            transform: open ? "rotate(0deg)" : "rotate(-90deg)",
-            transition: "transform 180ms ease",
-          }}
-        />
-      </button>
+        <motion.span
+          animate={{ rotate: open ? 0 : -90 }}
+          transition={softSpring}
+          style={{ display: "inline-flex", color: "var(--clay-muted)" }}
+        >
+          <ChevronDown size={16} />
+        </motion.span>
+      </motion.button>
 
-      {open && (
-        <>
-          <ul style={{ borderTop: "1px solid var(--clay-border)" }}>
-            {items.map((it) => {
-              const member = it.added_by_member_id
-                ? memberMap.get(it.added_by_member_id)
-                : undefined;
-              return (
-                <li
-                  key={it.id}
-                  style={{ borderTop: "1px solid var(--clay-border)" }}
-                  className="first:border-t-0"
-                >
-                  <div className="flex items-center gap-2.5 bg-white px-3.5 py-2">
-                    <button
-                      type="button"
-                      onClick={() => onUntick(it)}
-                      aria-label="Return to list"
-                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
-                      style={{
-                        border: "1.8px solid var(--clay-accent)",
-                        background: "var(--clay-accent)",
-                        color: "#fff",
-                      }}
-                    >
-                      <Check size={12} strokeWidth={3.5} />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onUntick(it)}
-                      className="flex min-h-[28px] flex-1 items-center gap-1.5 text-left"
-                    >
-                      <span
-                        className="text-[14px] leading-tight"
-                        style={{ color: "var(--clay-muted)", opacity: 0.75 }}
-                      >
-                        {it.display_name}
-                      </span>
-                      {it.quantity != null && (
-                        <span className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
-                          ×{it.quantity}
-                        </span>
-                      )}
-                    </button>
-                    {member && (
-                      <span
-                        title={`Added by ${member.name}`}
-                        className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
-                        style={{ background: member.color, opacity: 0.5 }}
-                      >
-                        {member.initial}
-                      </span>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-          <div
-            className="px-3.5 py-2"
-            style={{ borderTop: "1px solid var(--clay-border)" }}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="trolley-body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={softSpring}
+            style={{ overflow: "hidden" }}
           >
-            <button
-              type="button"
-              onClick={onClear}
-              className="w-full rounded-lg py-2 text-[13px] font-semibold text-white"
-              style={{ background: "var(--clay-accent)" }}
+            <ul style={{ borderTop: "1px solid var(--clay-border)" }}>
+              <AnimatePresence initial={false}>
+                {items.map((it) => {
+                  const member = it.added_by_member_id
+                    ? memberMap.get(it.added_by_member_id)
+                    : undefined;
+                  return (
+                    <motion.li
+                      key={it.id}
+                      layout
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={softSpring}
+                      style={{ borderTop: "1px solid var(--clay-border)", overflow: "hidden" }}
+                      className="first:border-t-0"
+                    >
+                      <div className="flex items-center gap-2.5 bg-white px-3.5 py-2">
+                        <button
+                          type="button"
+                          onClick={() => onUntick(it)}
+                          aria-label="Return to list"
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
+                          style={{
+                            border: "1.8px solid var(--clay-accent)",
+                            background: "var(--clay-accent)",
+                            color: "#fff",
+                          }}
+                        >
+                          <Check size={12} strokeWidth={3.5} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onUntick(it)}
+                          className="flex min-h-[28px] flex-1 items-center gap-1.5 text-left"
+                        >
+                          <span
+                            className="text-[14px] leading-tight"
+                            style={{ color: "var(--clay-muted)", opacity: 0.75 }}
+                          >
+                            {it.display_name}
+                          </span>
+                          {it.quantity != null && (
+                            <span className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
+                              ×{it.quantity}
+                            </span>
+                          )}
+                        </button>
+                        {member && (
+                          <span
+                            title={`Added by ${member.name}`}
+                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                            style={{ background: member.color, opacity: 0.5 }}
+                          >
+                            {member.initial}
+                          </span>
+                        )}
+                      </div>
+                    </motion.li>
+                  );
+                })}
+              </AnimatePresence>
+            </ul>
+            <div
+              className="px-3.5 py-2"
+              style={{ borderTop: "1px solid var(--clay-border)" }}
             >
-              Done — clear trolley
-            </button>
-          </div>
-        </>
-      )}
-    </section>
+              <motion.button
+                type="button"
+                onClick={onClear}
+                whileTap={{ scale: 0.96 }}
+                className="w-full rounded-lg py-2 text-[13px] font-semibold text-white"
+                style={{ background: "var(--clay-accent)" }}
+              >
+                Done — clear trolley
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.section>
   );
 }
 
