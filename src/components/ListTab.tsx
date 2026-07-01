@@ -146,7 +146,12 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   };
 
   const activeGrouped = groupBy(activeItems);
-  const checkedGrouped = groupBy(checkedItems);
+  const trolleyItems = [...checkedItems].sort((a, b) =>
+    a.created_at.localeCompare(b.created_at),
+  );
+  const total = items.length;
+  const done = checkedItems.length;
+  const pct = total === 0 ? 0 : Math.round((done / total) * 100);
 
   if (!loading && items.length === 0) {
     return (
@@ -164,12 +169,28 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-4 pb-8">
-      <p
-        className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider"
-        style={{ color: "var(--clay-muted)" }}
-      >
-        {activeItems.length} {activeItems.length === 1 ? "item" : "items"}
-      </p>
+      <div className="mb-3 px-1">
+        <div className="flex items-center justify-between">
+          <p
+            className="text-[11px] font-semibold uppercase tracking-wider"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            {activeItems.length} {activeItems.length === 1 ? "item" : "items"} left
+          </p>
+          <p className="text-[11px]" style={{ color: "var(--clay-muted)" }}>
+            {done} of {total} in the trolley
+          </p>
+        </div>
+        <div
+          className="mt-1.5 h-1 w-full overflow-hidden rounded-full"
+          style={{ background: "var(--clay-border)" }}
+        >
+          <div
+            className="h-full rounded-full transition-[width] duration-300 ease-out"
+            style={{ width: `${pct}%`, background: "var(--clay-accent)" }}
+          />
+        </div>
+      </div>
 
       <div className="space-y-2">
         {CATEGORIES.map((c) => {
@@ -190,36 +211,28 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
         })}
       </div>
 
-      {checkedItems.length > 0 && (
-        <>
-          <p
-            className="mt-6 mb-2 px-1 text-[11px] font-semibold uppercase tracking-wider"
-            style={{ color: "var(--clay-muted)" }}
-          >
-            Checked off · {checkedItems.length}
-          </p>
-          <div className="space-y-2">
-            {CATEGORIES.map((c) => {
-              const arr = checkedGrouped.get(c)!;
-              if (arr.length === 0) return null;
-              return (
-                <AisleCard
-                  key={c}
-                  label={CATEGORY_LABELS[c]}
-                  count={arr.length}
-                  items={arr}
-                  memberMap={memberMap}
-                  onToggle={toggleChecked}
-                  onEdit={setEditing}
-                  onDelete={deleteItem}
-                />
-              );
-            })}
-          </div>
-        </>
+      {trolleyItems.length > 0 && (
+        <div className="mt-4">
+          <TrolleyCard
+            items={trolleyItems}
+            memberMap={memberMap}
+            open={trolleyOpen}
+            onToggleOpen={() => setTrolleyOpen((o) => !o)}
+            onUntick={toggleChecked}
+            onClear={() => setConfirmClear(true)}
+          />
+        </div>
       )}
 
       {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
+
+      {confirmClear && (
+        <ConfirmClearDialog
+          count={trolleyItems.length}
+          onCancel={() => setConfirmClear(false)}
+          onConfirm={clearTrolley}
+        />
+      )}
     </div>
   );
 }
