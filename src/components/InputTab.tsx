@@ -282,7 +282,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-5 pb-10">
       {/* ---------- HERO BLOCK ---------- */}
-      <div className="flex flex-col items-center pt-[10vh]">
+      <div className="flex flex-col items-center pt-6">
         <h1
           className="font-display mb-5 text-center text-[28px] leading-tight"
           style={{ color: "var(--clay-ink)" }}
