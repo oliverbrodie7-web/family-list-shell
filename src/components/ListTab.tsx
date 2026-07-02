@@ -223,6 +223,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
             return (
               <AisleCard
                 key={c}
+                aisleKey={c}
                 label={CATEGORY_LABELS[c]}
                 count={arr.length}
                 items={arr}
