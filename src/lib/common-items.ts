@@ -48,6 +48,10 @@ export const COMMON_AISLES: CommonAisle[] = [
     label: "Household",
     items: ["Toilet paper", "Paper towel", "Dishwashing liquid", "Bin bags"],
   },
+  {
+    label: "Toiletries",
+    items: ["Shampoo", "Conditioner", "Body wash", "Toothpaste", "Deodorant", "Hand soap"],
+  },
 ];
 
 export const ALL_COMMON_ITEMS: string[] = Array.from(
