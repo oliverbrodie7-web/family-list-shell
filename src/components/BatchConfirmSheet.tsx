@@ -105,7 +105,7 @@ export function BatchConfirmSheet({
         >
           <X size={20} />
         </button>
-        <h2 className="text-base font-semibold text-neutral-900">
+        <h2 className="text-[17px] font-semibold text-neutral-900">
           Review {rows.length} {rows.length === 1 ? "item" : "items"}
         </h2>
         <div className="w-9" />
@@ -114,13 +114,13 @@ export function BatchConfirmSheet({
       {/* Body */}
       <div className="flex-1 overflow-y-auto px-4 py-3 pb-32">
         {loading && (
-          <div className="mb-3 flex items-center gap-2 text-xs text-neutral-400">
+          <div className="mb-3 flex items-center gap-2 text-[13px] text-neutral-400">
             <Loader2 size={12} className="animate-spin" />
             Sorting items…
           </div>
         )}
         {rows.length === 0 ? (
-          <p className="mt-10 text-center text-sm text-neutral-400">
+          <p className="mt-10 text-center text-[15px] text-neutral-400">
             No items to add.
           </p>
         ) : (
@@ -155,7 +155,7 @@ export function BatchConfirmSheet({
                     onClick={() =>
                       setOpenCatFor((cur) => (cur === r.key ? null : r.key))
                     }
-                    className="flex min-h-[36px] items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-3 text-xs font-medium uppercase tracking-wider text-neutral-600"
+                    className="flex min-h-[40px] items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-3 text-[13px] font-medium uppercase tracking-wider text-neutral-600"
                   >
                     {loading && r.category === "misc" ? (
                       <Loader2 size={12} className="animate-spin" />
@@ -229,7 +229,7 @@ export function BatchConfirmSheet({
           type="button"
           onClick={addAll}
           disabled={saving || rows.length === 0}
-          className="w-full rounded-xl bg-[var(--accent-green)] py-4 text-[15px] font-semibold text-white transition active:opacity-90 disabled:opacity-40"
+          className="w-full rounded-xl bg-[var(--accent-green)] py-4 text-[16px] font-semibold text-white transition active:opacity-90 disabled:opacity-40"
         >
           {saving ? "Adding…" : `Add all (${rows.length})`}
         </button>

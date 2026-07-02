@@ -107,7 +107,7 @@ function Shell({
       <div className="w-full max-w-sm">
         {showWordmark && (
           <h1
-            className="mb-6 text-center font-display text-[28px] leading-none"
+            className="mb-6 text-center font-display text-[30px] leading-none"
             style={{ color: "var(--clay-ink)", letterSpacing: "-0.015em" }}
           >
             Our Pantry
@@ -132,13 +132,13 @@ function ScreenHeader({
     <div className="flex items-start justify-between gap-3">
       <div className="flex-1">
         <h2
-          className="text-[22px] font-semibold leading-tight"
+          className="text-[24px] font-semibold leading-tight"
           style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
         >
           {title}
         </h2>
         {subtitle && (
-          <p className="mt-1.5 text-sm" style={{ color: "var(--clay-muted)" }}>
+          <p className="mt-1.5 text-[15px]" style={{ color: "var(--clay-muted)" }}>
             {subtitle}
           </p>
         )}
@@ -295,7 +295,7 @@ function FieldLabel({
   return (
     <label
       htmlFor={htmlFor}
-      className="block text-[11px] font-semibold uppercase tracking-[0.08em]"
+      className="block text-[12px] font-semibold uppercase tracking-[0.08em]"
       style={{ color: "var(--clay-muted)" }}
     >
       {children}
@@ -330,7 +330,7 @@ function PickerScreen({
               setPending(null);
               setError(null);
             }}
-            className="rounded-full px-3 py-1.5 text-[13px] font-medium"
+            className="rounded-full px-3 py-1.5 text-[14px] font-medium"
             style={{ color: "var(--clay-accent)" }}
           >
             {manage ? "Done" : "Manage"}
@@ -363,7 +363,7 @@ function PickerScreen({
                     {initialOf(m.name)}
                   </span>
                   <span
-                    className="flex-1 text-[16px] font-medium"
+                    className="flex-1 text-[17px] font-medium"
                     style={{ color: "var(--clay-ink)" }}
                   >
                     {m.name}
@@ -376,7 +376,7 @@ function PickerScreen({
                       Remove
                     </span>
                   ) : (
-                    <span className="text-[18px]" style={{ color: "var(--clay-muted)" }}>
+                    <span className="text-[20px]" style={{ color: "var(--clay-muted)" }}>
                       ›
                     </span>
                   )}
@@ -390,7 +390,7 @@ function PickerScreen({
       {!manage && (
         <button
           onClick={onAddAnother}
-          className="mt-3 flex w-full items-center justify-center rounded-[14px] px-4 py-3.5 text-[15px] font-medium transition"
+          className="mt-3 flex w-full items-center justify-center rounded-[14px] px-4 py-3.5 text-[16px] font-medium transition"
           style={{
             border: "1px dashed #C9BBA8",
             color: "var(--clay-muted)",
@@ -498,7 +498,7 @@ function PinScreen({
         >
           Hi, {member.name}
         </h2>
-        <p className="mt-1.5 text-sm" style={{ color: "var(--clay-muted)" }}>
+        <p className="mt-1.5 text-[15px]" style={{ color: "var(--clay-muted)" }}>
           Enter your 4-digit PIN.
         </p>
       </div>

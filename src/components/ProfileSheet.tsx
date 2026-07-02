@@ -118,12 +118,12 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
           </span>
           <div className="flex-1">
             <h2
-              className="text-[18px] font-semibold leading-tight"
+              className="text-[20px] font-semibold leading-tight"
               style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
             >
               Profile
             </h2>
-            <p className="text-[13px]" style={{ color: "var(--clay-muted)" }}>
+            <p className="text-[14px]" style={{ color: "var(--clay-muted)" }}>
               Signed in as {member.name}
             </p>
           </div>
@@ -136,7 +136,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
           style={{ border: "1px solid var(--clay-border)" }}
         >
           <label
-            className="block text-[11px] font-semibold uppercase tracking-[0.08em]"
+            className="block text-[12px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
           >
             Your name
@@ -148,12 +148,12 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
             className="clay-input"
           />
           {error && (
-            <p className="text-sm" style={{ color: "#B4441F" }}>
+            <p className="text-[15px]" style={{ color: "#B4441F" }}>
               {error}
             </p>
           )}
           {savedAt && !error && (
-            <p className="text-sm" style={{ color: "var(--clay-success)" }}>
+            <p className="text-[15px]" style={{ color: "var(--clay-success)" }}>
               Saved
             </p>
           )}
@@ -180,7 +180,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
           </button>
 
           {inviteError && (
-            <p className="text-sm" style={{ color: "#B4441F" }}>
+            <p className="text-[15px]" style={{ color: "#B4441F" }}>
               {inviteError}
             </p>
           )}
@@ -193,7 +193,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
                 border: "1px solid var(--clay-border)",
               }}
             >
-              <p className="text-xs" style={{ color: "var(--clay-muted)" }}>
+              <p className="text-[13px]" style={{ color: "var(--clay-muted)" }}>
                 This link lets someone join your family. Valid for 7 days.
               </p>
               <div
@@ -201,7 +201,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
                 style={{ border: "1px solid var(--clay-border)" }}
               >
                 <span
-                  className="flex-1 truncate text-[13px]"
+                  className="flex-1 truncate text-[14px]"
                   style={{ color: "var(--clay-ink)" }}
                 >
                   {inviteLink}
@@ -251,7 +251,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
               setDeleteError(null);
               setConfirmDelete(true);
             }}
-            className="mt-3 w-full rounded-[14px] py-3 text-[13px] font-medium transition"
+            className="mt-3 w-full rounded-[14px] py-3 text-[14px] font-medium transition"
             style={{
               color: "var(--clay-muted)",
               background: "transparent",
@@ -271,7 +271,7 @@ export function ProfileSheet({ onClose }: { onClose: () => void }) {
               Remove {member.name} from the family? This can't be undone.
             </p>
             {deleteError && (
-              <p className="text-sm" style={{ color: "#B4441F" }}>
+              <p className="text-[15px]" style={{ color: "#B4441F" }}>
                 {deleteError}
               </p>
             )}
@@ -326,7 +326,7 @@ function SheetRow({
   return (
     <button
       onClick={onClick}
-      className="flex w-full items-center justify-between px-4 py-3.5 text-left text-[15px] transition active:bg-[var(--clay-accent-soft)]"
+      className="flex w-full items-center justify-between px-4 py-3.5 text-left text-[16px] transition active:bg-[var(--clay-accent-soft)]"
       style={{
         color: subtle ? "var(--clay-muted)" : "var(--clay-ink)",
         borderTop: first ? "none" : "1px solid var(--clay-border)",

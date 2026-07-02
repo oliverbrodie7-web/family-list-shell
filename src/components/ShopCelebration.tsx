@@ -74,12 +74,12 @@ export function ShopCelebration({ onDone }: { onDone: () => void }) {
           style={{ border: "1px solid var(--clay-border)" }}
         >
           <p
-            className="font-display text-[26px] leading-tight"
+            className="font-display text-[28px] leading-tight"
             style={{ color: "var(--clay-ink)" }}
           >
             All done!
           </p>
-          <p className="mt-1 text-[13px]" style={{ color: "var(--clay-muted)" }}>
+          <p className="mt-1 text-[14px]" style={{ color: "var(--clay-muted)" }}>
             Nice one — everything's in the trolley.
           </p>
         </motion.div>

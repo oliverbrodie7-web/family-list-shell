@@ -139,12 +139,12 @@ export function SettingsSheet({
           </span>
           <div className="flex-1">
             <h2
-              className="font-serif text-[22px] leading-tight"
+              className="font-serif text-[24px] leading-tight"
               style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
             >
               Settings
             </h2>
-            <p className="text-[13px]" style={{ color: "var(--clay-muted)" }}>
+            <p className="text-[15px]" style={{ color: "var(--clay-muted)" }}>
               Signed in as {member.name}
             </p>
           </div>
@@ -172,13 +172,13 @@ export function SettingsSheet({
               </span>
               <span className="flex-1">
                 <span
-                  className="block text-[15px]"
+                  className="block text-[16px]"
                   style={{ color: "var(--clay-ink)" }}
                 >
                   Push notifications
                 </span>
                 <span
-                  className="block text-[12px]"
+                  className="block text-[13px]"
                   style={{ color: "var(--clay-muted)" }}
                 >
                   {needsReregister
@@ -189,7 +189,7 @@ export function SettingsSheet({
                 </span>
               </span>
               <span
-                className="text-[13px] font-medium"
+                className="text-[14px] font-medium"
                 style={{ color: enabled ? "var(--clay-accent)" : "var(--clay-muted)" }}
               >
                 {notifStatusLabel}
@@ -205,7 +205,7 @@ export function SettingsSheet({
           style={{ border: "1px solid var(--clay-border)" }}
         >
           <label
-            className="block text-[11px] font-semibold uppercase tracking-[0.08em]"
+            className="block text-[12px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
           >
             Your name
@@ -217,12 +217,12 @@ export function SettingsSheet({
             className="clay-input"
           />
           {error && (
-            <p className="text-sm" style={{ color: "#B4441F" }}>
+            <p className="text-[15px]" style={{ color: "#B4441F" }}>
               {error}
             </p>
           )}
           {savedAt && !error && (
-            <p className="text-sm" style={{ color: "var(--clay-success)" }}>
+            <p className="text-[15px]" style={{ color: "var(--clay-success)" }}>
               Saved
             </p>
           )}
@@ -249,7 +249,7 @@ export function SettingsSheet({
           </button>
 
           {inviteError && (
-            <p className="text-sm" style={{ color: "#B4441F" }}>
+            <p className="text-[15px]" style={{ color: "#B4441F" }}>
               {inviteError}
             </p>
           )}
@@ -262,7 +262,7 @@ export function SettingsSheet({
                 border: "1px solid var(--clay-border)",
               }}
             >
-              <p className="text-xs" style={{ color: "var(--clay-muted)" }}>
+              <p className="text-[13px]" style={{ color: "var(--clay-muted)" }}>
                 This link lets someone join your family. Valid for 7 days.
               </p>
               <div
@@ -270,7 +270,7 @@ export function SettingsSheet({
                 style={{ border: "1px solid var(--clay-border)" }}
               >
                 <span
-                  className="flex-1 truncate text-[13px]"
+                  className="flex-1 truncate text-[14px]"
                   style={{ color: "var(--clay-ink)" }}
                 >
                   {inviteLink}
@@ -313,7 +313,7 @@ export function SettingsSheet({
                 setDeleteError(null);
                 setConfirmDelete(true);
               }}
-              className="w-full rounded-[12px] py-3 text-[13px] font-medium transition"
+              className="w-full rounded-[12px] py-3 text-[14px] font-medium transition"
               style={{ color: "var(--clay-muted)", background: "transparent" }}
             >
               Remove this profile
@@ -323,11 +323,11 @@ export function SettingsSheet({
               className="space-y-2 rounded-[14px] p-4"
               style={{ background: "#FBEDE5", border: "1px solid #E9C7B5" }}
             >
-              <p className="text-[14px]" style={{ color: "#7A3520" }}>
+              <p className="text-[15px]" style={{ color: "#7A3520" }}>
                 Remove {member.name} from the family? This can't be undone.
               </p>
               {deleteError && (
-                <p className="text-sm" style={{ color: "#B4441F" }}>
+                <p className="text-[15px]" style={{ color: "#B4441F" }}>
                   {deleteError}
                 </p>
               )}
@@ -365,7 +365,7 @@ export function SettingsSheet({
               forgetMember();
               await signOut();
             }}
-            className="w-full rounded-[12px] py-3 text-[13px] font-medium transition"
+            className="w-full rounded-[12px] py-3 text-[14px] font-medium transition"
             style={{ color: "var(--clay-muted)", background: "transparent" }}
           >
             Log out
