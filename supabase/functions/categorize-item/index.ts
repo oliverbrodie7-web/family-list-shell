@@ -86,11 +86,14 @@ Return ONLY a raw JSON array. Do not include any preamble, explanation, markdown
 
 Every array element must be an object with exactly these keys:
 - "clean_name": fix spelling, punctuation and capitalisation only. Do NOT reword, expand, translate, pluralise, add detail, or change quantities. Keep the user's wording.
-- "category": exactly one of "produce", "bakery", "deli", "meat", "dairy", "frozen", "pantry", "household", "lollies_chocolate", "misc".
+- "category": exactly one of "produce", "bakery", "deli", "meat", "dairy", "frozen", "pantry", "household", "toiletries", "lollies_chocolate", "misc".
 
 The array must contain exactly ${rawItems.length} objects and preserve the input order.
 
-Route confectionery (chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc.) to "lollies_chocolate". If genuinely unsure, use "misc".
+Route confectionery (chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc.) to "lollies_chocolate".
+Route personal-care / bathroom items used on the body (shampoo, conditioner, soap, body wash, hand soap, shower gel, toothpaste, toothbrush, floss, mouthwash, deodorant, razors, shaving cream, moisturiser, sunscreen, cotton buds, sanitary/period products, tampons, pads, nappies) to "toiletries".
+Cleaning and home supplies (dishwashing liquid, laundry powder/detergent, bin bags, paper towel, cling wrap, sponges, surface spray, toilet paper) stay in "household" — do NOT put those in toiletries.
+If genuinely unsure, use "misc".
 
 Input items (in order):
 ${numbered}
