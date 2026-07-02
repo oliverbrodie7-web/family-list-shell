@@ -447,7 +447,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       </section>
 
       {/* ---------- BROWSE COMMON ITEMS ---------- */}
-      <section className="mt-4 w-full">
+      <section className="mt-8 w-full">
         <motion.button
           type="button"
           onClick={() => setBrowseOpen(true)}
