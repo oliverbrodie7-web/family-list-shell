@@ -94,12 +94,12 @@ function JoinPage() {
       <Shell>
         <Card>
           <h2
-            className="text-[20px] font-semibold leading-tight"
+            className="text-[24px] font-semibold leading-tight"
             style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
           >
             Joining your family…
           </h2>
-          <p className="mt-1.5 text-sm" style={{ color: "var(--clay-muted)" }}>
+          <p className="mt-1.5 text-[15px]" style={{ color: "var(--clay-muted)" }}>
             One moment.
           </p>
         </Card>
@@ -112,12 +112,12 @@ function JoinPage() {
       <Shell>
         <Card>
           <h2
-            className="text-[20px] font-semibold leading-tight"
+            className="text-[24px] font-semibold leading-tight"
             style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
           >
             Can't join
           </h2>
-          <p className="mt-2 text-[14px]" style={{ color: "var(--clay-muted)" }}>
+          <p className="mt-2 text-[15px]" style={{ color: "var(--clay-muted)" }}>
             {stage.message}
           </p>
           <button
@@ -147,7 +147,7 @@ function Shell({ children }: { children: React.ReactNode }) {
     >
       <div className="w-full max-w-sm">
         <h1
-          className="mb-6 text-center font-display text-[28px] leading-none"
+          className="mb-6 text-center font-display text-[30px] leading-none"
           style={{ color: "var(--clay-ink)", letterSpacing: "-0.015em" }}
         >
           Our Pantry
@@ -179,7 +179,7 @@ function FieldLabel({
   return (
     <label
       htmlFor={htmlFor}
-      className="block text-[11px] font-semibold uppercase tracking-[0.08em]"
+      className="block text-[12px] font-semibold uppercase tracking-[0.08em]"
       style={{ color: "var(--clay-muted)" }}
     >
       {children}
@@ -266,12 +266,12 @@ function SetupNewMember({
     <Shell>
       <div className="mb-4 text-center">
         <h2
-          className="text-[22px] font-semibold leading-tight"
+          className="text-[24px] font-semibold leading-tight"
           style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
         >
           Set up your profile
         </h2>
-        <p className="mt-1.5 text-sm" style={{ color: "var(--clay-muted)" }}>
+        <p className="mt-1.5 text-[15px]" style={{ color: "var(--clay-muted)" }}>
           You've joined the family. Tell us your name and pick a 4-digit PIN.
         </p>
       </div>

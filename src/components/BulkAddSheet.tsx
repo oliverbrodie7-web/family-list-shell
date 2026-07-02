@@ -29,12 +29,12 @@ export function BulkAddSheet({
         >
           <X size={20} />
         </button>
-        <h2 className="text-base font-semibold text-neutral-900">Bulk add</h2>
+        <h2 className="text-[17px] font-semibold text-neutral-900">Bulk add</h2>
         <div className="w-9" />
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 py-3 pb-32">
-        <p className="mb-2 text-xs text-neutral-500">
+        <p className="mb-2 text-[13px] text-neutral-500">
           One item per line, or separated by commas.
         </p>
         <textarea
@@ -44,7 +44,7 @@ export function BulkAddSheet({
           placeholder={"milk\neggs\nbananas\nbread"}
           className="h-[55vh] w-full resize-none rounded-xl border border-neutral-200 px-3 py-3 text-[16px] leading-relaxed text-neutral-900 outline-none focus:border-[var(--accent-green)]"
         />
-        <p className="mt-2 text-xs text-neutral-400">
+        <p className="mt-2 text-[13px] text-neutral-400">
           {items.length} {items.length === 1 ? "item" : "items"} detected
         </p>
       </div>

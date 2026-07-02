@@ -129,7 +129,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
 
   if (!householdId) {
     return (
-      <p className="px-5 pt-6 text-sm" style={{ color: "var(--clay-muted)" }}>
+      <p className="px-5 pt-6 text-[15px]" style={{ color: "var(--clay-muted)" }}>
         Loading household…
       </p>
     );
@@ -178,10 +178,10 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
     return (
       <div className="flex flex-1 flex-col items-center justify-center px-8 pt-20 text-center">
         <ShoppingCart size={36} strokeWidth={1.5} style={{ color: "#C9BBA8" }} />
-        <p className="mt-4 text-base font-medium" style={{ color: "var(--clay-ink)" }}>
+        <p className="mt-4 text-[17px] font-medium" style={{ color: "var(--clay-ink)" }}>
           Your shopping list will appear here
         </p>
-        <p className="mt-1 text-sm" style={{ color: "var(--clay-muted)" }}>
+        <p className="mt-1 text-[15px]" style={{ color: "var(--clay-muted)" }}>
           Add an item from the Input tab.
         </p>
       </div>
@@ -193,12 +193,12 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
       <div className="mb-3 px-1">
         <div className="flex items-center justify-between">
           <p
-            className="text-[11px] font-semibold uppercase tracking-wider"
+            className="text-[12px] font-semibold uppercase tracking-wider"
             style={{ color: "var(--clay-muted)" }}
           >
             {activeItems.length} {activeItems.length === 1 ? "item" : "items"} left
           </p>
-          <p className="text-[11px]" style={{ color: "var(--clay-muted)" }}>
+          <p className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
             {done} of {total} in the trolley
           </p>
         </div>
@@ -309,12 +309,12 @@ function AisleCard({
     >
       <header className="flex items-center justify-between px-3.5 pt-2 pb-1">
         <h2
-          className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+          className="text-[12px] font-semibold uppercase tracking-[0.08em]"
           style={{ color: "var(--clay-muted)" }}
         >
           {label}
         </h2>
-        <span className="text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
+        <span className="text-[12px] font-medium" style={{ color: "var(--clay-muted)" }}>
           {count}
         </span>
       </header>
@@ -435,7 +435,7 @@ function SwipeRow({
       </div>
 
       <motion.div
-        className="relative flex items-center gap-2.5 bg-white px-3.5 py-2 touch-pan-y"
+        className="relative flex items-center gap-2.5 bg-white px-3.5 py-2.5 touch-pan-y"
         style={{ x }}
         drag="x"
         dragDirectionLock
@@ -487,10 +487,10 @@ function SwipeRow({
         <button
           type="button"
           onClick={handleNameClick}
-          className="flex min-h-[28px] flex-1 items-center gap-1.5 text-left"
+          className="flex min-h-[32px] flex-1 items-center gap-1.5 text-left"
         >
           <span
-            className="text-[14px] leading-tight"
+            className="text-[15px] leading-tight"
             style={{
               color: checked ? "var(--clay-muted)" : "var(--clay-ink)",
               opacity: checked ? 0.7 : 1,
@@ -511,7 +511,7 @@ function SwipeRow({
         {member && (
           <span
             title={`Added by ${member.name}`}
-            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+            className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
             style={{ background: member.color, opacity: checked ? 0.5 : 1 }}
           >
             {member.initial}
@@ -563,7 +563,7 @@ function EditSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between">
-          <h3 className="text-base font-semibold" style={{ color: "var(--clay-ink)" }}>
+          <h3 className="text-[17px] font-semibold" style={{ color: "var(--clay-ink)" }}>
             Edit item
           </h3>
           <button
@@ -615,7 +615,7 @@ function EditSheet({
         </div>
 
         <p
-          className="mt-4 mb-2 text-[11px] font-semibold uppercase tracking-wider"
+          className="mt-4 mb-2 text-[12px] font-semibold uppercase tracking-wider"
           style={{ color: "var(--clay-muted)" }}
         >
           Category
@@ -626,7 +626,7 @@ function EditSheet({
               key={c}
               type="button"
               onClick={() => setCategory(c)}
-              className="min-h-[36px] rounded-full px-3 text-sm font-medium transition"
+              className="min-h-[40px] rounded-full px-3 text-[15px] font-medium transition"
               style={{
                 border:
                   category === c
@@ -645,7 +645,7 @@ function EditSheet({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-lg py-3 text-[15px] font-medium"
+            className="flex-1 rounded-lg py-3 text-[16px] font-medium"
             style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
           >
             Cancel
@@ -653,7 +653,7 @@ function EditSheet({
           <button
             type="button"
             onClick={submit}
-            className="flex-1 rounded-lg py-3 text-[15px] font-semibold text-white"
+            className="flex-1 rounded-lg py-3 text-[16px] font-semibold text-white"
             style={{ background: "var(--clay-accent)" }}
           >
             Save
@@ -689,18 +689,18 @@ function TrolleyCard({
         type="button"
         onClick={onToggleOpen}
         whileTap={{ scale: 0.98 }}
-        className="flex w-full items-center justify-between px-3.5 py-2 text-left"
+        className="flex w-full items-center justify-between px-3.5 py-2.5 text-left"
         aria-expanded={open}
       >
         <span className="flex items-center gap-2">
           <ShoppingCart size={13} style={{ color: "var(--clay-muted)" }} />
           <span
-            className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+            className="text-[12px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
           >
             In the trolley
           </span>
-          <span className="text-[11px] font-medium" style={{ color: "var(--clay-muted)" }}>
+          <span className="text-[12px] font-medium" style={{ color: "var(--clay-muted)" }}>
             · {items.length}
           </span>
         </span>
@@ -740,7 +740,7 @@ function TrolleyCard({
                       style={{ borderTop: "1px solid var(--clay-border)", overflow: "hidden" }}
                       className="first:border-t-0"
                     >
-                      <div className="flex items-center gap-2.5 bg-white px-3.5 py-2">
+                      <div className="flex items-center gap-2.5 bg-white px-3.5 py-2.5">
                         <button
                           type="button"
                           onClick={() => onUntick(it)}
@@ -757,10 +757,10 @@ function TrolleyCard({
                         <button
                           type="button"
                           onClick={() => onUntick(it)}
-                          className="flex min-h-[28px] flex-1 items-center gap-1.5 text-left"
+                          className="flex min-h-[32px] flex-1 items-center gap-1.5 text-left"
                         >
                           <span
-                            className="text-[14px] leading-tight"
+                            className="text-[15px] leading-tight"
                             style={{ color: "var(--clay-muted)", opacity: 0.75 }}
                           >
                             {it.display_name}
@@ -774,7 +774,7 @@ function TrolleyCard({
                         {member && (
                           <span
                             title={`Added by ${member.name}`}
-                            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                            className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[10px] font-semibold text-white"
                             style={{ background: member.color, opacity: 0.5 }}
                           >
                             {member.initial}
@@ -794,7 +794,7 @@ function TrolleyCard({
                 type="button"
                 onClick={onClear}
                 whileTap={{ scale: 0.96 }}
-                className="w-full rounded-lg py-2 text-[13px] font-semibold text-white"
+                className="w-full rounded-lg py-2.5 text-[14px] font-semibold text-white"
                 style={{ background: "var(--clay-accent)" }}
               >
                 Done — clear trolley
@@ -825,10 +825,10 @@ function ConfirmClearDialog({
         className="w-full max-w-md rounded-t-2xl bg-white p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-base font-semibold" style={{ color: "var(--clay-ink)" }}>
+        <h3 className="text-[17px] font-semibold" style={{ color: "var(--clay-ink)" }}>
           Clear the trolley?
         </h3>
-        <p className="mt-1 text-sm" style={{ color: "var(--clay-muted)" }}>
+        <p className="mt-1 text-[15px]" style={{ color: "var(--clay-muted)" }}>
           This removes {count} bought {count === 1 ? "item" : "items"} from the list. Unticked
           items stay for next time.
         </p>
@@ -836,7 +836,7 @@ function ConfirmClearDialog({
           <button
             type="button"
             onClick={onCancel}
-            className="flex-1 rounded-lg py-3 text-[15px] font-medium"
+            className="flex-1 rounded-lg py-3 text-[16px] font-medium"
             style={{ border: "1px solid var(--clay-border)", color: "var(--clay-ink)" }}
           >
             Cancel
@@ -844,7 +844,7 @@ function ConfirmClearDialog({
           <button
             type="button"
             onClick={onConfirm}
-            className="flex-1 rounded-lg py-3 text-[15px] font-semibold text-white"
+            className="flex-1 rounded-lg py-3 text-[16px] font-semibold text-white"
             style={{ background: "var(--clay-accent)" }}
           >
             Clear

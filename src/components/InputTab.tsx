@@ -284,7 +284,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       {/* ---------- HERO BLOCK ---------- */}
       <div className="flex flex-1 flex-col items-center justify-center">
         <h1
-          className="font-display mb-5 text-center text-[28px] leading-tight"
+          className="font-display mb-5 text-center text-[30px] leading-tight"
           style={{ color: "var(--clay-ink)" }}
         >
           What do you need?
@@ -353,7 +353,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           <div className="flex items-center gap-1.5">
             <label
               htmlFor="qty-input"
-              className="text-[12px]"
+              className="text-[13px]"
               style={{ color: "var(--clay-muted)" }}
             >
               + qty
@@ -377,7 +377,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
               whileTap={{ scale: 0.94 }}
               aria-label="Toggle priority"
               aria-pressed={priority}
-              className="ml-1 flex items-center gap-1 rounded-full px-2.5 py-1 text-[12px] transition"
+              className="ml-1 flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] transition"
               style={{
                 border: "1px solid var(--clay-border)",
                 background: priority ? "#FBEED9" : "#FFFFFF",
@@ -392,7 +392,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             type="button"
             onClick={() => setBulkOpen(true)}
             whileTap={{ scale: 0.95 }}
-            className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium transition"
+            className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-medium transition"
             style={{
               border: "1px solid var(--clay-border)",
               color: "var(--clay-muted)",
@@ -420,7 +420,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         <div className="mb-2 flex items-center gap-1.5 px-1">
           <Sparkles size={12} style={{ color: "var(--clay-accent)" }} />
           <h2
-            className="text-[11px] font-semibold uppercase tracking-[0.08em]"
+            className="text-[12px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
           >
             Your regulars
@@ -438,7 +438,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           </div>
         ) : (
           <p
-            className="px-1 text-[13px]"
+            className="px-1 text-[14px]"
             style={{ color: "var(--clay-muted)" }}
           >
             Your most-added items will show up here.
@@ -456,7 +456,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           style={{ border: "1px solid var(--clay-border)" }}
         >
           <span
-            className="text-[15px]"
+            className="text-[16px]"
             style={{ color: "var(--clay-ink)" }}
           >
             Browse common items
@@ -497,7 +497,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                   >
                     <div className="flex min-w-0 flex-1 items-center gap-2">
                       <span
-                        className="truncate text-[14px]"
+                        className="truncate text-[15px]"
                         style={{ color: "var(--clay-ink)" }}
                       >
                         {it.display_name}
@@ -514,7 +514,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
                     {it.categorizing || !it.category ? (
                       <span
-                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider"
+                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wider"
                         style={{
                           background: "var(--clay-border)",
                           color: "var(--clay-muted)",
@@ -529,7 +529,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                         initial={{ scale: 0.85, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={snappySpring}
-                        className="rounded-full px-2 py-0.5 text-[11px] font-medium"
+                        className="rounded-full px-2 py-0.5 text-[12px] font-medium"
                         style={{
                           background: "var(--clay-accent-soft)",
                           color: "var(--clay-accent)",
@@ -625,7 +625,7 @@ function AddChip({
       onClick={handle}
       whileTap={{ scale: 0.94 }}
       transition={snappySpring}
-      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[13px] transition-colors duration-200"
+      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[14px] transition-colors duration-200"
       style={{
         border: `1px solid ${added ? "var(--clay-accent)" : "var(--clay-border)"}`,
         background: added ? "var(--clay-accent)" : "#FFFFFF",
@@ -668,7 +668,7 @@ function SuggestionRow({
       onMouseDown={(e) => e.preventDefault()}
       onClick={handle}
       whileTap={{ scale: 0.98 }}
-      className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[15px] transition-colors duration-200"
+      className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[16px] transition-colors duration-200"
       style={{
         background: added ? "var(--clay-accent)" : "transparent",
         color: added ? "#FFFFFF" : "var(--clay-ink)",
@@ -718,7 +718,7 @@ function BrowseSheet({
       >
         <div className="flex items-center justify-between px-5 pt-4 pb-2">
           <h3
-            className="text-[16px] font-semibold"
+            className="text-[17px] font-semibold"
             style={{ color: "var(--clay-ink)" }}
           >
             Browse common items
@@ -734,7 +734,7 @@ function BrowseSheet({
           </button>
         </div>
         <p
-          className="px-5 pb-3 text-[12px]"
+          className="px-5 pb-3 text-[13px]"
           style={{ color: "var(--clay-muted)" }}
         >
           Tap any item to add it.
@@ -757,7 +757,7 @@ function BrowseSheet({
                 }}
               >
                 <p
-                  className="mb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.08em]"
+                  className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.08em]"
                   style={{ color: "var(--clay-muted)" }}
                 >
                   {aisle.label}

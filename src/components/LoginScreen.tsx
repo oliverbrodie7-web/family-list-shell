@@ -30,7 +30,7 @@ export function LoginScreen() {
           >
             Our Pantry
           </h1>
-          <p className="mt-2 text-sm" style={{ color: "var(--clay-muted)" }}>
+          <p className="mt-2 text-[15px]" style={{ color: "var(--clay-muted)" }}>
             Sign in to continue
           </p>
         </div>
@@ -89,7 +89,7 @@ function Field({
   return (
     <div>
       <label
-        className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.08em]"
+        className="mb-1.5 block text-[12px] font-semibold uppercase tracking-[0.08em]"
         style={{ color: "var(--clay-muted)" }}
       >
         {label}

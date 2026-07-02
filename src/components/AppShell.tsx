@@ -26,7 +26,7 @@ export function AppShell() {
       <header className="flex items-center justify-between gap-3 border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <div className="min-w-0 flex-1">
           {tab === "list" && (
-            <h1 className="font-serif text-[19px] leading-none" style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}>
+            <h1 className="font-serif text-[20px] leading-none" style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}>
               Shopping list
             </h1>
           )}
@@ -34,7 +34,7 @@ export function AppShell() {
         <div className="flex items-center gap-1.5">
           {member?.name && (
             <span
-              className="text-[13px] font-medium"
+              className="text-[14px] font-medium"
               style={{ color: "var(--clay-ink)" }}
             >
               {member.name}
@@ -114,7 +114,7 @@ function TabButton({
     <motion.button
       onClick={onClick}
       whileTap={{ scale: 0.92 }}
-      className={`flex flex-1 flex-col items-center gap-1 py-2 text-xs font-medium transition ${
+      className={`flex flex-1 flex-col items-center gap-1 py-2 text-sm font-medium transition ${
         active ? "text-[var(--accent-green)]" : "text-neutral-400"
       }`}
     >
