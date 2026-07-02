@@ -280,7 +280,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-5 pb-10">
+    <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-10">
       {/* ---------- HERO BLOCK ---------- */}
       <div className="flex flex-col items-center pt-6">
         <h1
