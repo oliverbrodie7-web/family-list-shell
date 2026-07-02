@@ -416,7 +416,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       )}
 
       {/* ---------- YOUR REGULARS ---------- */}
-      <section className="mt-6 w-full">
+      <section className="mt-10 w-full">
         <div className="mb-2 flex items-center gap-1.5 px-1">
           <Sparkles size={12} style={{ color: "var(--clay-accent)" }} />
           <h2
