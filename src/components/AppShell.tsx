@@ -92,7 +92,7 @@ export function AppShell() {
           />
         </div>
       </nav>
-      <Toaster position="bottom-center" offset={88} />
+      <Toaster position="top-center" offset={72} />
 
     </div>
     </MotionConfig>
