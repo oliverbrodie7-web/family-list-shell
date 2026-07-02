@@ -1,42 +1,70 @@
 import { useState } from "react";
-import { PlusCircle, ShoppingCart } from "lucide-react";
+import { PlusCircle, ShoppingCart, Bell, BellOff, Settings } from "lucide-react";
 import { MotionConfig, motion } from "framer-motion";
 import { useHouseholdId } from "@/lib/household";
 import { useMember } from "@/lib/member";
+import { useNotifications } from "@/lib/notifications";
 import { InputTab } from "./InputTab";
 import { ListTab } from "./ListTab";
 import { Toaster } from "@/components/ui/sonner";
-import { NotificationsToggle } from "./NotificationsToggle";
-import { ProfileSheet } from "./ProfileSheet";
+import { SettingsSheet } from "./SettingsSheet";
 
 type Tab = "input" | "list";
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>("input");
-  const [profileOpen, setProfileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const { householdId } = useHouseholdId();
   const { member } = useMember();
+  const notifications = useNotifications();
+
+  const bellOn = notifications.enabled && !notifications.needsReregister;
 
   return (
     <MotionConfig reducedMotion="user" transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.7 }}>
     <div className="flex min-h-[100dvh] flex-col bg-white">
-      <header className="flex items-center justify-between gap-2 border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
-        {tab === "list" && (
-          <h1 className="text-base font-semibold tracking-tight text-neutral-900">
-            Shopping list
-          </h1>
-        )}
-        <div className="flex items-center gap-2">
-          <NotificationsToggle />
+      <header className="flex items-center justify-between gap-3 border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
+        <div className="min-w-0 flex-1">
+          {tab === "list" && (
+            <h1 className="font-serif text-[19px] leading-none" style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}>
+              Shopping list
+            </h1>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {member?.name && (
+            <span
+              className="text-[13px] font-medium"
+              style={{ color: "var(--clay-ink)" }}
+            >
+              {member.name}
+            </span>
+          )}
+          {notifications.supported && notifications.ready && (
+            <button
+              onClick={() => setSettingsOpen(true)}
+              aria-label={bellOn ? "Notifications on" : "Notifications off"}
+              className="flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95"
+            >
+              {bellOn ? (
+                <Bell size={16} fill="#C2693F" color="#C2693F" strokeWidth={0} />
+              ) : (
+                <BellOff size={16} color="var(--clay-muted)" strokeWidth={1.75} />
+              )}
+            </button>
+          )}
           <button
-            onClick={() => setProfileOpen(true)}
-            className="rounded-lg px-2.5 py-1.5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-100"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="Settings"
+            className="flex h-8 w-8 items-center justify-center rounded-full transition active:scale-95"
           >
-            {member?.name ?? "Profile"}
+            <Settings size={18} color="var(--clay-muted)" strokeWidth={1.75} />
           </button>
         </div>
       </header>
-      {profileOpen && <ProfileSheet onClose={() => setProfileOpen(false)} />}
+      {settingsOpen && (
+        <SettingsSheet onClose={() => setSettingsOpen(false)} notifications={notifications} />
+      )}
 
       <main className="flex flex-1 flex-col pb-24">
         {tab === "input" ? (
