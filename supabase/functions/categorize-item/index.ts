@@ -207,9 +207,12 @@ Return ONLY a raw JSON object. No preamble, no explanation, no markdown, no code
 
 The object must have exactly these keys:
 - "clean_name": fix spelling, punctuation and capitalisation only. Do NOT reword, expand, translate, pluralise, add detail, or change quantities. Correct obvious misspellings. Only leave wording unchanged if it is a brand name or clearly deliberate.
-- "category": exactly one of "produce", "bakery", "deli", "meat", "dairy", "frozen", "pantry", "household", "lollies_chocolate", "misc".
+- "category": exactly one of "produce", "bakery", "deli", "meat", "dairy", "frozen", "pantry", "household", "toiletries", "lollies_chocolate", "misc".
 
-Route confectionery (chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc.) to "lollies_chocolate". If genuinely unsure about category, use "misc".
+Route confectionery (chocolate, lollies, sweets, candy, gum, gummies, marshmallows, etc.) to "lollies_chocolate".
+Route personal-care / bathroom items used on the body (shampoo, conditioner, soap, body wash, hand soap, shower gel, toothpaste, toothbrush, floss, mouthwash, deodorant, razors, shaving cream, moisturiser, sunscreen, cotton buds, sanitary/period products, tampons, pads, nappies) to "toiletries".
+Cleaning and home supplies (dishwashing liquid, laundry powder/detergent, bin bags, paper towel, cling wrap, sponges, surface spray, toilet paper) stay in "household" — do NOT put those in toiletries.
+If genuinely unsure about category, use "misc".
 
 Item: "${input}"
 
