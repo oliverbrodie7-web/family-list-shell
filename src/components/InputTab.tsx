@@ -282,7 +282,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-5 pb-10">
       {/* ---------- HERO BLOCK ---------- */}
-      <div className="flex flex-col items-center pt-[10vh]">
+      <div className="flex flex-col items-center pt-6">
         <h1
           className="font-display mb-5 text-center text-[28px] leading-tight"
           style={{ color: "var(--clay-ink)" }}
@@ -416,7 +416,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       )}
 
       {/* ---------- YOUR REGULARS ---------- */}
-      <section className="mt-6 w-full">
+      <section className="mt-10 w-full">
         <div className="mb-2 flex items-center gap-1.5 px-1">
           <Sparkles size={12} style={{ color: "var(--clay-accent)" }} />
           <h2
@@ -447,7 +447,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       </section>
 
       {/* ---------- BROWSE COMMON ITEMS ---------- */}
-      <section className="mt-4 w-full">
+      <section className="mt-8 w-full">
         <motion.button
           type="button"
           onClick={() => setBrowseOpen(true)}
@@ -468,7 +468,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
       {/* ---------- JUST ADDED ---------- */}
       {recent.length > 0 && (
-        <section className="mt-7">
+        <section className="mt-10">
           <p
             className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
