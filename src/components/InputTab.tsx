@@ -282,7 +282,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-10">
       {/* ---------- HERO BLOCK ---------- */}
-      <div className="flex flex-col items-center pt-6">
+      <div className="flex flex-1 flex-col items-center justify-center">
         <h1
           className="font-display mb-5 text-center text-[28px] leading-tight"
           style={{ color: "var(--clay-ink)" }}
@@ -316,8 +316,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
               whileTap={{ scale: 0.9 }}
               transition={snappySpring}
               aria-label="Add item"
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition disabled:opacity-40"
-              style={{ background: "var(--clay-accent)" }}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition"
+              style={{ background: "#C2693F" }}
             >
               <Plus size={22} strokeWidth={2.5} />
             </motion.button>
