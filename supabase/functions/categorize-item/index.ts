@@ -11,6 +11,7 @@ const ALLOWED = [
   "frozen",
   "pantry",
   "household",
+  "toiletries",
   "lollies_chocolate",
   "misc",
 ] as const;
