@@ -468,7 +468,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
       {/* ---------- JUST ADDED ---------- */}
       {recent.length > 0 && (
-        <section className="mt-7">
+        <section className="mt-10">
           <p
             className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
