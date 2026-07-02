@@ -185,6 +185,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     inputRef.current?.focus();
     setSubmitting(false);
 
+    notifyAdded(trimmed);
     await insertSingle(trimmed, qty, isPriority);
   };
 
