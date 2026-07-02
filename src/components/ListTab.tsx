@@ -223,6 +223,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
             return (
               <AisleCard
                 key={c}
+                aisleKey={c}
                 label={CATEGORY_LABELS[c]}
                 count={arr.length}
                 items={arr}
@@ -276,7 +277,29 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   );
 }
 
+const COLLAPSE_STORAGE_KEY = "pantry.aisleCollapsed.v1";
+
+function readCollapsed(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeCollapsed(state: Record<string, boolean>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    /* ignore */
+  }
+}
+
 function AisleCard({
+  aisleKey,
   label,
   count,
   items,
@@ -287,6 +310,7 @@ function AisleCard({
   openSwipeId,
   setOpenSwipeId,
 }: {
+  aisleKey: string;
   label: string;
   count: number;
   items: Item[];
@@ -297,6 +321,20 @@ function AisleCard({
   openSwipeId: string | null;
   setOpenSwipeId: (id: string | null) => void;
 }) {
+  const [collapsed, setCollapsed] = useState<boolean>(() => !!readCollapsed()[aisleKey]);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      const state = readCollapsed();
+      if (next) state[aisleKey] = true;
+      else delete state[aisleKey];
+      writeCollapsed(state);
+      return next;
+    });
+    if (openSwipeId) setOpenSwipeId(null);
+  };
+
   return (
     <motion.section
       layout
@@ -307,37 +345,68 @@ function AisleCard({
       className="overflow-hidden rounded-[14px] bg-white"
       style={{ border: "1px solid var(--clay-border)" }}
     >
-      <header className="flex items-center justify-between px-3.5 pt-2 pb-1">
+      <button
+        type="button"
+        onClick={toggleCollapsed}
+        aria-expanded={!collapsed}
+        aria-controls={`aisle-${aisleKey}`}
+        className="flex w-full items-center justify-between px-3.5 pt-2 pb-1.5 text-left"
+      >
         <h2
           className="text-[12px] font-semibold uppercase tracking-[0.08em]"
           style={{ color: "var(--clay-muted)" }}
         >
           {label}
         </h2>
-        <span className="text-[12px] font-medium" style={{ color: "var(--clay-muted)" }}>
-          {count}
+        <span className="flex items-center gap-1.5">
+          <span className="text-[12px] font-medium" style={{ color: "var(--clay-muted)" }}>
+            {count}
+          </span>
+          <motion.span
+            animate={{ rotate: collapsed ? -90 : 0 }}
+            transition={gentleSpring}
+            className="flex items-center justify-center"
+            style={{ color: "var(--clay-muted)" }}
+            aria-hidden
+          >
+            <ChevronDown size={14} strokeWidth={2.25} />
+          </motion.span>
         </span>
-      </header>
-      <ul>
-        <AnimatePresence initial={false}>
-          {items.map((it, idx) => (
-            <SwipeRow
-              key={it.id}
-              item={it}
-              isFirst={idx === 0}
-              member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
-              isOpen={openSwipeId === it.id}
-              onRequestOpen={() => setOpenSwipeId(it.id)}
-              onRequestClose={() => {
-                if (openSwipeId === it.id) setOpenSwipeId(null);
-              }}
-              onToggle={() => onToggle(it)}
-              onEdit={() => onEdit(it)}
-              onDelete={() => onDelete(it)}
-            />
-          ))}
-        </AnimatePresence>
-      </ul>
+      </button>
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            key="body"
+            id={`aisle-${aisleKey}`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={softSpring}
+            style={{ overflow: "hidden" }}
+          >
+            <ul>
+              <AnimatePresence initial={false}>
+                {items.map((it, idx) => (
+                  <SwipeRow
+                    key={it.id}
+                    item={it}
+                    isFirst={idx === 0}
+                    member={it.added_by_member_id ? memberMap.get(it.added_by_member_id) : undefined}
+                    isOpen={openSwipeId === it.id}
+                    onRequestOpen={() => setOpenSwipeId(it.id)}
+                    onRequestClose={() => {
+                      if (openSwipeId === it.id) setOpenSwipeId(null);
+                    }}
+                    onToggle={() => onToggle(it)}
+                    onEdit={() => onEdit(it)}
+                    onDelete={() => onDelete(it)}
+                  />
+                ))}
+              </AnimatePresence>
+            </ul>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.section>
   );
 }
