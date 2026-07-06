@@ -61,36 +61,37 @@ export function LoginScreen() {
         return;
       }
 
-      // Ensure session (email confirmation is off, so signUp should sign us in).
+      // Ensure session. If email confirmation is on, signUp won't return one —
+      // try signing in immediately as a safety net.
       let session = signUpData.session;
       if (!session) {
-        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        const { data: signInData } = await supabase.auth.signInWithPassword({
           email: cleanEmail,
           password,
         });
-        if (signInErr || !signInData.session) {
-          setError("Account created, but we couldn't sign you in. Please try logging in.");
-          setStatus(null);
-          setSubmitting(false);
-          return;
-        }
-        session = signInData.session;
+        session = signInData.session ?? null;
       }
 
-      setStatus("Setting up your family…");
-      const { data: hhData, error: hhErr } = await supabase.functions.invoke("create-household", {
-        body: { familyName: "My Family" },
-      });
-      if (hhErr || !hhData?.household_id) {
+      if (!session) {
         setError(
-          "We couldn't finish setting things up. Tap 'Create account' again to retry.",
+          "Account created. Please check your email to confirm, then log in.",
         );
         setStatus(null);
         setSubmitting(false);
         return;
       }
 
-      // Fresh reload lands the user cleanly in member setup with correct household state.
+      // Best-effort: create the household now. If this fails for any reason,
+      // the HouseholdGate self-heal will retry on the next app load.
+      setStatus("Setting up your pantry…");
+      try {
+        await supabase.functions.invoke("create-household", {
+          body: { familyName: "My Family" },
+        });
+      } catch {
+        /* swallow — self-heal will handle it */
+      }
+
       window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
