@@ -81,17 +81,8 @@ export function LoginScreen() {
         return;
       }
 
-      // Best-effort: create the household now. If this fails for any reason,
-      // the HouseholdGate self-heal will retry on the next app load.
-      setStatus("Setting up your pantry…");
-      try {
-        await supabase.functions.invoke("create-household", {
-          body: { familyName: "My Family" },
-        });
-      } catch {
-        /* swallow — self-heal will handle it */
-      }
-
+      // Don't auto-create a household — let the user choose "Start a new
+      // family" or "Join a family" on the fork screen after signup.
       window.location.reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
