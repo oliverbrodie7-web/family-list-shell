@@ -270,60 +270,125 @@ export function SettingsSheet({
           </button>
         </form>
 
-        {/* Invite card */}
+        {/* Invite card — code-first */}
         <div
-          className="mt-3 space-y-2 rounded-[14px] bg-white p-4"
+          className="mt-3 space-y-3 rounded-[14px] bg-white p-4"
           style={{ border: "1px solid var(--clay-border)" }}
         >
+          <div>
+            <h3
+              className="text-[16px] font-semibold"
+              style={{ color: "var(--clay-ink)" }}
+            >
+              Invite a family member
+            </h3>
+            <p className="mt-1 text-[13px]" style={{ color: "var(--clay-muted)" }}>
+              Get a short code they can type into the app on their phone.
+            </p>
+          </div>
+
           <button
-            onClick={createInvite}
-            disabled={inviteLoading || !householdId}
-            className="clay-btn-secondary"
+            onClick={createInviteCode}
+            disabled={codeLoading}
+            className="clay-btn-primary"
           >
-            {inviteLoading ? "Creating link…" : "Invite a family member"}
+            {codeLoading
+              ? "Creating code…"
+              : inviteCode
+                ? "Create another code"
+                : "Create invite code"}
           </button>
 
-          {inviteError && (
+          {codeError && (
             <p className="text-[15px]" style={{ color: "#B4441F" }}>
-              {inviteError}
+              {codeError}
             </p>
           )}
 
-          {inviteLink && (
+          {inviteCode && (
             <div
-              className="space-y-2 rounded-xl p-3"
+              className="space-y-3 rounded-xl p-4 text-center"
               style={{
                 background: "var(--clay-accent-soft)",
                 border: "1px solid var(--clay-border)",
               }}
             >
-              <p className="text-[13px]" style={{ color: "var(--clay-muted)" }}>
-                This link lets someone join your family. Valid for 7 days.
-              </p>
-              <div
-                className="flex items-center gap-2 rounded-lg bg-white px-3 py-2"
-                style={{ border: "1px solid var(--clay-border)" }}
+              <p
+                className="font-serif text-[30px] leading-none tracking-[0.08em]"
+                style={{ color: "var(--clay-ink)", letterSpacing: "0.12em" }}
               >
-                <span
-                  className="flex-1 truncate text-[14px]"
-                  style={{ color: "var(--clay-ink)" }}
+                {inviteCode}
+              </p>
+              <p className="text-[13px]" style={{ color: "var(--clay-muted)" }}>
+                Share this code with your family member. It works for one join
+                and expires in 7 days.
+              </p>
+              <button onClick={copyCode} className="clay-btn-primary">
+                {codeCopied ? "Copied!" : "Copy code"}
+              </button>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowLinkOption((v) => !v)}
+            className="text-[13px] font-medium"
+            style={{ color: "var(--clay-muted)" }}
+          >
+            {showLinkOption ? "Hide link option" : "Or share a link instead"}
+          </button>
+
+          {showLinkOption && (
+            <div className="space-y-2">
+              <button
+                onClick={createInvite}
+                disabled={inviteLoading || !householdId}
+                className="clay-btn-secondary"
+              >
+                {inviteLoading ? "Creating link…" : "Create invite link"}
+              </button>
+
+              {inviteError && (
+                <p className="text-[15px]" style={{ color: "#B4441F" }}>
+                  {inviteError}
+                </p>
+              )}
+
+              {inviteLink && (
+                <div
+                  className="space-y-2 rounded-xl p-3"
+                  style={{
+                    background: "var(--clay-accent-soft)",
+                    border: "1px solid var(--clay-border)",
+                  }}
                 >
-                  {inviteLink}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={copyLink} className="clay-btn-primary flex-1">
-                  {copied ? "Copied!" : "Copy link"}
-                </button>
-                {typeof navigator !== "undefined" && !!navigator.share && (
-                  <button onClick={shareLink} className="clay-btn-secondary flex-1">
-                    Share
-                  </button>
-                )}
-              </div>
+                  <div
+                    className="flex items-center gap-2 rounded-lg bg-white px-3 py-2"
+                    style={{ border: "1px solid var(--clay-border)" }}
+                  >
+                    <span
+                      className="flex-1 truncate text-[14px]"
+                      style={{ color: "var(--clay-ink)" }}
+                    >
+                      {inviteLink}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={copyLink} className="clay-btn-primary flex-1">
+                      {copied ? "Copied!" : "Copy link"}
+                    </button>
+                    {typeof navigator !== "undefined" && !!navigator.share && (
+                      <button onClick={shareLink} className="clay-btn-secondary flex-1">
+                        Share
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
+
 
         {/* Switch member */}
         <div
