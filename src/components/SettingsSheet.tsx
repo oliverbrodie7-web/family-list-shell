@@ -28,10 +28,15 @@ export function SettingsSheet({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [inviteCode, setInviteCode] = useState<string | null>(null);
+  const [codeLoading, setCodeLoading] = useState(false);
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [inviteLoading, setInviteLoading] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showLinkOption, setShowLinkOption] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -48,6 +53,36 @@ export function SettingsSheet({
     setSaving(false);
     if (error) setError(error);
     else setSavedAt(Date.now());
+  };
+
+  const createInviteCode = async () => {
+    setCodeLoading(true);
+    setCodeError(null);
+    setInviteCode(null);
+    setCodeCopied(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-invite-code");
+      setCodeLoading(false);
+      if (error || !data?.code) {
+        setCodeError("Couldn't create a code, please try again.");
+        return;
+      }
+      setInviteCode(data.code as string);
+    } catch {
+      setCodeLoading(false);
+      setCodeError("Couldn't create a code, please try again.");
+    }
+  };
+
+  const copyCode = async () => {
+    if (!inviteCode) return;
+    try {
+      await navigator.clipboard.writeText(inviteCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
   };
 
   const createInvite = async () => {
