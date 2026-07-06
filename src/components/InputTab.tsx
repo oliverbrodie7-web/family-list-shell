@@ -314,7 +314,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             <motion.button
               type="submit"
               disabled={!text.trim() || !householdId || submitting}
-              whileTap={{ scale: 0.9 }}
+              whileTap={{ scale: 0.86 }}
               transition={snappySpring}
               aria-label="Add item"
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-white transition"
@@ -375,7 +375,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
             <motion.button
               type="button"
               onClick={() => setPriority((p) => !p)}
-              whileTap={{ scale: 0.94 }}
+              whileTap={{ scale: 0.9 }}
+              transition={snappySpring}
               aria-label="Toggle priority"
               aria-pressed={priority}
               className="ml-1 flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] transition"
@@ -392,7 +393,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           <motion.button
             type="button"
             onClick={() => setBulkOpen(true)}
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.92 }}
+            transition={snappySpring}
             className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-medium transition"
             style={{
               border: "1px solid var(--clay-border)",
@@ -436,10 +438,10 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                   <motion.li
                     key={it.id}
                     layout
-                    initial={{ opacity: 0, height: 0, y: -6 }}
-                    animate={{ opacity: 1, height: "auto", y: 0 }}
+                    initial={{ opacity: 0, height: 0, y: -20, scale: 0.97 }}
+                    animate={{ opacity: 1, height: "auto", y: 0, scale: 1 }}
                     exit={{ opacity: 0, height: 0 }}
-                    transition={softSpring}
+                    transition={{ ...softSpring, delay: idx * 0.05 }}
                     className="flex items-center justify-between gap-2 overflow-hidden px-3.5 py-2.5"
                     style={{
                       borderTop:
@@ -476,7 +478,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                     ) : (
                       <motion.span
                         key={it.category}
-                        initial={{ scale: 0.85, opacity: 0 }}
+                        initial={{ scale: 0.7, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={snappySpring}
                         className="rounded-full px-2 py-0.5 text-[12px] font-medium"
@@ -493,7 +495,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                       onClick={() =>
                         toggleRecentPriority(it.id, !it.is_priority)
                       }
-                      whileTap={{ scale: 0.85 }}
+                      whileTap={{ scale: 0.82 }}
+                      transition={snappySpring}
                       aria-label="Toggle priority"
                       className="p-1 transition"
                       style={{
@@ -551,7 +554,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         <motion.button
           type="button"
           onClick={() => setBrowseOpen(true)}
-          whileTap={{ scale: 0.985 }}
+          whileTap={{ scale: 0.97 }}
+          transition={snappySpring}
           className="flex w-full items-center justify-between rounded-[14px] bg-white px-4 py-3.5 text-left transition active:bg-[var(--clay-accent-soft)]"
           style={{ border: "1px solid var(--clay-border)" }}
         >
@@ -623,7 +627,7 @@ function AddChip({
     <motion.button
       type="button"
       onClick={handle}
-      whileTap={{ scale: 0.94 }}
+      whileTap={{ scale: 0.9 }}
       transition={snappySpring}
       className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[14px] transition-colors duration-200"
       style={{
@@ -667,7 +671,8 @@ function SuggestionRow({
       type="button"
       onMouseDown={(e) => e.preventDefault()}
       onClick={handle}
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.96 }}
+      transition={snappySpring}
       className="flex w-full items-center justify-between gap-2 px-4 py-2.5 text-left text-[16px] transition-colors duration-200"
       style={{
         background: added ? "var(--clay-accent)" : "transparent",

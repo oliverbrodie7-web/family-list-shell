@@ -244,9 +244,9 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
           <motion.div
             key="trolley"
             layout
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
+            exit={{ opacity: 0, y: 20 }}
             transition={softSpring}
             className="mt-4"
           >
@@ -338,7 +338,7 @@ function AisleCard({
   return (
     <motion.section
       layout
-      initial={{ opacity: 0, y: -6 }}
+      initial={{ opacity: 0, y: -16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, height: 0, marginTop: 0 }}
       transition={softSpring}
@@ -439,7 +439,7 @@ function SwipeRow({
 
   const x = useMotionValue(0);
   const controls = useAnimation();
-  const spring = { type: "spring" as const, stiffness: 500, damping: 42, mass: 0.7 };
+  const spring = { type: "spring" as const, stiffness: 380, damping: 30, mass: 0.8 };
 
   // Sync external open/close state (e.g. another row opened).
   useEffect(() => {
@@ -478,8 +478,8 @@ function SwipeRow({
   return (
     <motion.li
       layout
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
+      initial={{ opacity: 0, height: 0, y: -18, scale: 0.97 }}
+      animate={{ opacity: 1, height: "auto", y: 0, scale: 1 }}
       exit={{ opacity: 0, height: 0 }}
       transition={softSpring}
       className="relative overflow-hidden"
@@ -526,8 +526,8 @@ function SwipeRow({
           type="button"
           onClick={onToggle}
           aria-label={checked ? "Uncheck" : "Check off"}
-          whileTap={{ scale: 0.88 }}
-          animate={{ scale: checked ? 1.08 : 1 }}
+          whileTap={{ scale: 0.85 }}
+          animate={{ scale: checked ? 1.18 : 1 }}
           transition={snappySpring}
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full"
           style={{
@@ -757,7 +757,8 @@ function TrolleyCard({
       <motion.button
         type="button"
         onClick={onToggleOpen}
-        whileTap={{ scale: 0.98 }}
+        whileTap={{ scale: 0.96 }}
+        transition={snappySpring}
         className="flex w-full items-center justify-between px-3.5 py-2.5 text-left"
         aria-expanded={open}
       >
@@ -802,8 +803,8 @@ function TrolleyCard({
                     <motion.li
                       key={it.id}
                       layout
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
+                      initial={{ opacity: 0, height: 0, y: -12 }}
+                      animate={{ opacity: 1, height: "auto", y: 0 }}
                       exit={{ opacity: 0, height: 0 }}
                       transition={softSpring}
                       style={{ borderTop: "1px solid var(--clay-border)", overflow: "hidden" }}
@@ -862,7 +863,8 @@ function TrolleyCard({
               <motion.button
                 type="button"
                 onClick={onClear}
-                whileTap={{ scale: 0.96 }}
+                whileTap={{ scale: 0.94 }}
+                transition={snappySpring}
                 className="w-full rounded-lg py-2.5 text-[14px] font-semibold text-white"
                 style={{ background: "var(--clay-accent)" }}
               >

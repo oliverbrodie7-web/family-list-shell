@@ -1,25 +1,28 @@
-// Shared framer-motion presets. Keep springs quick and understated.
+// Shared framer-motion presets. Loosened for lively, iOS-like motion:
+// clearly perceptible travel with a little spring overshoot as things settle
+// (not floppy) — taps are quick and poppy, layout/reorder glide with a touch
+// of bounce, and slower value tweens (progress, chevrons) read as smooth motion.
 import type { Transition } from "framer-motion";
 
 export const softSpring: Transition = {
   type: "spring",
-  stiffness: 420,
-  damping: 34,
-  mass: 0.7,
+  stiffness: 230,
+  damping: 22,
+  mass: 0.9,
 };
 
 export const snappySpring: Transition = {
   type: "spring",
-  stiffness: 520,
-  damping: 40,
-  mass: 0.6,
+  stiffness: 320,
+  damping: 18,
+  mass: 0.7,
 };
 
 export const gentleSpring: Transition = {
   type: "spring",
-  stiffness: 260,
-  damping: 26,
-  mass: 0.8,
+  stiffness: 200,
+  damping: 24,
+  mass: 1,
 };
 
-export const tapScale = { scale: 0.95 } as const;
+export const tapScale = { scale: 0.9 } as const;

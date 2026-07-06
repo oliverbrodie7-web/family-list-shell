@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { PlusCircle, ShoppingCart, Bell, BellOff, Settings } from "lucide-react";
 import { MotionConfig, motion } from "framer-motion";
+import { snappySpring } from "@/lib/motion";
 import { useHouseholdId } from "@/lib/household";
 import { useMember } from "@/lib/member";
 import { useNotifications } from "@/lib/notifications";
@@ -21,7 +22,7 @@ export function AppShell() {
   const bellOn = notifications.enabled && !notifications.needsReregister;
 
   return (
-    <MotionConfig reducedMotion="user" transition={{ type: "spring", stiffness: 420, damping: 34, mass: 0.7 }}>
+    <MotionConfig reducedMotion="user" transition={{ type: "spring", stiffness: 230, damping: 22, mass: 0.9 }}>
     <div className="flex min-h-[100dvh] flex-col bg-white">
       <header className="flex items-center justify-between gap-3 border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <div className="min-w-0 flex-1">
@@ -113,7 +114,8 @@ function TabButton({
   return (
     <motion.button
       onClick={onClick}
-      whileTap={{ scale: 0.92 }}
+      whileTap={{ scale: 0.88 }}
+      transition={snappySpring}
       className={`flex flex-1 flex-col items-center gap-1 py-2 text-sm font-medium transition ${
         active ? "text-[var(--accent-green)]" : "text-neutral-400"
       }`}
