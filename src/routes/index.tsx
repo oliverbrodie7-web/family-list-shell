@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { supabase } from "@/lib/supabase";
 import { AuthProvider, useAuth } from "@/lib/auth";
 import { LoginScreen } from "@/components/LoginScreen";
 import { AppShell } from "@/components/AppShell";
