@@ -190,6 +190,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     );
     bumpRegular(display_name);
     setRegularsTick((t) => t + 1);
+    registerUndo((data as RecentItem).id, display_name);
+
     if (householdId) {
       void notifyHousehold({
         householdId,
