@@ -1,0 +1,13 @@
+# Supabase project configuration.
+#
+# Only the alexa-test function is configured here. Amazon Alexa calls our
+# endpoint server-to-server and cannot send a Supabase JWT, so JWT verification
+# must be disabled for that one function. Every other Edge Function is left
+# untouched and keeps the platform default (verify_jwt = true), so the app's
+# authenticated functions stay protected.
+#
+# The GitHub Actions workflow runs `supabase functions deploy --project-ref ...`,
+# which reads this file and applies each function's settings on deploy.
+
+[functions.alexa-test]
+verify_jwt = false
