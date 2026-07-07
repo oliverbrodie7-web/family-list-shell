@@ -664,46 +664,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         </section>
       )}
 
-      {/* ---------- VOICE TEST (temporary) ---------- */}
-      <section className="mt-6 w-full rounded-[14px] border border-dashed border-[var(--clay-border)] bg-white/60 px-4 py-4">
-        <p
-          className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em]"
-          style={{ color: 'var(--clay-muted)' }}
-        >
-          Temporary test
-        </p>
-        <button
-          type="button"
-          onClick={startVoiceTest}
-          disabled={voiceStatus === 'listening'}
-          className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[15px] font-medium transition active:scale-95 disabled:opacity-50"
-          style={{ border: '1px solid var(--clay-border)', color: 'var(--clay-ink)' }}
-        >
-          <Mic size={18} />
-          🎤 Voice test
-        </button>
 
-        {voiceStatus === 'listening' && (
-          <p className="mt-2 text-[14px]" style={{ color: 'var(--clay-accent)' }}>
-            Listening…
-          </p>
-        )}
-        {voiceText && (
-          <p className="mt-2 text-[14px]" style={{ color: 'var(--clay-ink)' }}>
-            Heard: {voiceText}
-          </p>
-        )}
-        {voiceError && (
-          <p className="mt-2 text-[14px]" style={{ color: '#B4441F' }}>
-            {voiceError}
-          </p>
-        )}
-        {voiceNote && (
-          <p className="mt-1 text-[13px]" style={{ color: 'var(--clay-muted)' }}>
-            {voiceNote}
-          </p>
-        )}
-      </section>
+
 
       {/* ---------- YOUR REGULARS ---------- */}
       <section className="mt-10 w-full">
