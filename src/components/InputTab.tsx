@@ -54,46 +54,47 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [voiceHeard, setVoiceHeard] = useState<string | null>(null);
   const recRef = useRef<any>(null);
 
-  const [undoChips, setUndoChips] = useState<
-    { id: string; name: string; addedAt: number }[]
-  >([]);
-  const undoTimersRef = useRef<Map<string, number>>(new Map());
+  const expiryTimersRef = useRef<Map<string, number>>(new Map());
 
-  const removeUndoChip = useCallback((id: string) => {
-    setUndoChips((chips) => chips.filter((c) => c.id !== id));
-    const t = undoTimersRef.current.get(id);
-    if (t) {
-      window.clearTimeout(t);
-      undoTimersRef.current.delete(id);
-    }
-  }, []);
-
-  const registerUndo = useCallback((id: string, name: string) => {
-    setUndoChips((chips) => [{ id, name, addedAt: Date.now() }, ...chips].slice(0, 12));
+  const scheduleRecentExpiry = useCallback((id: string) => {
+    const existing = expiryTimersRef.current.get(id);
+    if (existing) window.clearTimeout(existing);
     const timer = window.setTimeout(() => {
-      setUndoChips((chips) => chips.filter((c) => c.id !== id));
-      undoTimersRef.current.delete(id);
+      setRecent((r) => r.filter((it) => it.id !== id));
+      expiryTimersRef.current.delete(id);
     }, 60_000);
-    undoTimersRef.current.set(id, timer);
+    expiryTimersRef.current.set(id, timer);
   }, []);
+
+  const registerUndo = useCallback(
+    (id: string, _name: string) => {
+      scheduleRecentExpiry(id);
+    },
+    [scheduleRecentExpiry],
+  );
 
   useEffect(() => {
     return () => {
-      for (const t of undoTimersRef.current.values()) window.clearTimeout(t);
-      undoTimersRef.current.clear();
+      for (const t of expiryTimersRef.current.values()) window.clearTimeout(t);
+      expiryTimersRef.current.clear();
     };
   }, []);
 
   const undoAdd = async (id: string, name: string) => {
-    removeUndoChip(id);
+    const timer = expiryTimersRef.current.get(id);
+    if (timer) {
+      window.clearTimeout(timer);
+      expiryTimersRef.current.delete(id);
+    }
     setRecent((r) => r.filter((it) => it.id !== id));
     try {
       await supabase.from("shopping_list_items").delete().eq("id", id);
       toast.success(`Removed ${name}`, { id: "undo-feedback", duration: 1800 });
     } catch {
-      // fail gracefully — chip already removed
+      // fail gracefully — row already removed
     }
   };
+
 
 
 
@@ -715,23 +716,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         </p>
       )}
 
-      {/* ---------- UNDO CHIPS ---------- */}
-      {undoChips.length > 0 && (
-        <section className="mt-3 w-full" aria-label="Undo recent adds">
-          <div className="flex flex-wrap gap-1.5">
-            <AnimatePresence initial={false}>
-              {undoChips.map((chip) => (
-                <UndoChip
-                  key={chip.id}
-                  name={chip.name}
-                  addedAt={chip.addedAt}
-                  onUndo={() => undoAdd(chip.id, chip.name)}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-        </section>
-      )}
+
+
 
 
       {/* ---------- JUST ADDED (inline, under input) ---------- */}
@@ -825,7 +811,24 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                         fill={it.is_priority ? "currentColor" : "none"}
                       />
                     </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={() => undoAdd(it.id, it.display_name)}
+                      whileTap={{ scale: 0.9 }}
+                      transition={snappySpring}
+                      aria-label={`Undo ${it.display_name}`}
+                      className="ml-0.5 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] transition"
+                      style={{
+                        border: "1px solid var(--clay-border)",
+                        background: "#FFFFFF",
+                        color: "var(--clay-muted)",
+                      }}
+                    >
+                      <Undo2 size={12} style={{ color: "#C2693F" }} />
+                      Undo
+                    </motion.button>
                   </motion.li>
+
                 ))}
               </AnimatePresence>
             </ul>
@@ -917,48 +920,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   );
 }
 
-function UndoChip({
-  name,
-  addedAt,
-  onUndo,
-}: {
-  name: string;
-  addedAt: number;
-  onUndo: () => void;
-}) {
-  const [fading, setFading] = useState(false);
-  useEffect(() => {
-    const elapsed = Date.now() - addedAt;
-    const fadeAt = Math.max(0, 50_000 - elapsed);
-    const t = window.setTimeout(() => setFading(true), fadeAt);
-    return () => window.clearTimeout(t);
-  }, [addedAt]);
-
-  return (
-    <motion.button
-      type="button"
-      onClick={onUndo}
-      layout
-      initial={{ opacity: 0, y: -4, scale: 0.9 }}
-      animate={{ opacity: fading ? 0.55 : 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}
-      whileTap={{ scale: 0.92 }}
-      transition={snappySpring}
-      aria-label={`Undo ${name}`}
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] transition"
-      style={{
-        border: "1px solid var(--clay-border)",
-        background: "#FFFFFF",
-        color: "var(--clay-muted)",
-      }}
-    >
-      <Undo2 size={12} style={{ color: "#C2693F" }} />
-      <span>
-        Undo <span style={{ color: "var(--clay-ink)" }}>{name}</span>
-      </span>
-    </motion.button>
-  );
-}
 
 function AddChip({
 
