@@ -323,6 +323,23 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     return out.filter(Boolean);
   };
 
+  const buzz = (pattern: number | number[]) => {
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+      }
+    } catch {
+      /* no-op */
+    }
+  };
+
+  const voiceHeardTimer = useRef<number | null>(null);
+  const showHeard = (text: string) => {
+    setVoiceHeard(text);
+    if (voiceHeardTimer.current) window.clearTimeout(voiceHeardTimer.current);
+    voiceHeardTimer.current = window.setTimeout(() => setVoiceHeard(null), 4000);
+  };
+
   const handleVoiceTranscript = async (transcript: string) => {
     const items = parseSpokenList(transcript);
     if (items.length === 0) {
@@ -330,7 +347,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       setVoiceMessage("Didn't catch that, try again");
       return;
     }
-    setVoiceHeard(transcript);
+    showHeard(transcript);
     setVoiceMessage(null);
     setVoiceState('idle');
 
@@ -339,16 +356,30 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     setQuantity("");
     setPriority(false);
 
+    // Haptic buzz — brief for single, double-pulse for many.
+    buzz(items.length === 1 ? 30 : [25, 60, 25]);
+
     if (items.length === 1) {
       notifyAdded(items[0]);
     } else {
-      toast.success(`Added ${items.length} items`, { id: "add-feedback", duration: 2200 });
+      toast.success(`Added ${items.length} items`, { id: "add-feedback", duration: 2400 });
     }
-    for (const it of items) {
-      // Fire in parallel; recent list updates in place.
-      void insertSingle(it, items.length === 1 ? qty : null, items.length === 1 ? isPriority : false);
+
+    // Stagger inserts so items visibly cascade into "Just added".
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const isSingle = items.length === 1;
+      window.setTimeout(() => {
+        void insertSingle(it, isSingle ? qty : null, isSingle ? isPriority : false);
+      }, i * 140);
     }
+
+    // Bring the "Just added" area into view a beat after the first item lands.
+    window.setTimeout(() => {
+      justAddedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 180);
   };
+
 
   const startVoice = () => {
     // Toggle off if already listening.
