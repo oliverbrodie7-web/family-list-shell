@@ -671,7 +671,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
       {/* ---------- JUST ADDED (inline, under input) ---------- */}
       {recent.length > 0 && (
-        <section className="mt-4 w-full">
+        <section ref={justAddedRef} className="mt-4 w-full scroll-mt-4">
           <p
             className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
