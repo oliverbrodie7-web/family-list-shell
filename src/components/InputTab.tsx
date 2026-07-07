@@ -46,6 +46,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [browseOpen, setBrowseOpen] = useState(false);
   const [regularsTick, setRegularsTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const justAddedRef = useRef<HTMLElement>(null);
+
   const [voiceState, setVoiceState] = useState<'idle' | 'listening' | 'processing'>('idle');
   const [voiceMessage, setVoiceMessage] = useState<string | null>(null);
   const [voiceHeard, setVoiceHeard] = useState<string | null>(null);
@@ -323,6 +325,23 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     return out.filter(Boolean);
   };
 
+  const buzz = (pattern: number | number[]) => {
+    try {
+      if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+      }
+    } catch {
+      /* no-op */
+    }
+  };
+
+  const voiceHeardTimer = useRef<number | null>(null);
+  const showHeard = (text: string) => {
+    setVoiceHeard(text);
+    if (voiceHeardTimer.current) window.clearTimeout(voiceHeardTimer.current);
+    voiceHeardTimer.current = window.setTimeout(() => setVoiceHeard(null), 4000);
+  };
+
   const handleVoiceTranscript = async (transcript: string) => {
     const items = parseSpokenList(transcript);
     if (items.length === 0) {
@@ -330,7 +349,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
       setVoiceMessage("Didn't catch that, try again");
       return;
     }
-    setVoiceHeard(transcript);
+    showHeard(transcript);
     setVoiceMessage(null);
     setVoiceState('idle');
 
@@ -339,16 +358,30 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     setQuantity("");
     setPriority(false);
 
+    // Haptic buzz — brief for single, double-pulse for many.
+    buzz(items.length === 1 ? 30 : [25, 60, 25]);
+
     if (items.length === 1) {
       notifyAdded(items[0]);
     } else {
-      toast.success(`Added ${items.length} items`, { id: "add-feedback", duration: 2200 });
+      toast.success(`Added ${items.length} items`, { id: "add-feedback", duration: 2400 });
     }
-    for (const it of items) {
-      // Fire in parallel; recent list updates in place.
-      void insertSingle(it, items.length === 1 ? qty : null, items.length === 1 ? isPriority : false);
+
+    // Stagger inserts so items visibly cascade into "Just added".
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
+      const isSingle = items.length === 1;
+      window.setTimeout(() => {
+        void insertSingle(it, isSingle ? qty : null, isSingle ? isPriority : false);
+      }, i * 140);
     }
+
+    // Bring the "Just added" area into view a beat after the first item lands.
+    window.setTimeout(() => {
+      justAddedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 180);
   };
+
 
   const startVoice = () => {
     // Toggle off if already listening.
@@ -592,14 +625,29 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                 : 'Say your list'}
           </span>
         </motion.button>
-        {voiceHeard && voiceState === 'idle' && (
-          <p
-            className="mt-2 px-1 text-[13px]"
-            style={{ color: 'var(--clay-muted)' }}
-          >
-            Heard: <span style={{ color: 'var(--clay-ink)' }}>"{voiceHeard}"</span>
-          </p>
-        )}
+        <AnimatePresence>
+          {voiceHeard && voiceState === 'idle' && (
+            <motion.div
+              key={voiceHeard}
+              initial={{ opacity: 0, y: -6, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -4, scale: 0.98 }}
+              transition={snappySpring}
+              className="mt-2.5 flex items-start gap-2 rounded-[12px] px-3.5 py-2.5"
+              style={{
+                background: 'var(--clay-accent-soft)',
+                border: '1px solid #E8CBB4',
+              }}
+            >
+              <Mic size={14} className="mt-0.5 shrink-0" style={{ color: '#C2693F' }} />
+              <p className="text-[14px] leading-snug" style={{ color: 'var(--clay-ink)' }}>
+                <span className="font-semibold" style={{ color: '#C2693F' }}>Heard: </span>
+                {voiceHeard}
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {voiceMessage && (
           <p className="mt-2 px-1 text-[13px]" style={{ color: '#B4441F' }}>
             {voiceMessage}
@@ -623,7 +671,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
       {/* ---------- JUST ADDED (inline, under input) ---------- */}
       {recent.length > 0 && (
-        <section className="mt-4 w-full">
+        <section ref={justAddedRef} className="mt-4 w-full scroll-mt-4">
           <p
             className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
