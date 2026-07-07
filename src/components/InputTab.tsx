@@ -811,6 +811,21 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                         fill={it.is_priority ? "currentColor" : "none"}
                       />
                     </motion.button>
+                    <motion.button
+                      type="button"
+                      onClick={() => undoAdd(it.id, it.display_name)}
+                      whileTap={{ scale: 0.9 }}
+                      transition={snappySpring}
+                      aria-label={`Undo ${it.display_name}`}
+                      className="ml-0.5 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] transition"
+                      style={{
+                        border: "1px solid var(--clay-border)",
+                        background: "#FFFFFF",
+                        color: "var(--clay-muted)",
+                      }}
+                    >
+                      <Undo2 size={12} style={{ color: "#C2693F" }} />
+                      Undo
                   </motion.li>
                 ))}
               </AnimatePresence>
