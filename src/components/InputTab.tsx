@@ -917,7 +917,51 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   );
 }
 
+function UndoChip({
+  name,
+  addedAt,
+  onUndo,
+}: {
+  name: string;
+  addedAt: number;
+  onUndo: () => void;
+}) {
+  const [fading, setFading] = useState(false);
+  useEffect(() => {
+    const elapsed = Date.now() - addedAt;
+    const fadeAt = Math.max(0, 50_000 - elapsed);
+    const t = window.setTimeout(() => setFading(true), fadeAt);
+    return () => window.clearTimeout(t);
+  }, [addedAt]);
+
+  return (
+    <motion.button
+      type="button"
+      onClick={onUndo}
+      layout
+      initial={{ opacity: 0, y: -4, scale: 0.9 }}
+      animate={{ opacity: fading ? 0.55 : 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.18 } }}
+      whileTap={{ scale: 0.92 }}
+      transition={snappySpring}
+      aria-label={`Undo ${name}`}
+      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] transition"
+      style={{
+        border: "1px solid var(--clay-border)",
+        background: "#FFFFFF",
+        color: "var(--clay-muted)",
+      }}
+    >
+      <Undo2 size={12} style={{ color: "#C2693F" }} />
+      <span>
+        Undo <span style={{ color: "var(--clay-ink)" }}>{name}</span>
+      </span>
+    </motion.button>
+  );
+}
+
 function AddChip({
+
   label,
   onAdd,
 }: {
