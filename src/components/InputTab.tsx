@@ -46,11 +46,11 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [browseOpen, setBrowseOpen] = useState(false);
   const [regularsTick, setRegularsTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'heard' | 'error'>('idle');
-  const [voiceText, setVoiceText] = useState('');
-  const [voiceError, setVoiceError] = useState('');
-  const [voiceNote, setVoiceNote] = useState('');
+  const [voiceState, setVoiceState] = useState<'idle' | 'listening' | 'processing'>('idle');
+  const [voiceMessage, setVoiceMessage] = useState<string | null>(null);
+  const [voiceHeard, setVoiceHeard] = useState<string | null>(null);
   const recRef = useRef<any>(null);
+
 
   useEffect(() => {
     inputRef.current?.focus();
