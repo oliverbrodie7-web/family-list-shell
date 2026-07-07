@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from "react";
-import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X, Check } from "lucide-react";
+import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X, Check, Mic } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
@@ -46,6 +46,11 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [browseOpen, setBrowseOpen] = useState(false);
   const [regularsTick, setRegularsTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [voiceStatus, setVoiceStatus] = useState<'idle' | 'listening' | 'heard' | 'error'>('idle');
+  const [voiceText, setVoiceText] = useState('');
+  const [voiceError, setVoiceError] = useState('');
+  const [voiceNote, setVoiceNote] = useState('');
+  const recRef = useRef<any>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -272,6 +277,55 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
   const notifyAdded = (name: string) => {
     toast.success(`${name} added`, { id: "add-feedback", duration: 2000 });
+  };
+
+  const startVoiceTest = () => {
+    if (recRef.current) {
+      try { recRef.current.abort(); } catch {}
+      recRef.current = null;
+    }
+    const SpeechRecognitionAPI =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionAPI) {
+      setVoiceError('Speech recognition NOT supported in this browser.');
+      setVoiceStatus('error');
+      return;
+    }
+    const rec = new SpeechRecognitionAPI();
+    rec.lang = 'en-GB';
+    rec.continuous = true;
+    rec.interimResults = true;
+
+    setVoiceError('');
+    setVoiceText('');
+    setVoiceNote('');
+    setVoiceStatus('idle');
+
+    rec.onstart = () => setVoiceStatus('listening');
+
+    rec.onresult = (e: any) => {
+      let text = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        text += e.results[i][0].transcript;
+      }
+      const trimmed = text.trim();
+      if (trimmed) setVoiceText(trimmed);
+      if (e.results[e.results.length - 1]?.isFinal) {
+        setVoiceStatus('heard');
+      }
+    };
+
+    rec.onerror = (e: any) => {
+      setVoiceError('Error: ' + e.error);
+      setVoiceStatus('error');
+    };
+
+    rec.onend = () => {
+      setVoiceNote('Session ended. If continuous=true but it stopped, iOS PWA does not support continuous listening.');
+    };
+
+    recRef.current = rec;
+    rec.start();
   };
 
   const chipAdd = (name: string) => {
@@ -517,6 +571,47 @@ export function InputTab({ householdId }: { householdId: string | null }) {
           </div>
         </section>
       )}
+
+      {/* ---------- VOICE TEST (temporary) ---------- */}
+      <section className="mt-6 w-full rounded-[14px] border border-dashed border-[var(--clay-border)] bg-white/60 px-4 py-4">
+        <p
+          className="mb-3 text-[11px] font-semibold uppercase tracking-[0.08em]"
+          style={{ color: 'var(--clay-muted)' }}
+        >
+          Temporary test
+        </p>
+        <button
+          type="button"
+          onClick={startVoiceTest}
+          disabled={voiceStatus === 'listening'}
+          className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[15px] font-medium transition active:scale-95 disabled:opacity-50"
+          style={{ border: '1px solid var(--clay-border)', color: 'var(--clay-ink)' }}
+        >
+          <Mic size={18} />
+          🎤 Voice test
+        </button>
+
+        {voiceStatus === 'listening' && (
+          <p className="mt-2 text-[14px]" style={{ color: 'var(--clay-accent)' }}>
+            Listening…
+          </p>
+        )}
+        {voiceText && (
+          <p className="mt-2 text-[14px]" style={{ color: 'var(--clay-ink)' }}>
+            Heard: {voiceText}
+          </p>
+        )}
+        {voiceError && (
+          <p className="mt-2 text-[14px]" style={{ color: '#B4441F' }}>
+            {voiceError}
+          </p>
+        )}
+        {voiceNote && (
+          <p className="mt-1 text-[13px]" style={{ color: 'var(--clay-muted)' }}>
+            {voiceNote}
+          </p>
+        )}
+      </section>
 
       {/* ---------- YOUR REGULARS ---------- */}
       <section className="mt-10 w-full">
