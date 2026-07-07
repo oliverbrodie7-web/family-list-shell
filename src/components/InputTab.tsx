@@ -553,6 +553,62 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         </div>
       </form>
 
+      {/* ---------- VOICE INPUT ---------- */}
+      <div className="mt-3 w-full">
+        <motion.button
+          type="button"
+          onClick={startVoice}
+          disabled={!householdId || voiceState === 'processing'}
+          whileTap={{ scale: 0.97 }}
+          transition={snappySpring}
+          aria-label={voiceState === 'listening' ? 'Stop listening' : 'Add by voice'}
+          aria-pressed={voiceState === 'listening'}
+          className="relative flex w-full items-center justify-center gap-2.5 rounded-[14px] px-4 py-3.5 text-[15px] font-medium transition disabled:opacity-60"
+          style={{
+            background:
+              voiceState === 'listening' ? '#C2693F' : 'var(--clay-accent-soft)',
+            color: voiceState === 'listening' ? '#FFFFFF' : '#C2693F',
+            border:
+              voiceState === 'listening'
+                ? '1px solid #C2693F'
+                : '1px solid var(--clay-border)',
+          }}
+        >
+          {voiceState === 'listening' && (
+            <motion.span
+              aria-hidden
+              className="absolute inset-0 rounded-[14px]"
+              style={{ background: '#C2693F' }}
+              animate={{ opacity: [0.35, 0.15, 0.35] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+            />
+          )}
+          <span className="relative flex items-center gap-2.5">
+            <Mic size={18} strokeWidth={2.25} />
+            {voiceState === 'listening'
+              ? 'Listening… tap to stop'
+              : voiceState === 'processing'
+                ? 'Adding…'
+                : 'Say your list'}
+          </span>
+        </motion.button>
+        {voiceHeard && voiceState === 'idle' && (
+          <p
+            className="mt-2 px-1 text-[13px]"
+            style={{ color: 'var(--clay-muted)' }}
+          >
+            Heard: <span style={{ color: 'var(--clay-ink)' }}>"{voiceHeard}"</span>
+          </p>
+        )}
+        {voiceMessage && (
+          <p className="mt-2 px-1 text-[13px]" style={{ color: '#B4441F' }}>
+            {voiceMessage}
+          </p>
+        )}
+      </div>
+
+
+
       {error && (
         <p className="mt-3 text-sm" style={{ color: "#B4441F" }}>
           {error}
