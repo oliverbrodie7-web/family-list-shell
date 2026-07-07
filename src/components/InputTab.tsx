@@ -826,7 +826,9 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                     >
                       <Undo2 size={12} style={{ color: "#C2693F" }} />
                       Undo
+                    </motion.button>
                   </motion.li>
+
                 ))}
               </AnimatePresence>
             </ul>
