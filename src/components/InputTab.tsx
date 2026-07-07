@@ -54,6 +54,48 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [voiceHeard, setVoiceHeard] = useState<string | null>(null);
   const recRef = useRef<any>(null);
 
+  const [undoChips, setUndoChips] = useState<
+    { id: string; name: string; addedAt: number }[]
+  >([]);
+  const undoTimersRef = useRef<Map<string, number>>(new Map());
+
+  const removeUndoChip = useCallback((id: string) => {
+    setUndoChips((chips) => chips.filter((c) => c.id !== id));
+    const t = undoTimersRef.current.get(id);
+    if (t) {
+      window.clearTimeout(t);
+      undoTimersRef.current.delete(id);
+    }
+  }, []);
+
+  const registerUndo = useCallback((id: string, name: string) => {
+    setUndoChips((chips) => [{ id, name, addedAt: Date.now() }, ...chips].slice(0, 12));
+    const timer = window.setTimeout(() => {
+      setUndoChips((chips) => chips.filter((c) => c.id !== id));
+      undoTimersRef.current.delete(id);
+    }, 60_000);
+    undoTimersRef.current.set(id, timer);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      for (const t of undoTimersRef.current.values()) window.clearTimeout(t);
+      undoTimersRef.current.clear();
+    };
+  }, []);
+
+  const undoAdd = async (id: string, name: string) => {
+    removeUndoChip(id);
+    setRecent((r) => r.filter((it) => it.id !== id));
+    try {
+      await supabase.from("shopping_list_items").delete().eq("id", id);
+      toast.success(`Removed ${name}`, { id: "undo-feedback", duration: 1800 });
+    } catch {
+      // fail gracefully — chip already removed
+    }
+  };
+
+
 
   useEffect(() => {
     inputRef.current?.focus();
