@@ -54,46 +54,47 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [voiceHeard, setVoiceHeard] = useState<string | null>(null);
   const recRef = useRef<any>(null);
 
-  const [undoChips, setUndoChips] = useState<
-    { id: string; name: string; addedAt: number }[]
-  >([]);
-  const undoTimersRef = useRef<Map<string, number>>(new Map());
+  const expiryTimersRef = useRef<Map<string, number>>(new Map());
 
-  const removeUndoChip = useCallback((id: string) => {
-    setUndoChips((chips) => chips.filter((c) => c.id !== id));
-    const t = undoTimersRef.current.get(id);
-    if (t) {
-      window.clearTimeout(t);
-      undoTimersRef.current.delete(id);
-    }
-  }, []);
-
-  const registerUndo = useCallback((id: string, name: string) => {
-    setUndoChips((chips) => [{ id, name, addedAt: Date.now() }, ...chips].slice(0, 12));
+  const scheduleRecentExpiry = useCallback((id: string) => {
+    const existing = expiryTimersRef.current.get(id);
+    if (existing) window.clearTimeout(existing);
     const timer = window.setTimeout(() => {
-      setUndoChips((chips) => chips.filter((c) => c.id !== id));
-      undoTimersRef.current.delete(id);
+      setRecent((r) => r.filter((it) => it.id !== id));
+      expiryTimersRef.current.delete(id);
     }, 60_000);
-    undoTimersRef.current.set(id, timer);
+    expiryTimersRef.current.set(id, timer);
   }, []);
+
+  const registerUndo = useCallback(
+    (id: string, _name: string) => {
+      scheduleRecentExpiry(id);
+    },
+    [scheduleRecentExpiry],
+  );
 
   useEffect(() => {
     return () => {
-      for (const t of undoTimersRef.current.values()) window.clearTimeout(t);
-      undoTimersRef.current.clear();
+      for (const t of expiryTimersRef.current.values()) window.clearTimeout(t);
+      expiryTimersRef.current.clear();
     };
   }, []);
 
   const undoAdd = async (id: string, name: string) => {
-    removeUndoChip(id);
+    const timer = expiryTimersRef.current.get(id);
+    if (timer) {
+      window.clearTimeout(timer);
+      expiryTimersRef.current.delete(id);
+    }
     setRecent((r) => r.filter((it) => it.id !== id));
     try {
       await supabase.from("shopping_list_items").delete().eq("id", id);
       toast.success(`Removed ${name}`, { id: "undo-feedback", duration: 1800 });
     } catch {
-      // fail gracefully — chip already removed
+      // fail gracefully — row already removed
     }
   };
+
 
 
 
