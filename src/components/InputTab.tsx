@@ -304,6 +304,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     }));
     for (const row of added) bumpRegular(row.display_name);
     setRegularsTick((t) => t + 1);
+    for (const row of added) registerUndo(row.id, row.display_name);
+
 
     setRecent((r) => [...added.reverse(), ...r].slice(0, 6));
     setBatchItems(null);
