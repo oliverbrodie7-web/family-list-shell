@@ -743,7 +743,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                     animate={{ opacity: 1, height: "auto", y: 0, scale: 1 }}
                     exit={{ opacity: 0, height: 0 }}
                     transition={{ ...softSpring, delay: idx * 0.05 }}
-                    className="flex items-center justify-between gap-2 overflow-hidden px-3.5 py-2.5"
+                    className="flex items-center justify-between gap-3 overflow-hidden px-3.5 py-2.5"
                     style={{
                       borderTop:
                         idx === 0 ? "none" : "1px solid var(--clay-border)",
@@ -765,68 +765,70 @@ export function InputTab({ householdId }: { householdId: string | null }) {
                         </span>
                       )}
                     </div>
-                    {it.categorizing || !it.category ? (
-                      <span
-                        className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wider"
+                    <div className="flex shrink-0 items-center gap-3">
+                      {it.categorizing || !it.category ? (
+                        <span
+                          className="flex items-center gap-1 rounded-full px-2 py-1 text-[11px] uppercase tracking-wider"
+                          style={{
+                            background: "var(--clay-border)",
+                            color: "var(--clay-muted)",
+                          }}
+                        >
+                          <Loader2 size={10} className="animate-spin" />
+                          sorting
+                        </span>
+                      ) : (
+                        <motion.span
+                          key={it.category}
+                          initial={{ scale: 0.7, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={snappySpring}
+                          className="rounded-full px-2 py-1 text-[12px] font-medium"
+                          style={{
+                            background: "var(--clay-accent-soft)",
+                            color: "var(--clay-accent)",
+                          }}
+                        >
+                          {CATEGORY_LABELS[it.category] ?? it.category}
+                        </motion.span>
+                      )}
+                      <motion.button
+                        type="button"
+                        onClick={() =>
+                          toggleRecentPriority(it.id, !it.is_priority)
+                        }
+                        whileTap={{ scale: 0.82 }}
+                        transition={snappySpring}
+                        aria-label="Toggle priority"
+                        className="flex items-center justify-center p-3 transition"
                         style={{
-                          background: "var(--clay-border)",
+                          color: it.is_priority
+                            ? "var(--clay-priority)"
+                            : "#C9BBA8",
+                        }}
+                      >
+                        <Flag
+                          size={14}
+                          fill={it.is_priority ? "currentColor" : "none"}
+                        />
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        onClick={() => undoAdd(it.id, it.display_name)}
+                        whileTap={{ scale: 0.9 }}
+                        transition={snappySpring}
+                        aria-label={`Undo ${it.display_name}`}
+                        className="inline-flex items-center gap-1 rounded-full px-2.5 py-1.5 text-[12px] transition"
+                        style={{
+                          border: "1px solid var(--clay-border)",
+                          background: "#FFFFFF",
                           color: "var(--clay-muted)",
                         }}
                       >
-                        <Loader2 size={10} className="animate-spin" />
-                        sorting
-                      </span>
-                    ) : (
-                      <motion.span
-                        key={it.category}
-                        initial={{ scale: 0.7, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={snappySpring}
-                        className="rounded-full px-2 py-0.5 text-[12px] font-medium"
-                        style={{
-                          background: "var(--clay-accent-soft)",
-                          color: "var(--clay-accent)",
-                        }}
-                      >
-                        {CATEGORY_LABELS[it.category] ?? it.category}
-                      </motion.span>
-                    )}
-                    <motion.button
-                      type="button"
-                      onClick={() =>
-                        toggleRecentPriority(it.id, !it.is_priority)
-                      }
-                      whileTap={{ scale: 0.82 }}
-                      transition={snappySpring}
-                      aria-label="Toggle priority"
-                      className="p-1 transition"
-                      style={{
-                        color: it.is_priority
-                          ? "var(--clay-priority)"
-                          : "#C9BBA8",
-                      }}
-                    >
-                      <Flag
-                        size={14}
-                        fill={it.is_priority ? "currentColor" : "none"}
-                      />
-                    </motion.button>
-                    <motion.button
-                      type="button"
-                      onClick={() => undoAdd(it.id, it.display_name)}
-                      whileTap={{ scale: 0.9 }}
-                      transition={snappySpring}
-                      aria-label={`Undo ${it.display_name}`}
-                      className="ml-0.5 inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12px] transition"
-                      style={{
-                        border: "1px solid var(--clay-border)",
-                        background: "#FFFFFF",
-                        color: "var(--clay-muted)",
-                      }}
-                    >
-                      <Undo2 size={12} style={{ color: "#C2693F" }} />
-                      Undo
-                    </motion.button>
+                        <Undo2 size={12} style={{ color: "#C2693F" }} />
+                        Undo
+                      </motion.button>
+                    </div>
                   </motion.li>
 
                 ))}
