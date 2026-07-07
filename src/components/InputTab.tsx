@@ -716,23 +716,8 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         </p>
       )}
 
-      {/* ---------- UNDO CHIPS ---------- */}
-      {undoChips.length > 0 && (
-        <section className="mt-3 w-full" aria-label="Undo recent adds">
-          <div className="flex flex-wrap gap-1.5">
-            <AnimatePresence initial={false}>
-              {undoChips.map((chip) => (
-                <UndoChip
-                  key={chip.id}
-                  name={chip.name}
-                  addedAt={chip.addedAt}
-                  onUndo={() => undoAdd(chip.id, chip.name)}
-                />
-              ))}
-            </AnimatePresence>
-          </div>
-        </section>
-      )}
+
+
 
 
       {/* ---------- JUST ADDED (inline, under input) ---------- */}
