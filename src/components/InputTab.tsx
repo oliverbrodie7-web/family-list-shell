@@ -279,54 +279,146 @@ export function InputTab({ householdId }: { householdId: string | null }) {
     toast.success(`${name} added`, { id: "add-feedback", duration: 2000 });
   };
 
-  const startVoiceTest = () => {
-    if (recRef.current) {
-      try { recRef.current.abort(); } catch {}
-      recRef.current = null;
+  const parseSpokenList = (raw: string): string[] => {
+    const knownMulti = new Set(
+      ALL_COMMON_ITEMS
+        .map((n) => n.toLowerCase())
+        .filter((n) => n.includes(" ")),
+    );
+    // Normalise "and" and semicolons to commas.
+    const normalised = raw
+      .replace(/\b(and|und|&)\b/gi, ",")
+      .replace(/[;]/g, ",");
+    const segments = normalised
+      .split(",")
+      .map((s) => s.trim().replace(/[.!?]+$/g, "").trim())
+      .filter(Boolean);
+
+    const out: string[] = [];
+    for (const seg of segments) {
+      const words = seg.split(/\s+/).filter(Boolean);
+      if (words.length <= 2) {
+        out.push(seg);
+        continue;
+      }
+      // Greedy match of known multi-word items, else split per word.
+      let i = 0;
+      while (i < words.length) {
+        let matched = false;
+        for (let len = Math.min(3, words.length - i); len >= 2; len--) {
+          const candidate = words.slice(i, i + len).join(" ").toLowerCase();
+          if (knownMulti.has(candidate)) {
+            out.push(words.slice(i, i + len).join(" "));
+            i += len;
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) {
+          out.push(words[i]);
+          i += 1;
+        }
+      }
+    }
+    return out.filter(Boolean);
+  };
+
+  const handleVoiceTranscript = async (transcript: string) => {
+    const items = parseSpokenList(transcript);
+    if (items.length === 0) {
+      setVoiceState('idle');
+      setVoiceMessage("Didn't catch that, try again");
+      return;
+    }
+    setVoiceHeard(transcript);
+    setVoiceMessage(null);
+    setVoiceState('idle');
+
+    const qty = quantity.trim() === "" ? null : Number(quantity);
+    const isPriority = priority;
+    setQuantity("");
+    setPriority(false);
+
+    if (items.length === 1) {
+      notifyAdded(items[0]);
+    } else {
+      toast.success(`Added ${items.length} items`, { id: "add-feedback", duration: 2200 });
+    }
+    for (const it of items) {
+      // Fire in parallel; recent list updates in place.
+      void insertSingle(it, items.length === 1 ? qty : null, items.length === 1 ? isPriority : false);
+    }
+  };
+
+  const startVoice = () => {
+    // Toggle off if already listening.
+    if (voiceState === 'listening' && recRef.current) {
+      try { recRef.current.stop(); } catch {}
+      return;
     }
     const SpeechRecognitionAPI =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionAPI) {
-      setVoiceError('Speech recognition NOT supported in this browser.');
-      setVoiceStatus('error');
+      setVoiceMessage("Voice input isn't supported on this device.");
       return;
     }
     const rec = new SpeechRecognitionAPI();
     rec.lang = 'en-GB';
-    rec.continuous = true;
-    rec.interimResults = true;
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
 
-    setVoiceError('');
-    setVoiceText('');
-    setVoiceNote('');
-    setVoiceStatus('idle');
+    setVoiceMessage(null);
+    setVoiceHeard(null);
 
-    rec.onstart = () => setVoiceStatus('listening');
+    let finalText = '';
+    let errored = false;
 
+    rec.onstart = () => setVoiceState('listening');
     rec.onresult = (e: any) => {
-      let text = '';
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        text += e.results[i][0].transcript;
-      }
-      const trimmed = text.trim();
-      if (trimmed) setVoiceText(trimmed);
-      if (e.results[e.results.length - 1]?.isFinal) {
-        setVoiceStatus('heard');
+      for (let i = 0; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          finalText += e.results[i][0].transcript + ' ';
+        }
       }
     };
-
     rec.onerror = (e: any) => {
-      setVoiceError('Error: ' + e.error);
-      setVoiceStatus('error');
+      errored = true;
+      recRef.current = null;
+      const code = e?.error ?? '';
+      if (code === 'not-allowed' || code === 'service-not-allowed') {
+        setVoiceMessage("Microphone access is off — enable it in your settings.");
+      } else if (code === 'no-speech') {
+        setVoiceMessage("Didn't catch that, try again.");
+      } else if (code === 'aborted') {
+        // silent
+      } else {
+        setVoiceMessage("Couldn't hear you — try again.");
+      }
+      setVoiceState('idle');
     };
-
     rec.onend = () => {
-      setVoiceNote('Session ended. If continuous=true but it stopped, iOS PWA does not support continuous listening.');
+      recRef.current = null;
+      if (errored) return;
+      const trimmed = finalText.trim();
+      if (!trimmed) {
+        setVoiceState('idle');
+        setVoiceMessage("Didn't catch that, try again.");
+        return;
+      }
+      setVoiceState('processing');
+      void handleVoiceTranscript(trimmed);
     };
 
     recRef.current = rec;
-    rec.start();
+    try {
+      rec.start();
+    } catch {
+      setVoiceMessage("Couldn't start listening — try again.");
+      setVoiceState('idle');
+    }
   };
+
 
   const chipAdd = (name: string) => {
     notifyAdded(name);
