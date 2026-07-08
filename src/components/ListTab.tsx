@@ -143,6 +143,66 @@ export function ListTab({
       .eq("id", updated.id);
   };
 
+  const addItemToCategory = async (category: Category, raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed || !householdId) return;
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const nowIso = new Date().toISOString();
+    const temp: Item = {
+      id: tempId,
+      display_name: trimmed,
+      quantity: null,
+      is_priority: false,
+      is_checked: false,
+      category,
+      created_at: nowIso,
+      added_by_member_id: member?.id ?? null,
+    };
+    setItems((arr) => [...arr, temp]);
+
+    // Clean up name via AI but IGNORE its category — user picked the aisle.
+    let cleanName = trimmed;
+    try {
+      const { data } = await supabase.functions.invoke("categorize-item", {
+        body: { text: trimmed },
+      });
+      const d = data as { display_name?: string };
+      if (typeof d?.display_name === "string" && d.display_name.trim()) {
+        cleanName = d.display_name.trim();
+      }
+    } catch {
+      /* keep raw */
+    }
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from("shopping_list_items")
+      .insert({
+        user_id: userId,
+        household_id: householdId,
+        raw_input: trimmed,
+        display_name: cleanName,
+        category,
+        quantity: null,
+        is_priority: false,
+        is_checked: false,
+        added_by_member_id: member?.id ?? null,
+      })
+      .select(
+        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id",
+      )
+      .single();
+
+    if (insertErr || !inserted) {
+      setItems((arr) => arr.filter((i) => i.id !== tempId));
+      toast.error("Couldn't add item");
+      return;
+    }
+    setItems((arr) =>
+      arr.map((i) => (i.id === tempId ? (inserted as Item) : i)),
+    );
+  };
+
+
   if (!householdId) {
     return (
       <p className="px-5 pt-6 text-[15px]" style={{ color: "var(--clay-muted)" }}>
