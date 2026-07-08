@@ -252,20 +252,27 @@ export function ListTab({
 
   if (!loading && items.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-8 pt-20 text-center">
-        <ShoppingCart size={36} strokeWidth={1.5} style={{ color: "#C9BBA8" }} />
-        <p className="mt-4 text-[17px] font-medium" style={{ color: "var(--clay-ink)" }}>
-          Your shopping list will appear here
-        </p>
-        <p className="mt-1 text-[15px]" style={{ color: "var(--clay-muted)" }}>
-          Add an item from the Input tab.
-        </p>
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-4 pb-8">
+        <TabSwitcher tab={tab} onChange={onTabChange} />
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-16 text-center">
+          <ShoppingCart size={36} strokeWidth={1.5} style={{ color: "#C9BBA8" }} />
+          <p className="mt-4 text-[17px] font-medium" style={{ color: "var(--clay-ink)" }}>
+            Your shopping list will appear here
+          </p>
+          <p className="mt-1 text-[15px]" style={{ color: "var(--clay-muted)" }}>
+            Add an item from the Input tab.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-4 pb-8">
+      <div className="mb-3">
+        <TabSwitcher tab={tab} onChange={onTabChange} />
+      </div>
+
       <div className="mb-3 px-1">
         <div className="flex items-center justify-between">
           <p
@@ -307,6 +314,7 @@ export function ListTab({
                 onToggle={toggleChecked}
                 onEdit={setEditing}
                 onDelete={deleteItem}
+                onAdd={(name) => addItemToCategory(c, name)}
                 openSwipeId={openSwipeId}
                 setOpenSwipeId={setOpenSwipeId}
               />
@@ -314,6 +322,7 @@ export function ListTab({
           })}
         </AnimatePresence>
       </motion.div>
+
 
       <AnimatePresence initial={false}>
         {trolleyItems.length > 0 && (
