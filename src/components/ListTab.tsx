@@ -392,6 +392,7 @@ function AisleCard({
   onToggle,
   onEdit,
   onDelete,
+  onAdd,
   openSwipeId,
   setOpenSwipeId,
 }: {
@@ -403,10 +404,14 @@ function AisleCard({
   onToggle: (i: Item) => void;
   onEdit: (i: Item) => void;
   onDelete: (i: Item) => void;
+  onAdd: (name: string) => void;
   openSwipeId: string | null;
   setOpenSwipeId: (id: string | null) => void;
 }) {
   const [collapsed, setCollapsed] = useState<boolean>(() => !!readCollapsed()[aisleKey]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addText, setAddText] = useState("");
+  const addInputRef = useRef<HTMLInputElement>(null);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -420,6 +425,32 @@ function AisleCard({
     if (openSwipeId) setOpenSwipeId(null);
   };
 
+  const openAdd = () => {
+    if (collapsed) {
+      setCollapsed(false);
+      const state = readCollapsed();
+      delete state[aisleKey];
+      writeCollapsed(state);
+    }
+    setAddOpen(true);
+    if (openSwipeId) setOpenSwipeId(null);
+    // focus after render
+    window.setTimeout(() => addInputRef.current?.focus(), 40);
+  };
+
+  const submitAdd = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const name = addText.trim();
+    if (!name) {
+      setAddOpen(false);
+      return;
+    }
+    onAdd(name);
+    setAddText("");
+    // keep open for another add; focus stays
+    addInputRef.current?.focus();
+  };
+
   return (
     <motion.section
       layout
@@ -430,34 +461,112 @@ function AisleCard({
       className="overflow-hidden rounded-[14px] bg-white"
       style={{ border: "1px solid var(--clay-border)" }}
     >
-      <button
-        type="button"
-        onClick={toggleCollapsed}
-        aria-expanded={!collapsed}
-        aria-controls={`aisle-${aisleKey}`}
-        className="flex w-full items-center justify-between px-3.5 pt-2 pb-1.5 text-left"
-      >
-        <h2
-          className="text-[12px] font-semibold uppercase tracking-[0.08em]"
-          style={{ color: "var(--clay-muted)" }}
+      <div className="flex items-center px-3.5 pt-2 pb-1.5">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-expanded={!collapsed}
+          aria-controls={`aisle-${aisleKey}`}
+          className="flex flex-1 items-center justify-between text-left"
         >
-          {label}
-        </h2>
-        <span className="flex items-center gap-1.5">
-          <span className="text-[12px] font-medium" style={{ color: "var(--clay-muted)" }}>
-            {count}
-          </span>
-          <motion.span
-            animate={{ rotate: collapsed ? -90 : 0 }}
-            transition={gentleSpring}
-            className="flex items-center justify-center"
+          <h2
+            className="text-[12px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
-            aria-hidden
           >
-            <ChevronDown size={14} strokeWidth={2.25} />
-          </motion.span>
-        </span>
-      </button>
+            {label}
+          </h2>
+          <span className="mr-1 flex items-center gap-1.5">
+            <span className="text-[12px] font-medium" style={{ color: "var(--clay-muted)" }}>
+              {count}
+            </span>
+            <motion.span
+              animate={{ rotate: collapsed ? -90 : 0 }}
+              transition={gentleSpring}
+              className="flex items-center justify-center"
+              style={{ color: "var(--clay-muted)" }}
+              aria-hidden
+            >
+              <ChevronDown size={14} strokeWidth={2.25} />
+            </motion.span>
+          </span>
+        </button>
+        <motion.button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            openAdd();
+          }}
+          whileTap={{ scale: 0.88 }}
+          transition={snappySpring}
+          aria-label={`Add to ${label}`}
+          className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+          style={{
+            background: "var(--clay-accent-soft)",
+            color: "var(--clay-accent)",
+          }}
+        >
+          <Plus size={14} strokeWidth={2.5} />
+        </motion.button>
+      </div>
+      <AnimatePresence initial={false}>
+        {addOpen && (
+          <motion.form
+            key="add-form"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={softSpring}
+            onSubmit={submitAdd}
+            style={{ overflow: "hidden", borderTop: "1px solid var(--clay-border)" }}
+          >
+            <div className="flex items-center gap-2 px-3.5 py-2.5">
+              <input
+                ref={addInputRef}
+                type="text"
+                value={addText}
+                onChange={(e) => setAddText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setAddOpen(false);
+                    setAddText("");
+                  }
+                }}
+                placeholder={`Add to ${label.toLowerCase()}…`}
+                className="flex-1 rounded-full bg-white px-3 py-2 text-[15px] outline-none"
+                style={{
+                  border: "1px solid var(--clay-border)",
+                  color: "var(--clay-ink)",
+                }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+              />
+              <button
+                type="submit"
+                aria-label="Add"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+                style={{ background: "var(--clay-accent)" }}
+              >
+                <Plus size={16} strokeWidth={2.5} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddOpen(false);
+                  setAddText("");
+                }}
+                aria-label="Close"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                style={{ color: "var(--clay-muted)" }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence initial={false}>
         {!collapsed && (
           <motion.div
