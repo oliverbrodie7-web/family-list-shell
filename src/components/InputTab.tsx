@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Flag, Plus, Loader2, List, Sparkles, Check, Mic, Undo2 } from "lucide-react";
+import { Flag, Plus, Loader2, List, Check, Mic, Undo2 } from "lucide-react";
 
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,8 +11,10 @@ import { BulkAddSheet } from "./BulkAddSheet";
 import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
+import { TabSwitcher, type Tab } from "./TabSwitcher";
 
 import { softSpring, snappySpring } from "@/lib/motion";
+
 
 interface RecentItem {
   id: string;
@@ -31,7 +33,7 @@ const parseCommaList = (s: string): string[] =>
     .map((t) => t.trim())
     .filter((t) => t.length > 0);
 
-export function InputTab({ householdId }: { householdId: string | null }) {
+export function InputTab({ householdId, tab, onTabChange }: { householdId: string | null; tab: Tab; onTabChange: (t: Tab) => void }) {
   const { session } = useAuth();
   const { member } = useMember();
   const userId = session?.user?.id;
@@ -844,36 +846,11 @@ export function InputTab({ householdId }: { householdId: string | null }) {
 
 
 
-      {/* ---------- YOUR REGULARS ---------- */}
-      <section className="mt-10 w-full">
-        <div className="mb-2 flex items-center gap-1.5 px-1">
-          <Sparkles size={12} style={{ color: "var(--clay-accent)" }} />
-          <h2
-            className="text-[12px] font-semibold uppercase tracking-[0.08em]"
-            style={{ color: "var(--clay-muted)" }}
-          >
-            Your regulars
-          </h2>
-        </div>
-        {regulars.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {regulars.map((r) => (
-              <AddChip
-                key={`reg-${r.name}`}
-                label={r.name}
-                onAdd={() => chipAdd(r.name)}
-              />
-            ))}
-          </div>
-        ) : (
-          <p
-            className="px-1 text-[14px]"
-            style={{ color: "var(--clay-muted)" }}
-          >
-            Your most-added items will show up here.
-          </p>
-        )}
+      {/* ---------- INPUT / LIST SWITCH ---------- */}
+      <section className="mt-8 w-full">
+        <TabSwitcher tab={tab} onChange={onTabChange} />
       </section>
+
 
       </div>
 

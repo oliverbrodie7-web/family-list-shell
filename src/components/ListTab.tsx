@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Check, ShoppingCart, Trash2, X, Star, Flag, ChevronDown } from "lucide-react";
+import { Check, ShoppingCart, Trash2, X, Star, Flag, ChevronDown, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   motion,
@@ -9,10 +9,13 @@ import {
   type PanInfo,
 } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 import { CATEGORIES, CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { useMember } from "@/lib/member";
 import { softSpring, snappySpring, gentleSpring } from "@/lib/motion";
 import { ShopCelebration } from "./ShopCelebration";
+import { TabSwitcher, type Tab } from "./TabSwitcher";
+
 
 interface Item {
   id: string;
@@ -34,7 +37,17 @@ function memberColor(id: string | null | undefined) {
   return MEMBER_COLORS[h % MEMBER_COLORS.length];
 }
 
-export function ListTab({ householdId, active }: { householdId: string | null; active: boolean }) {
+export function ListTab({
+  householdId,
+  active,
+  tab,
+  onTabChange,
+}: {
+  householdId: string | null;
+  active: boolean;
+  tab: Tab;
+  onTabChange: (t: Tab) => void;
+}) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Item | null>(null);
@@ -43,7 +56,10 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [celebrate, setCelebrate] = useState(false);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const prevActiveRef = useRef<number | null>(null);
-  const { members } = useMember();
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+  const { members, member } = useMember();
+
 
   const memberMap = useMemo(() => {
     const m = new Map<string, { name: string; initial: string; color: string }>();
@@ -127,6 +143,66 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
       .eq("id", updated.id);
   };
 
+  const addItemToCategory = async (category: Category, raw: string) => {
+    const trimmed = raw.trim();
+    if (!trimmed || !householdId) return;
+    const tempId = `temp-${Date.now()}-${Math.random()}`;
+    const nowIso = new Date().toISOString();
+    const temp: Item = {
+      id: tempId,
+      display_name: trimmed,
+      quantity: null,
+      is_priority: false,
+      is_checked: false,
+      category,
+      created_at: nowIso,
+      added_by_member_id: member?.id ?? null,
+    };
+    setItems((arr) => [...arr, temp]);
+
+    // Clean up name via AI but IGNORE its category — user picked the aisle.
+    let cleanName = trimmed;
+    try {
+      const { data } = await supabase.functions.invoke("categorize-item", {
+        body: { text: trimmed },
+      });
+      const d = data as { display_name?: string };
+      if (typeof d?.display_name === "string" && d.display_name.trim()) {
+        cleanName = d.display_name.trim();
+      }
+    } catch {
+      /* keep raw */
+    }
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from("shopping_list_items")
+      .insert({
+        user_id: userId,
+        household_id: householdId,
+        raw_input: trimmed,
+        display_name: cleanName,
+        category,
+        quantity: null,
+        is_priority: false,
+        is_checked: false,
+        added_by_member_id: member?.id ?? null,
+      })
+      .select(
+        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id",
+      )
+      .single();
+
+    if (insertErr || !inserted) {
+      setItems((arr) => arr.filter((i) => i.id !== tempId));
+      toast.error("Couldn't add item");
+      return;
+    }
+    setItems((arr) =>
+      arr.map((i) => (i.id === tempId ? (inserted as Item) : i)),
+    );
+  };
+
+
   if (!householdId) {
     return (
       <p className="px-5 pt-6 text-[15px]" style={{ color: "var(--clay-muted)" }}>
@@ -176,20 +252,27 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
 
   if (!loading && items.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center px-8 pt-20 text-center">
-        <ShoppingCart size={36} strokeWidth={1.5} style={{ color: "#C9BBA8" }} />
-        <p className="mt-4 text-[17px] font-medium" style={{ color: "var(--clay-ink)" }}>
-          Your shopping list will appear here
-        </p>
-        <p className="mt-1 text-[15px]" style={{ color: "var(--clay-muted)" }}>
-          Add an item from the Input tab.
-        </p>
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 pt-4 pb-8">
+        <TabSwitcher tab={tab} onChange={onTabChange} />
+        <div className="flex flex-1 flex-col items-center justify-center px-4 pt-16 text-center">
+          <ShoppingCart size={36} strokeWidth={1.5} style={{ color: "#C9BBA8" }} />
+          <p className="mt-4 text-[17px] font-medium" style={{ color: "var(--clay-ink)" }}>
+            Your shopping list will appear here
+          </p>
+          <p className="mt-1 text-[15px]" style={{ color: "var(--clay-muted)" }}>
+            Add an item from the Input tab.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="mx-auto w-full max-w-md px-4 pt-4 pb-8">
+      <div className="mb-3">
+        <TabSwitcher tab={tab} onChange={onTabChange} />
+      </div>
+
       <div className="mb-3 px-1">
         <div className="flex items-center justify-between">
           <p
@@ -231,6 +314,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
                 onToggle={toggleChecked}
                 onEdit={setEditing}
                 onDelete={deleteItem}
+                onAdd={(name) => addItemToCategory(c, name)}
                 openSwipeId={openSwipeId}
                 setOpenSwipeId={setOpenSwipeId}
               />
@@ -238,6 +322,7 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
           })}
         </AnimatePresence>
       </motion.div>
+
 
       <AnimatePresence initial={false}>
         {trolleyItems.length > 0 && (
@@ -307,6 +392,7 @@ function AisleCard({
   onToggle,
   onEdit,
   onDelete,
+  onAdd,
   openSwipeId,
   setOpenSwipeId,
 }: {
@@ -318,10 +404,14 @@ function AisleCard({
   onToggle: (i: Item) => void;
   onEdit: (i: Item) => void;
   onDelete: (i: Item) => void;
+  onAdd: (name: string) => void;
   openSwipeId: string | null;
   setOpenSwipeId: (id: string | null) => void;
 }) {
   const [collapsed, setCollapsed] = useState<boolean>(() => !!readCollapsed()[aisleKey]);
+  const [addOpen, setAddOpen] = useState(false);
+  const [addText, setAddText] = useState("");
+  const addInputRef = useRef<HTMLInputElement>(null);
 
   const toggleCollapsed = () => {
     setCollapsed((prev) => {
@@ -335,6 +425,32 @@ function AisleCard({
     if (openSwipeId) setOpenSwipeId(null);
   };
 
+  const openAdd = () => {
+    if (collapsed) {
+      setCollapsed(false);
+      const state = readCollapsed();
+      delete state[aisleKey];
+      writeCollapsed(state);
+    }
+    setAddOpen(true);
+    if (openSwipeId) setOpenSwipeId(null);
+    // focus after render
+    window.setTimeout(() => addInputRef.current?.focus(), 40);
+  };
+
+  const submitAdd = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    const name = addText.trim();
+    if (!name) {
+      setAddOpen(false);
+      return;
+    }
+    onAdd(name);
+    setAddText("");
+    // keep open for another add; focus stays
+    addInputRef.current?.focus();
+  };
+
   return (
     <motion.section
       layout
@@ -345,34 +461,112 @@ function AisleCard({
       className="overflow-hidden rounded-[14px] bg-white"
       style={{ border: "1px solid var(--clay-border)" }}
     >
-      <button
-        type="button"
-        onClick={toggleCollapsed}
-        aria-expanded={!collapsed}
-        aria-controls={`aisle-${aisleKey}`}
-        className="flex w-full items-center justify-between px-3.5 pt-2 pb-1.5 text-left"
-      >
-        <h2
-          className="text-[12px] font-semibold uppercase tracking-[0.08em]"
-          style={{ color: "var(--clay-muted)" }}
+      <div className="flex items-center px-3.5 pt-2 pb-1.5">
+        <button
+          type="button"
+          onClick={toggleCollapsed}
+          aria-expanded={!collapsed}
+          aria-controls={`aisle-${aisleKey}`}
+          className="flex flex-1 items-center justify-between text-left"
         >
-          {label}
-        </h2>
-        <span className="flex items-center gap-1.5">
-          <span className="text-[12px] font-medium" style={{ color: "var(--clay-muted)" }}>
-            {count}
-          </span>
-          <motion.span
-            animate={{ rotate: collapsed ? -90 : 0 }}
-            transition={gentleSpring}
-            className="flex items-center justify-center"
+          <h2
+            className="text-[12px] font-semibold uppercase tracking-[0.08em]"
             style={{ color: "var(--clay-muted)" }}
-            aria-hidden
           >
-            <ChevronDown size={14} strokeWidth={2.25} />
-          </motion.span>
-        </span>
-      </button>
+            {label}
+          </h2>
+          <span className="mr-1 flex items-center gap-1.5">
+            <span className="text-[12px] font-medium" style={{ color: "var(--clay-muted)" }}>
+              {count}
+            </span>
+            <motion.span
+              animate={{ rotate: collapsed ? -90 : 0 }}
+              transition={gentleSpring}
+              className="flex items-center justify-center"
+              style={{ color: "var(--clay-muted)" }}
+              aria-hidden
+            >
+              <ChevronDown size={14} strokeWidth={2.25} />
+            </motion.span>
+          </span>
+        </button>
+        <motion.button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            openAdd();
+          }}
+          whileTap={{ scale: 0.88 }}
+          transition={snappySpring}
+          aria-label={`Add to ${label}`}
+          className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
+          style={{
+            background: "var(--clay-accent-soft)",
+            color: "var(--clay-accent)",
+          }}
+        >
+          <Plus size={14} strokeWidth={2.5} />
+        </motion.button>
+      </div>
+      <AnimatePresence initial={false}>
+        {addOpen && (
+          <motion.form
+            key="add-form"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={softSpring}
+            onSubmit={submitAdd}
+            style={{ overflow: "hidden", borderTop: "1px solid var(--clay-border)" }}
+          >
+            <div className="flex items-center gap-2 px-3.5 py-2.5">
+              <input
+                ref={addInputRef}
+                type="text"
+                value={addText}
+                onChange={(e) => setAddText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setAddOpen(false);
+                    setAddText("");
+                  }
+                }}
+                placeholder={`Add to ${label.toLowerCase()}…`}
+                className="flex-1 rounded-full bg-white px-3 py-2 text-[15px] outline-none"
+                style={{
+                  border: "1px solid var(--clay-border)",
+                  color: "var(--clay-ink)",
+                }}
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="none"
+                spellCheck={false}
+              />
+              <button
+                type="submit"
+                aria-label="Add"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
+                style={{ background: "var(--clay-accent)" }}
+              >
+                <Plus size={16} strokeWidth={2.5} />
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddOpen(false);
+                  setAddText("");
+                }}
+                aria-label="Close"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                style={{ color: "var(--clay-muted)" }}
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </motion.form>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence initial={false}>
         {!collapsed && (
           <motion.div
