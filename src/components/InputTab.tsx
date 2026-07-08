@@ -328,11 +328,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   };
 
   const parseSpokenList = (raw: string): string[] => {
-    const knownMulti = new Set(
-      ALL_COMMON_ITEMS
-        .map((n) => n.toLowerCase())
-        .filter((n) => n.includes(" ")),
-    );
+    const knownMulti = new Set<string>();
     // Normalise "and" and semicolons to commas.
     const normalised = raw
       .replace(/\b(and|und|&)\b/gi, ",")
