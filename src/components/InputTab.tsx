@@ -11,7 +11,7 @@ import { BulkAddSheet } from "./BulkAddSheet";
 import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
-import { COMMON_AISLES, ALL_COMMON_ITEMS } from "@/lib/common-items";
+
 import { softSpring, snappySpring } from "@/lib/motion";
 
 interface RecentItem {
