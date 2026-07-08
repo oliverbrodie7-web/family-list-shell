@@ -19,6 +19,10 @@ export function AppShell() {
   const { member } = useMember();
   const notifications = useNotifications();
 
+  useEffect(() => {
+    checkForUpdateDaily();
+  }, []);
+
   const bellOn = notifications.enabled && !notifications.needsReregister;
 
   return (
