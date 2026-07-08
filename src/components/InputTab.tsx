@@ -111,9 +111,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const suggestions = useMemo(() => {
     const q = text.trim().toLowerCase();
     if (q.length < 1 || q.includes(",")) return [];
-    const pool = Array.from(
-      new Set([...regulars.map((r) => r.name), ...ALL_COMMON_ITEMS]),
-    );
+    const pool = Array.from(new Set(regulars.map((r) => r.name)));
     return pool
       .filter((n) => n.toLowerCase().includes(q) && n.toLowerCase() !== q)
       .slice(0, 5);
