@@ -11,7 +11,11 @@ type VersionRow = {
 };
 
 export function WhatsNewPopup() {
-  const [row, setRow] = useState<VersionRow | null>(null);
+  const [row, setRow] = useState<VersionRow | null>({
+    version: "1.2",
+    title: "Second test",
+    notes: "If you can see this message, the What's new popup is now working.",
+  });
 
   useEffect(() => {
     let cancelled = false;
