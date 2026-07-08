@@ -15,9 +15,27 @@ type Tab = "input" | "list";
 export function AppShell() {
   const [tab, setTab] = useState<Tab>("input");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [kbOffset, setKbOffset] = useState(0);
   const { householdId } = useHouseholdId();
   const { member } = useMember();
   const notifications = useNotifications();
+
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!vv) return;
+    const update = () => {
+      const bottomInset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      // Only lift when keyboard clearly present (>120px)
+      setKbOffset(bottomInset > 120 ? bottomInset : 0);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   const bellOn = notifications.enabled && !notifications.needsReregister;
 
