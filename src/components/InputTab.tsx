@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Flag, Plus, Loader2, List, Sparkles, Check, Mic, Undo2 } from "lucide-react";
+import { Flag, Plus, Loader2, List, Check, Mic, Undo2 } from "lucide-react";
 
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,8 +11,10 @@ import { BulkAddSheet } from "./BulkAddSheet";
 import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
+import { TabSwitcher, type Tab } from "./TabSwitcher";
 
 import { softSpring, snappySpring } from "@/lib/motion";
+
 
 interface RecentItem {
   id: string;
