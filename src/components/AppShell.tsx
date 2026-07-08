@@ -80,6 +80,8 @@ export function AppShell() {
       </main>
 
       <Toaster position="top-center" offset={72} />
+      <WhatsNewPopup />
+
 
     </div>
     </MotionConfig>
