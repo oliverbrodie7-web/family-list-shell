@@ -53,10 +53,11 @@ export function WhatsNewPopup() {
     <AnimatePresence>
       {row && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-6 pt-10 sm:items-center"
+          className="fixed inset-0 z-50 flex items-center justify-center p-5"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
           style={{ background: "rgba(55,48,43,0.35)" }}
           onClick={dismiss}
         >
@@ -64,41 +65,47 @@ export function WhatsNewPopup() {
             role="dialog"
             aria-modal="true"
             onClick={(e) => e.stopPropagation()}
-            initial={{ y: 24, opacity: 0, scale: 0.98 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 12, opacity: 0, scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 260, damping: 24 }}
-            className="w-full max-w-[380px] rounded-3xl p-6 shadow-xl"
+            initial={{ opacity: 0, scale: 0.92, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 6 }}
+            transition={{ type: "spring", stiffness: 280, damping: 22 }}
+            className="w-full max-w-[340px] rounded-[18px] p-7 shadow-2xl"
             style={{
               background: "var(--clay-surface)",
               border: "1px solid var(--clay-border)",
+              boxShadow: "0 25px 60px -20px rgba(55,48,43,0.35)",
             }}
           >
             <div
-              className="mb-2 text-[11px] font-medium uppercase tracking-[0.14em]"
+              className="mb-3 text-[11px] font-semibold uppercase tracking-[0.16em]"
               style={{ color: "var(--clay-accent)" }}
             >
               What's new
             </div>
             <h2
-              className="font-serif text-[24px] leading-tight"
-              style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
+              className="font-display text-[26px] leading-[1.15]"
+              style={{ color: "var(--clay-ink)" }}
             >
               {row.title || "What's new"}
             </h2>
             <p
-              className="mt-3 whitespace-pre-wrap text-[15px] leading-relaxed"
+              className="mt-4 whitespace-pre-wrap text-[16px] leading-[1.55]"
               style={{ color: "var(--clay-ink)" }}
             >
               {row.notes}
             </p>
-            <div className="mt-5 flex items-center justify-between">
-              <span className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
-                v{row.version}
-              </span>
-              <button onClick={dismiss} className="clay-btn-primary px-5 py-2 text-[14px]">
+            <div className="mt-7">
+              <button onClick={dismiss} className="clay-btn-primary">
                 Got it
               </button>
+            </div>
+            <div className="mt-3 text-center">
+              <span
+                className="text-[12px] font-medium"
+                style={{ color: "var(--clay-muted)" }}
+              >
+                v{row.version}
+              </span>
             </div>
           </motion.div>
         </motion.div>
