@@ -44,7 +44,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [recent, setRecent] = useState<RecentItem[]>([]);
   const [batchItems, setBatchItems] = useState<string[] | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [browseOpen, setBrowseOpen] = useState(false);
+  
   const [regularsTick, setRegularsTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const justAddedRef = useRef<HTMLElement>(null);
