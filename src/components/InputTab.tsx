@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X, Check, Mic, Undo2 } from "lucide-react";
+import { Flag, Plus, Loader2, List, Sparkles, Check, Mic, Undo2 } from "lucide-react";
 
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
