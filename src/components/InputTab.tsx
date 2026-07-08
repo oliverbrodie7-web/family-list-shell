@@ -573,46 +573,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
           )}
         </div>
 
-        <div className="flex items-center justify-between gap-2 pl-1">
-          <div className="flex items-center gap-1.5">
-            <label
-              htmlFor="qty-input"
-              className="text-[13px]"
-              style={{ color: "var(--clay-muted)" }}
-            >
-              + qty
-            </label>
-            <input
-              id="qty-input"
-              type="number"
-              min={1}
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              placeholder="1"
-              className="w-14 rounded-full bg-white px-3 py-1 text-center text-[16px] outline-none"
-              style={{
-                border: "1px solid var(--clay-border)",
-                color: "var(--clay-ink)",
-              }}
-            />
-            <motion.button
-              type="button"
-              onClick={() => setPriority((p) => !p)}
-              whileTap={{ scale: 0.9 }}
-              transition={snappySpring}
-              aria-label="Toggle priority"
-              aria-pressed={priority}
-              className="ml-1 flex items-center gap-1 rounded-full px-2.5 py-1 text-[13px] transition"
-              style={{
-                border: "1px solid var(--clay-border)",
-                background: priority ? "#FBEED9" : "#FFFFFF",
-                color: priority ? "var(--clay-priority)" : "var(--clay-muted)",
-              }}
-            >
-              <Flag size={12} fill={priority ? "currentColor" : "none"} />
-              priority
-            </motion.button>
-          </div>
+        <div className="flex items-center justify-end gap-2 pl-1">
           <motion.button
             type="button"
             onClick={() => setBulkOpen(true)}
@@ -716,7 +677,12 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
 
 
 
-      {/* ---------- JUST ADDED (inline, under input) ---------- */}
+      {/* ---------- INPUT / LIST SWITCH ---------- */}
+      <section className="mt-6 w-full">
+        <TabSwitcher tab={tab} onChange={onTabChange} />
+      </section>
+
+      {/* ---------- JUST ADDED ---------- */}
       {recent.length > 0 && (
         <section ref={justAddedRef} className="mt-4 w-full scroll-mt-4">
           <p
@@ -842,14 +808,6 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
           </ul>
         </section>
       )}
-
-
-
-
-      {/* ---------- INPUT / LIST SWITCH ---------- */}
-      <section className="mt-8 w-full">
-        <TabSwitcher tab={tab} onChange={onTabChange} />
-      </section>
 
 
       </div>
