@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
-import { PlusCircle, ShoppingCart, Bell, BellOff, Settings } from "lucide-react";
-import { MotionConfig, motion } from "framer-motion";
-import { snappySpring } from "@/lib/motion";
+import { useState } from "react";
+import { Bell, BellOff, Settings } from "lucide-react";
+import { MotionConfig } from "framer-motion";
 import { useHouseholdId } from "@/lib/household";
 import { useMember } from "@/lib/member";
 import { useNotifications } from "@/lib/notifications";
@@ -9,33 +8,14 @@ import { InputTab } from "./InputTab";
 import { ListTab } from "./ListTab";
 import { Toaster } from "@/components/ui/sonner";
 import { SettingsSheet } from "./SettingsSheet";
-
-type Tab = "input" | "list";
+import type { Tab } from "./TabSwitcher";
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>("input");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [kbOffset, setKbOffset] = useState(0);
   const { householdId } = useHouseholdId();
   const { member } = useMember();
   const notifications = useNotifications();
-
-  useEffect(() => {
-    const vv = typeof window !== "undefined" ? window.visualViewport : null;
-    if (!vv) return;
-    const update = () => {
-      const bottomInset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      // Only lift when keyboard clearly present (>120px)
-      setKbOffset(bottomInset > 120 ? bottomInset : 0);
-    };
-    update();
-    vv.addEventListener("resize", update);
-    vv.addEventListener("scroll", update);
-    return () => {
-      vv.removeEventListener("resize", update);
-      vv.removeEventListener("scroll", update);
-    };
-  }, []);
 
   const bellOn = notifications.enabled && !notifications.needsReregister;
 
@@ -85,75 +65,17 @@ export function AppShell() {
         <SettingsSheet onClose={() => setSettingsOpen(false)} notifications={notifications} />
       )}
 
-      <main className="flex flex-1 flex-col pb-24">
+      <main className="flex flex-1 flex-col pb-[max(env(safe-area-inset-bottom),1rem)]">
         {tab === "input" ? (
-          <InputTab householdId={householdId} />
+          <InputTab householdId={householdId} tab={tab} onTabChange={setTab} />
         ) : (
-          <ListTab householdId={householdId} active={tab === "list"} />
+          <ListTab householdId={householdId} active={tab === "list"} tab={tab} onTabChange={setTab} />
         )}
       </main>
 
-      <nav
-        className="fixed inset-x-0 z-20 flex justify-center px-4 pointer-events-none"
-        style={{
-          bottom: kbOffset > 0
-            ? `calc(${kbOffset}px + 12px)`
-            : `calc(env(safe-area-inset-bottom) + 14px)`,
-          transition: "bottom 180ms ease-out",
-        }}
-      >
-        <div
-          className="pointer-events-auto flex w-full max-w-sm items-center gap-1 rounded-full bg-white/95 p-1.5 backdrop-blur"
-          style={{
-            border: "1px solid var(--clay-border)",
-            boxShadow: "0 8px 24px rgba(55, 48, 43, 0.12), 0 2px 6px rgba(55, 48, 43, 0.06)",
-          }}
-        >
-          <TabButton
-            active={tab === "input"}
-            onClick={() => setTab("input")}
-            icon={<PlusCircle size={22} strokeWidth={2} />}
-            label="Input"
-          />
-          <TabButton
-            active={tab === "list"}
-            onClick={() => setTab("list")}
-            icon={<ShoppingCart size={20} strokeWidth={2} />}
-            label="List"
-          />
-        </div>
-      </nav>
       <Toaster position="top-center" offset={72} />
 
     </div>
     </MotionConfig>
-  );
-}
-
-function TabButton({
-  active,
-  onClick,
-  icon,
-  label,
-}: {
-  active: boolean;
-  onClick: () => void;
-  icon: React.ReactNode;
-  label: string;
-}) {
-  return (
-    <motion.button
-      onClick={onClick}
-      whileTap={{ scale: 0.92 }}
-      transition={snappySpring}
-      className="flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-[14px] font-semibold transition-colors"
-      style={{
-        background: active ? "var(--clay-accent)" : "transparent",
-        color: active ? "#FFFFFF" : "var(--clay-muted)",
-      }}
-    >
-      {icon}
-      <span>{label}</span>
-    </motion.button>
   );
 }
