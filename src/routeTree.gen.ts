@@ -9,15 +9,9 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TestPopupRouteImport } from './routes/test-popup'
 import { Route as JoinRouteImport } from './routes/join'
 import { Route as IndexRouteImport } from './routes/index'
 
-const TestPopupRoute = TestPopupRouteImport.update({
-  id: '/test-popup',
-  path: '/test-popup',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const JoinRoute = JoinRouteImport.update({
   id: '/join',
   path: '/join',
@@ -32,42 +26,31 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/join': typeof JoinRoute
-  '/test-popup': typeof TestPopupRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/join': typeof JoinRoute
-  '/test-popup': typeof TestPopupRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/join': typeof JoinRoute
-  '/test-popup': typeof TestPopupRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/join' | '/test-popup'
+  fullPaths: '/' | '/join'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/join' | '/test-popup'
-  id: '__root__' | '/' | '/join' | '/test-popup'
+  to: '/' | '/join'
+  id: '__root__' | '/' | '/join'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   JoinRoute: typeof JoinRoute
-  TestPopupRoute: typeof TestPopupRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/test-popup': {
-      id: '/test-popup'
-      path: '/test-popup'
-      fullPath: '/test-popup'
-      preLoaderRoute: typeof TestPopupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/join': {
       id: '/join'
       path: '/join'
@@ -88,7 +71,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   JoinRoute: JoinRoute,
-  TestPopupRoute: TestPopupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
