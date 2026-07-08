@@ -37,7 +37,17 @@ function memberColor(id: string | null | undefined) {
   return MEMBER_COLORS[h % MEMBER_COLORS.length];
 }
 
-export function ListTab({ householdId, active }: { householdId: string | null; active: boolean }) {
+export function ListTab({
+  householdId,
+  active,
+  tab,
+  onTabChange,
+}: {
+  householdId: string | null;
+  active: boolean;
+  tab: Tab;
+  onTabChange: (t: Tab) => void;
+}) {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Item | null>(null);
@@ -46,7 +56,10 @@ export function ListTab({ householdId, active }: { householdId: string | null; a
   const [celebrate, setCelebrate] = useState(false);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const prevActiveRef = useRef<number | null>(null);
-  const { members } = useMember();
+  const { session } = useAuth();
+  const userId = session?.user?.id;
+  const { members, member } = useMember();
+
 
   const memberMap = useMemo(() => {
     const m = new Map<string, { name: string; initial: string; color: string }>();
