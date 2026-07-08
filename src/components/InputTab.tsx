@@ -846,36 +846,11 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
 
 
 
-      {/* ---------- YOUR REGULARS ---------- */}
-      <section className="mt-10 w-full">
-        <div className="mb-2 flex items-center gap-1.5 px-1">
-          <Sparkles size={12} style={{ color: "var(--clay-accent)" }} />
-          <h2
-            className="text-[12px] font-semibold uppercase tracking-[0.08em]"
-            style={{ color: "var(--clay-muted)" }}
-          >
-            Your regulars
-          </h2>
-        </div>
-        {regulars.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {regulars.map((r) => (
-              <AddChip
-                key={`reg-${r.name}`}
-                label={r.name}
-                onAdd={() => chipAdd(r.name)}
-              />
-            ))}
-          </div>
-        ) : (
-          <p
-            className="px-1 text-[14px]"
-            style={{ color: "var(--clay-muted)" }}
-          >
-            Your most-added items will show up here.
-          </p>
-        )}
+      {/* ---------- INPUT / LIST SWITCH ---------- */}
+      <section className="mt-8 w-full">
+        <TabSwitcher tab={tab} onChange={onTabChange} />
       </section>
+
 
       </div>
 
