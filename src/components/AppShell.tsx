@@ -10,6 +10,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { SettingsSheet } from "./SettingsSheet";
 import { WhatsNewPopup } from "./WhatsNewPopup";
 import { checkForUpdateDaily } from "@/lib/pwa-update";
+import { CURRENT_VERSION } from "@/lib/currentVersion";
+import { supabase } from "@/lib/supabase";
 import type { Tab } from "./TabSwitcher";
 
 export function AppShell() {
@@ -21,7 +23,23 @@ export function AppShell() {
 
   useEffect(() => {
     checkForUpdateDaily();
+    // Fire-and-forget: record the current version note if not already stored.
+    // Idempotent server-side; safe to call every load.
+    (async () => {
+      try {
+        await supabase.functions.invoke("publish-version", {
+          body: {
+            version: CURRENT_VERSION.version,
+            title: CURRENT_VERSION.title,
+            notes: CURRENT_VERSION.notes,
+          },
+        });
+      } catch {
+        /* silent */
+      }
+    })();
   }, []);
+
 
   const bellOn = notifications.enabled && !notifications.needsReregister;
 
