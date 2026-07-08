@@ -677,7 +677,12 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
 
 
 
-      {/* ---------- JUST ADDED (inline, under input) ---------- */}
+      {/* ---------- INPUT / LIST SWITCH ---------- */}
+      <section className="mt-6 w-full">
+        <TabSwitcher tab={tab} onChange={onTabChange} />
+      </section>
+
+      {/* ---------- JUST ADDED ---------- */}
       {recent.length > 0 && (
         <section ref={justAddedRef} className="mt-4 w-full scroll-mt-4">
           <p
@@ -803,14 +808,6 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
           </ul>
         </section>
       )}
-
-
-
-
-      {/* ---------- INPUT / LIST SWITCH ---------- */}
-      <section className="mt-8 w-full">
-        <TabSwitcher tab={tab} onChange={onTabChange} />
-      </section>
 
 
       </div>
