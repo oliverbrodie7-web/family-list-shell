@@ -33,7 +33,7 @@ const parseCommaList = (s: string): string[] =>
     .map((t) => t.trim())
     .filter((t) => t.length > 0);
 
-export function InputTab({ householdId }: { householdId: string | null }) {
+export function InputTab({ householdId, tab, onTabChange }: { householdId: string | null; tab: Tab; onTabChange: (t: Tab) => void }) {
   const { session } = useAuth();
   const { member } = useMember();
   const userId = session?.user?.id;
