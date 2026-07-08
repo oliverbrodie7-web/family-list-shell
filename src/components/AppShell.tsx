@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, BellOff, Settings } from "lucide-react";
 import { MotionConfig } from "framer-motion";
 import { useHouseholdId } from "@/lib/household";
@@ -8,6 +8,8 @@ import { InputTab } from "./InputTab";
 import { ListTab } from "./ListTab";
 import { Toaster } from "@/components/ui/sonner";
 import { SettingsSheet } from "./SettingsSheet";
+import { WhatsNewPopup } from "./WhatsNewPopup";
+import { checkForUpdateDaily } from "@/lib/pwa-update";
 import type { Tab } from "./TabSwitcher";
 
 export function AppShell() {
@@ -16,6 +18,10 @@ export function AppShell() {
   const { householdId } = useHouseholdId();
   const { member } = useMember();
   const notifications = useNotifications();
+
+  useEffect(() => {
+    checkForUpdateDaily();
+  }, []);
 
   const bellOn = notifications.enabled && !notifications.needsReregister;
 
@@ -74,6 +80,8 @@ export function AppShell() {
       </main>
 
       <Toaster position="top-center" offset={72} />
+      <WhatsNewPopup />
+
 
     </div>
     </MotionConfig>
