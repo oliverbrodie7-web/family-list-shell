@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Flag, Plus, Loader2, List, Sparkles, ChevronRight, X, Check, Mic, Undo2 } from "lucide-react";
+import { Flag, Plus, Loader2, List, Sparkles, Check, Mic, Undo2 } from "lucide-react";
 
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,7 +11,7 @@ import { BulkAddSheet } from "./BulkAddSheet";
 import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
-import { COMMON_AISLES, ALL_COMMON_ITEMS } from "@/lib/common-items";
+
 import { softSpring, snappySpring } from "@/lib/motion";
 
 interface RecentItem {
@@ -44,7 +44,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const [recent, setRecent] = useState<RecentItem[]>([]);
   const [batchItems, setBatchItems] = useState<string[] | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [browseOpen, setBrowseOpen] = useState(false);
+  
   const [regularsTick, setRegularsTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const justAddedRef = useRef<HTMLElement>(null);
@@ -111,9 +111,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   const suggestions = useMemo(() => {
     const q = text.trim().toLowerCase();
     if (q.length < 1 || q.includes(",")) return [];
-    const pool = Array.from(
-      new Set([...regulars.map((r) => r.name), ...ALL_COMMON_ITEMS]),
-    );
+    const pool = Array.from(new Set(regulars.map((r) => r.name)));
     return pool
       .filter((n) => n.toLowerCase().includes(q) && n.toLowerCase() !== q)
       .slice(0, 5);
@@ -330,11 +328,7 @@ export function InputTab({ householdId }: { householdId: string | null }) {
   };
 
   const parseSpokenList = (raw: string): string[] => {
-    const knownMulti = new Set(
-      ALL_COMMON_ITEMS
-        .map((n) => n.toLowerCase())
-        .filter((n) => n.includes(" ")),
-    );
+    const knownMulti = new Set<string>();
     // Normalise "and" and semicolons to commas.
     const normalised = raw
       .replace(/\b(and|und|&)\b/gi, ",")
@@ -881,25 +875,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         )}
       </section>
 
-      {/* ---------- BROWSE COMMON ITEMS ---------- */}
-      <section className="mt-8 w-full">
-        <motion.button
-          type="button"
-          onClick={() => setBrowseOpen(true)}
-          whileTap={{ scale: 0.97 }}
-          transition={snappySpring}
-          className="flex w-full items-center justify-between rounded-[14px] bg-white px-4 py-3.5 text-left transition active:bg-[var(--clay-accent-soft)]"
-          style={{ border: "1px solid var(--clay-border)" }}
-        >
-          <span
-            className="text-[16px]"
-            style={{ color: "var(--clay-ink)" }}
-          >
-            Browse common items
-          </span>
-          <ChevronRight size={18} style={{ color: "var(--clay-muted)" }} />
-        </motion.button>
-      </section>
       </div>
 
 
@@ -921,12 +896,6 @@ export function InputTab({ householdId }: { householdId: string | null }) {
         />
       )}
 
-      {browseOpen && (
-        <BrowseSheet
-          onClose={() => setBrowseOpen(false)}
-          onPick={(name) => chipAdd(name)}
-        />
-      )}
     </div>
   );
 }
@@ -1022,102 +991,6 @@ function SuggestionRow({
   );
 }
 
-function BrowseSheet({
-  onClose,
-  onPick,
-}: {
-  onClose: () => void;
-  onPick: (name: string) => void;
-}) {
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, []);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center"
-      role="dialog"
-      aria-modal="true"
-    >
-      <div
-        className="absolute inset-0 bg-black/30"
-        onClick={onClose}
-      />
-      <div
-        className="relative w-full max-w-md rounded-t-[20px] bg-[var(--clay-bg)]"
-        style={{
-          maxHeight: "85vh",
-          paddingBottom: "env(safe-area-inset-bottom)",
-          border: "1px solid var(--clay-border)",
-        }}
-      >
-        <div className="flex items-center justify-between px-5 pt-4 pb-2">
-          <h3
-            className="text-[17px] font-semibold"
-            style={{ color: "var(--clay-ink)" }}
-          >
-            Browse common items
-          </h3>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close"
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white"
-            style={{ border: "1px solid var(--clay-border)" }}
-          >
-            <X size={16} style={{ color: "var(--clay-muted)" }} />
-          </button>
-        </div>
-        <p
-          className="px-5 pb-3 text-[13px]"
-          style={{ color: "var(--clay-muted)" }}
-        >
-          Tap any item to add it.
-        </p>
-        <div
-          className="overflow-y-auto px-5 pb-6"
-          style={{ maxHeight: "calc(85vh - 84px)" }}
-        >
-          <div
-            className="overflow-hidden rounded-[14px] bg-white"
-            style={{ border: "1px solid var(--clay-border)" }}
-          >
-            {COMMON_AISLES.map((aisle, idx) => (
-              <div
-                key={aisle.label}
-                className="px-3.5 py-3"
-                style={{
-                  borderTop:
-                    idx === 0 ? "none" : "1px solid var(--clay-border)",
-                }}
-              >
-                <p
-                  className="mb-1.5 text-[12px] font-semibold uppercase tracking-[0.08em]"
-                  style={{ color: "var(--clay-muted)" }}
-                >
-                  {aisle.label}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {aisle.items.map((it) => (
-                    <AddChip
-                      key={`${aisle.label}-${it}`}
-                      label={it}
-                      onAdd={() => onPick(it)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // Silence unused import in case tree-shaking complains
 void normalizeName;

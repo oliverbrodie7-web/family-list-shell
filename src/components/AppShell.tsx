@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlusCircle, ShoppingCart, Bell, BellOff, Settings } from "lucide-react";
 import { MotionConfig, motion } from "framer-motion";
 import { snappySpring } from "@/lib/motion";
@@ -15,9 +15,27 @@ type Tab = "input" | "list";
 export function AppShell() {
   const [tab, setTab] = useState<Tab>("input");
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [kbOffset, setKbOffset] = useState(0);
   const { householdId } = useHouseholdId();
   const { member } = useMember();
   const notifications = useNotifications();
+
+  useEffect(() => {
+    const vv = typeof window !== "undefined" ? window.visualViewport : null;
+    if (!vv) return;
+    const update = () => {
+      const bottomInset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      // Only lift when keyboard clearly present (>120px)
+      setKbOffset(bottomInset > 120 ? bottomInset : 0);
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
 
   const bellOn = notifications.enabled && !notifications.needsReregister;
 
@@ -76,19 +94,31 @@ export function AppShell() {
       </main>
 
       <nav
-        className="fixed inset-x-0 bottom-0 z-10 border-t border-neutral-100 bg-white/95 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 backdrop-blur"
+        className="fixed inset-x-0 z-20 flex justify-center px-4 pointer-events-none"
+        style={{
+          bottom: kbOffset > 0
+            ? `calc(${kbOffset}px + 12px)`
+            : `calc(env(safe-area-inset-bottom) + 14px)`,
+          transition: "bottom 180ms ease-out",
+        }}
       >
-        <div className="mx-auto flex max-w-md items-center justify-around">
+        <div
+          className="pointer-events-auto flex w-full max-w-sm items-center gap-1 rounded-full bg-white/95 p-1.5 backdrop-blur"
+          style={{
+            border: "1px solid var(--clay-border)",
+            boxShadow: "0 8px 24px rgba(55, 48, 43, 0.12), 0 2px 6px rgba(55, 48, 43, 0.06)",
+          }}
+        >
           <TabButton
             active={tab === "input"}
             onClick={() => setTab("input")}
-            icon={<PlusCircle size={26} strokeWidth={2} />}
+            icon={<PlusCircle size={22} strokeWidth={2} />}
             label="Input"
           />
           <TabButton
             active={tab === "list"}
             onClick={() => setTab("list")}
-            icon={<ShoppingCart size={24} strokeWidth={2} />}
+            icon={<ShoppingCart size={20} strokeWidth={2} />}
             label="List"
           />
         </div>
@@ -114,11 +144,13 @@ function TabButton({
   return (
     <motion.button
       onClick={onClick}
-      whileTap={{ scale: 0.88 }}
+      whileTap={{ scale: 0.92 }}
       transition={snappySpring}
-      className={`flex flex-1 flex-col items-center gap-1 py-2 text-sm font-medium transition ${
-        active ? "text-[var(--accent-green)]" : "text-neutral-400"
-      }`}
+      className="flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-[14px] font-semibold transition-colors"
+      style={{
+        background: active ? "var(--clay-accent)" : "transparent",
+        color: active ? "#FFFFFF" : "var(--clay-muted)",
+      }}
     >
       {icon}
       <span>{label}</span>
