@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlusCircle, ShoppingCart, Bell, BellOff, Settings } from "lucide-react";
 import { MotionConfig, motion } from "framer-motion";
 import { snappySpring } from "@/lib/motion";
