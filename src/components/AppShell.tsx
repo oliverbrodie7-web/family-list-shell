@@ -144,11 +144,13 @@ function TabButton({
   return (
     <motion.button
       onClick={onClick}
-      whileTap={{ scale: 0.88 }}
+      whileTap={{ scale: 0.92 }}
       transition={snappySpring}
-      className={`flex flex-1 flex-col items-center gap-1 py-2 text-sm font-medium transition ${
-        active ? "text-[var(--accent-green)]" : "text-neutral-400"
-      }`}
+      className="flex flex-1 items-center justify-center gap-2 rounded-full py-2.5 text-[14px] font-semibold transition-colors"
+      style={{
+        background: active ? "var(--clay-accent)" : "transparent",
+        color: active ? "#FFFFFF" : "var(--clay-muted)",
+      }}
     >
       {icon}
       <span>{label}</span>
