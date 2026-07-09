@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from "react";
+import { motion } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { useMember } from "@/lib/member";
+import { snappySpring } from "@/lib/motion";
 
 // "Suggest a feature" submit sheet — available to everyone (basic feature).
 // Inserts a row into shopping_feedback.
@@ -39,28 +41,26 @@ export function FeedbackModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-6"
       onClick={onClose}
     >
-      <div
-        className="w-full max-w-md rounded-t-2xl p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
-        style={{ background: "var(--clay-bg)", border: "1px solid var(--clay-border)" }}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.94 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={snappySpring}
+        className="w-full max-w-[340px] rounded-[18px] bg-white p-6 shadow-xl"
+        style={{ border: "1px solid var(--clay-border)" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div
-          className="mx-auto mb-4 h-1 w-10 rounded-full"
-          style={{ background: "var(--clay-border)" }}
-        />
-
         {sent ? (
-          <div className="space-y-4 py-2 text-center">
+          <div className="space-y-5 text-center">
             <h2
               className="font-serif text-[22px] leading-tight"
               style={{ color: "var(--clay-ink)", letterSpacing: "-0.01em" }}
             >
               Thanks! Your suggestion has been sent.
             </h2>
-            <button onClick={onClose} className="clay-btn-primary">
+            <button onClick={onClose} className="clay-btn-primary w-full">
               Close
             </button>
           </div>
@@ -109,7 +109,7 @@ export function FeedbackModal({
             </div>
           </form>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
