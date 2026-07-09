@@ -4,4 +4,4 @@
 //   "off"           → never gate
 // Set to "advanced-only" for the initial rollout.
 export const INSTALL_GATE_MODE: "advanced-only" | "everyone" | "off" =
-  "advanced-only";
+  "everyone";
