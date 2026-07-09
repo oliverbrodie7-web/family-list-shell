@@ -79,11 +79,11 @@ function InstallGateScreen({ env }: { env: InstallEnv }) {
             className="font-display mt-5 text-[24px] leading-tight"
             style={{ color: "var(--clay-ink)" }}
           >
-            Our Pantry lives on your Home Screen
+            Add Our Pantry to your Home Screen to get started
           </h1>
           <p className="mt-2 text-[15px]" style={{ color: "var(--clay-muted)" }}>
-            It works best installed as an app — quick to open, and it feels right
-            at home next to your other apps.
+            Our Pantry runs as an app on your Home Screen. To use it, add it using
+            the steps below — it only takes a few seconds.
           </p>
         </div>
 
@@ -179,8 +179,8 @@ function IosInAppSteps({ copied, onCopy }: { copied: boolean; onCopy: () => void
         Let's open this in Safari first
       </h2>
       <p className="text-[15px] leading-snug" style={{ color: "var(--clay-ink)" }}>
-        It looks like you opened this inside another app. To add Our Pantry to your
-        Home Screen, you'll need to open it in Safari first.
+        To use Our Pantry, you'll need to open it in Safari first, then add it to
+        your Home Screen. It looks like you're currently inside another app.
       </p>
       <p className="mt-3 text-[15px] leading-snug" style={{ color: "var(--clay-ink)" }}>
         Tap the <strong>•••</strong> or the <strong>Safari / compass</strong> icon in
@@ -210,9 +210,12 @@ function AndroidSteps({
 }) {
   return (
     <Card>
-      <h2 className="mb-3 text-[16px] font-semibold" style={{ color: "var(--clay-ink)" }}>
+      <h2 className="mb-2 text-[16px] font-semibold" style={{ color: "var(--clay-ink)" }}>
         Add to your Home screen
       </h2>
+      <p className="mb-3 text-[15px] leading-snug" style={{ color: "var(--clay-ink)" }}>
+        To use Our Pantry, add it to your Home Screen using the steps below.
+      </p>
       <Steps
         items={[
           <>Tap the <strong>menu (⋮)</strong> in the top-right of Chrome.</>,
@@ -239,8 +242,8 @@ function OtherSteps() {
         Add Our Pantry to your Home Screen
       </h2>
       <p className="text-[15px] leading-snug" style={{ color: "var(--clay-ink)" }}>
-        Add this page to your Home Screen (or install it) from your browser's menu,
-        then open it from the new icon.
+        To use Our Pantry, add it to your Home Screen (or install it) from your
+        browser's menu, then open it from the new icon.
       </p>
     </Card>
   );
