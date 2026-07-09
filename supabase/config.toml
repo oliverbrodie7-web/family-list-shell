@@ -5,6 +5,7 @@
 #   - alexa-test:      Amazon Alexa calls it server-to-server (no user session).
 #   - publish-version: the app calls it before/around auth; it only inserts a
 #                      predefined, app-supplied release note (harmless).
+#   - price-test:      a manual curl-invoked feasibility probe (no user session).
 # Every other Edge Function is left untouched and keeps the platform default
 # (verify_jwt = true), so the app's authenticated functions stay protected.
 #
@@ -15,4 +16,7 @@
 verify_jwt = false
 
 [functions.publish-version]
+verify_jwt = false
+
+[functions.price-test]
 verify_jwt = false
