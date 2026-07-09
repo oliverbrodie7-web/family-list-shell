@@ -12,8 +12,27 @@ import { WhatsNewPopup } from "./WhatsNewPopup";
 import { checkForUpdateDaily } from "@/lib/pwa-update";
 import { CURRENT_VERSION } from "@/lib/currentVersion";
 import { supabase } from "@/lib/supabase";
-import { AdvancedFeaturesProvider } from "@/lib/advancedFeatures";
+import { AdvancedFeaturesProvider, useAdvancedFeatures } from "@/lib/advancedFeatures";
 import type { Tab } from "./TabSwitcher";
+
+// Subtle "advanced mode on" indicator for the top bar, beside the bell.
+// Renders only when the central gate is on; a small, quiet soft-terracotta dot.
+function AdvancedIndicator() {
+  const { showAdvanced } = useAdvancedFeatures();
+  if (!showAdvanced) return null;
+  return (
+    <span
+      title="Advanced mode on"
+      aria-label="Advanced mode on"
+      className="flex h-8 items-center"
+    >
+      <span
+        className="h-[7px] w-[7px] rounded-full"
+        style={{ background: "var(--clay-accent)", opacity: 0.85 }}
+      />
+    </span>
+  );
+}
 
 export function AppShell() {
   const [tab, setTab] = useState<Tab>("input");
@@ -65,6 +84,7 @@ export function AppShell() {
               {member.name}
             </span>
           )}
+          <AdvancedIndicator />
           {notifications.supported && notifications.ready && (
             <button
               onClick={() => setSettingsOpen(true)}
