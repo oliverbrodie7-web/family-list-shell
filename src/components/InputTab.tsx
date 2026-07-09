@@ -12,8 +12,30 @@ import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
 import { TabSwitcher, type Tab } from "./TabSwitcher";
+import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 
 import { softSpring, snappySpring } from "@/lib/motion";
+
+// Placeholder proving the advanced-features wall works. Renders ONLY when the
+// central gate says advanced is on (household unlocked AND this member shows it).
+// Remove/replace once real advanced features exist.
+function AdvancedPlaceholder() {
+  const { showAdvanced } = useAdvancedFeatures();
+  if (!showAdvanced) return null;
+  return (
+    <div
+      className="mt-4 flex items-center gap-2 rounded-[14px] px-4 py-3 text-[14px] font-medium"
+      style={{
+        background: "var(--clay-accent-soft)",
+        border: "1px solid var(--clay-border)",
+        color: "var(--clay-accent)",
+      }}
+    >
+      <Check size={16} strokeWidth={2.5} />
+      Advanced features are ON (placeholder)
+    </div>
+  );
+}
 
 
 interface RecentItem {
@@ -505,6 +527,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-10">
+      <AdvancedPlaceholder />
       {/* ---------- HERO BLOCK ---------- */}
       <div className="flex flex-1 flex-col items-center justify-start pt-6">
         <h1

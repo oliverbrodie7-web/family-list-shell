@@ -3,6 +3,7 @@ import { Bell, BellOff } from "lucide-react";
 import { useMember } from "@/lib/member";
 import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
+import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { supabase } from "@/lib/supabase";
 import type { NotificationsState } from "@/lib/notifications";
 
@@ -40,6 +41,29 @@ export function SettingsSheet({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  const { householdUnlocked, localShow, unlockHousehold, setShowAdvanced } =
+    useAdvancedFeatures();
+  const [advOpen, setAdvOpen] = useState(false);
+  const [advPassword, setAdvPassword] = useState("");
+  const [advError, setAdvError] = useState<string | null>(null);
+  const [advBusy, setAdvBusy] = useState(false);
+  const [advSuccess, setAdvSuccess] = useState(false);
+
+  const submitUnlock = async (e: FormEvent) => {
+    e.preventDefault();
+    setAdvBusy(true);
+    setAdvError(null);
+    const { ok, error } = await unlockHousehold(advPassword);
+    setAdvBusy(false);
+    if (!ok) {
+      setAdvError(error ?? "That password isn't right");
+      return;
+    }
+    setAdvOpen(false);
+    setAdvPassword("");
+    setAdvSuccess(true);
+  };
 
   if (!member) return null;
   const color = memberColor(member.id);
@@ -389,6 +413,105 @@ export function SettingsSheet({
           )}
         </div>
 
+
+        {/* Advanced features */}
+        <div
+          className="mt-3 space-y-3 rounded-[14px] bg-white p-4"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <div>
+            <h3
+              className="text-[16px] font-semibold"
+              style={{ color: "var(--clay-ink)" }}
+            >
+              Advanced features
+            </h3>
+            <p className="mt-1 text-[13px]" style={{ color: "var(--clay-muted)" }}>
+              {householdUnlocked
+                ? "Unlocked for your family. Choose whether to show them on this device."
+                : "Extra tools for power users. Off by default."}
+            </p>
+          </div>
+
+          {advSuccess && (
+            <p className="text-[15px]" style={{ color: "var(--clay-success)" }}>
+              Advanced features unlocked for your family
+            </p>
+          )}
+
+          {!householdUnlocked ? (
+            !advOpen ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAdvError(null);
+                  setAdvOpen(true);
+                }}
+                className="clay-btn-secondary"
+              >
+                Enable advanced features
+              </button>
+            ) : (
+              <form onSubmit={submitUnlock} className="space-y-2">
+                <input
+                  type="password"
+                  value={advPassword}
+                  onChange={(e) => setAdvPassword(e.target.value)}
+                  placeholder="Enter password"
+                  autoFocus
+                  className="clay-input"
+                />
+                {advError && (
+                  <p className="text-[15px]" style={{ color: "#B4441F" }}>
+                    {advError}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAdvOpen(false);
+                      setAdvPassword("");
+                      setAdvError(null);
+                    }}
+                    className="clay-btn-secondary flex-1"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={advBusy || !advPassword.trim()}
+                    className="clay-btn-primary flex-1"
+                  >
+                    {advBusy ? "Checking…" : "Unlock"}
+                  </button>
+                </div>
+              </form>
+            )
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowAdvanced(!localShow)}
+              aria-pressed={localShow}
+              className="flex w-full items-center justify-between gap-3"
+            >
+              <span className="text-[15px]" style={{ color: "var(--clay-ink)" }}>
+                Show advanced features
+              </span>
+              <span
+                className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
+                style={{
+                  background: localShow ? "var(--clay-accent)" : "var(--clay-border)",
+                }}
+              >
+                <span
+                  className="inline-block h-5 w-5 rounded-full bg-white transition"
+                  style={{ transform: localShow ? "translateX(22px)" : "translateX(2px)" }}
+                />
+              </span>
+            </button>
+          )}
+        </div>
 
         {/* Switch member */}
         <div
