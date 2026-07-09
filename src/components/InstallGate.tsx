@@ -102,17 +102,6 @@ function InstallGateScreen({ env }: { env: InstallEnv }) {
           {env === "other" && <OtherSteps />}
         </div>
 
-        {/* Always-available copy-link fallback (in-app screen has its own primary one) */}
-        {env !== "ios-inapp" && (
-          <div className="mt-6 text-center">
-            <button type="button" onClick={copyLink} className="clay-btn-secondary">
-              {copied ? "Link copied!" : "Copy link"}
-            </button>
-            <p className="mt-2 text-[13px]" style={{ color: "var(--clay-muted)" }}>
-              Handy if you want to paste it somewhere else.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
