@@ -106,11 +106,14 @@ export function AdvancedFeaturesProvider({
         return { ok: false, error: "That password isn't right" };
       }
       if (!householdId) return { ok: false, error: "No household found" };
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("shopping_households")
         .update({ advanced_unlocked: true })
-        .eq("id", householdId);
-      if (error) return { ok: false, error: error.message };
+        .eq("id", householdId)
+        .select("id");
+      if (error || !data || data.length === 0) {
+        return { ok: false, error: "Couldn't save — please try again." };
+      }
       setHouseholdUnlocked(true);
       setShowAdvanced(true); // the member who unlocks it sees advanced by default
       return { ok: true };
