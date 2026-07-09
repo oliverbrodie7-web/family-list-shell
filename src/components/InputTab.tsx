@@ -9,6 +9,8 @@ import { CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { BatchConfirmSheet, type BatchRow } from "./BatchConfirmSheet";
 import { BulkAddSheet } from "./BulkAddSheet";
 import { FeedbackModal } from "./FeedbackModal";
+import { JoinFamilyModal } from "./JoinFamilyModal";
+import { InviteModal } from "./InviteModal";
 import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
@@ -48,6 +50,26 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
   const [batchItems, setBatchItems] = useState<string[] | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [showNewUserCard, setShowNewUserCard] = useState(false);
+
+  // Show the new-user family card only during the member's first 48 hours
+  // (first-seen timestamp recorded per-member in localStorage).
+  useEffect(() => {
+    const mid = member?.id;
+    if (!mid || typeof window === "undefined") {
+      setShowNewUserCard(false);
+      return;
+    }
+    const key = `op_first_seen_${mid}`;
+    let ts = Number(window.localStorage.getItem(key));
+    if (!ts) {
+      ts = Date.now();
+      window.localStorage.setItem(key, String(ts));
+    }
+    setShowNewUserCard(Date.now() < ts + 48 * 60 * 60 * 1000);
+  }, [member?.id]);
   
   const [regularsTick, setRegularsTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -692,6 +714,36 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
             Got an idea? Suggest a feature
           </button>
         </div>
+
+        {showNewUserCard && (
+          <div
+            className="mt-3 rounded-[14px] p-3.5"
+            style={{
+              background: "var(--clay-accent-soft)",
+              border: "1px solid var(--clay-border)",
+            }}
+          >
+            <p className="text-[14px]" style={{ color: "var(--clay-ink)" }}>
+              Sharing a pantry with family?
+            </p>
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setJoinOpen(true)}
+                className="clay-btn-secondary flex-1"
+              >
+                Join a family
+              </button>
+              <button
+                type="button"
+                onClick={() => setInviteOpen(true)}
+                className="clay-btn-secondary flex-1"
+              >
+                Invite someone
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ---------- JUST ADDED ---------- */}
@@ -846,6 +898,10 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
       {feedbackOpen && (
         <FeedbackModal householdId={householdId} onClose={() => setFeedbackOpen(false)} />
       )}
+
+      {joinOpen && <JoinFamilyModal onClose={() => setJoinOpen(false)} />}
+
+      {inviteOpen && <InviteModal onClose={() => setInviteOpen(false)} />}
 
     </div>
   );

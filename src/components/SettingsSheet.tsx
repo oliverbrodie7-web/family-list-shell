@@ -5,6 +5,8 @@ import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { FeedbackViewer } from "./FeedbackViewer";
+import { InviteSteps } from "./InviteSteps";
+import { JoinFamilyModal } from "./JoinFamilyModal";
 import { supabase } from "@/lib/supabase";
 import type { NotificationsState } from "@/lib/notifications";
 
@@ -46,6 +48,7 @@ export function SettingsSheet({
   const { householdUnlocked, localShow, showAdvanced, unlockHousehold, setShowAdvanced } =
     useAdvancedFeatures();
   const [feedbackViewerOpen, setFeedbackViewerOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
   const [advOpen, setAdvOpen] = useState(false);
   const [advPassword, setAdvPassword] = useState("");
   const [advError, setAdvError] = useState<string | null>(null);
@@ -356,6 +359,8 @@ export function SettingsSheet({
             </div>
           )}
 
+          {inviteCode && <InviteSteps code={inviteCode} />}
+
           <button
             type="button"
             onClick={() => setShowLinkOption((v) => !v)}
@@ -416,6 +421,17 @@ export function SettingsSheet({
           )}
         </div>
 
+        {/* Join a family with a code */}
+        <div
+          className="mt-3 overflow-hidden rounded-[14px] bg-white"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <SheetRow
+            label="Join a family with a code"
+            first
+            onClick={() => setJoinOpen(true)}
+          />
+        </div>
 
         {/* Advanced features */}
         <div
@@ -621,6 +637,8 @@ export function SettingsSheet({
     {feedbackViewerOpen && (
       <FeedbackViewer onClose={() => setFeedbackViewerOpen(false)} />
     )}
+
+    {joinOpen && <JoinFamilyModal onClose={() => setJoinOpen(false)} />}
     </>
   );
 }

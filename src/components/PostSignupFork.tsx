@@ -203,7 +203,7 @@ export function PostSignupFork({ onStarted }: { onStarted: () => void }) {
   );
 }
 
-function SetupNewMember({ householdId }: { householdId: string }) {
+export function SetupNewMember({ householdId }: { householdId: string }) {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [confirm, setConfirm] = useState("");
