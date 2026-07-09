@@ -13,6 +13,7 @@ import { checkForUpdateDaily } from "@/lib/pwa-update";
 import { CURRENT_VERSION } from "@/lib/currentVersion";
 import { supabase } from "@/lib/supabase";
 import { AdvancedFeaturesProvider, useAdvancedFeatures } from "@/lib/advancedFeatures";
+import { InstallGate } from "./InstallGate";
 import type { Tab } from "./TabSwitcher";
 
 // Subtle "advanced mode on" indicator for the top bar, beside the bell.
@@ -66,6 +67,7 @@ export function AppShell() {
   return (
     <MotionConfig reducedMotion="user" transition={{ type: "spring", stiffness: 230, damping: 22, mass: 0.9 }}>
     <AdvancedFeaturesProvider householdId={householdId}>
+    <InstallGate>
     <div className="flex min-h-[100dvh] flex-col bg-white">
       <header className="flex items-center justify-between gap-3 border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <div className="min-w-0 flex-1">
@@ -124,6 +126,7 @@ export function AppShell() {
 
 
     </div>
+    </InstallGate>
     </AdvancedFeaturesProvider>
     </MotionConfig>
   );
