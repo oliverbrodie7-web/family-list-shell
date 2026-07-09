@@ -183,10 +183,11 @@ export function SettingsSheet({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-t-2xl p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
+        className="max-h-[88dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-2xl p-5 pb-[max(env(safe-area-inset-bottom),1rem)]"
         style={{
           background: "var(--clay-bg)",
           border: "1px solid var(--clay-border)",
+          WebkitOverflowScrolling: "touch",
         }}
         onClick={(e) => e.stopPropagation()}
       >
