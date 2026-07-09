@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { CATEGORY_LABELS, type Category } from "@/lib/categories";
 import { BatchConfirmSheet, type BatchRow } from "./BatchConfirmSheet";
 import { BulkAddSheet } from "./BulkAddSheet";
+import { FeedbackModal } from "./FeedbackModal";
 import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
@@ -46,6 +47,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
   const [recent, setRecent] = useState<RecentItem[]>([]);
   const [batchItems, setBatchItems] = useState<string[] | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   
   const [regularsTick, setRegularsTick] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -680,6 +682,16 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
       {/* ---------- INPUT / LIST SWITCH ---------- */}
       <section className="mt-6 w-full">
         <TabSwitcher tab={tab} onChange={onTabChange} />
+        <div className="mt-3 text-center">
+          <button
+            type="button"
+            onClick={() => setFeedbackOpen(true)}
+            className="text-[13px] underline"
+            style={{ color: "#9A8E7F", textUnderlineOffset: "3px" }}
+          >
+            Got an idea? Suggest a feature
+          </button>
+        </div>
       </section>
 
       {/* ---------- JUST ADDED ---------- */}
@@ -829,6 +841,10 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
           onCancel={() => setBatchItems(null)}
           onConfirm={confirmBatch}
         />
+      )}
+
+      {feedbackOpen && (
+        <FeedbackModal householdId={householdId} onClose={() => setFeedbackOpen(false)} />
       )}
 
     </div>

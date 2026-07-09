@@ -4,6 +4,7 @@ import { useMember } from "@/lib/member";
 import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
+import { FeedbackViewer } from "./FeedbackViewer";
 import { supabase } from "@/lib/supabase";
 import type { NotificationsState } from "@/lib/notifications";
 
@@ -42,8 +43,9 @@ export function SettingsSheet({
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { householdUnlocked, localShow, unlockHousehold, setShowAdvanced } =
+  const { householdUnlocked, localShow, showAdvanced, unlockHousehold, setShowAdvanced } =
     useAdvancedFeatures();
+  const [feedbackViewerOpen, setFeedbackViewerOpen] = useState(false);
   const [advOpen, setAdvOpen] = useState(false);
   const [advPassword, setAdvPassword] = useState("");
   const [advError, setAdvError] = useState<string | null>(null);
@@ -172,6 +174,7 @@ export function SettingsSheet({
   };
 
   return (
+    <>
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/30"
       onClick={onClose}
@@ -513,6 +516,20 @@ export function SettingsSheet({
           )}
         </div>
 
+        {/* Feedback viewer — advanced only */}
+        {showAdvanced && (
+          <div
+            className="mt-3 overflow-hidden rounded-[14px] bg-white"
+            style={{ border: "1px solid var(--clay-border)" }}
+          >
+            <SheetRow
+              label="Feedback"
+              first
+              onClick={() => setFeedbackViewerOpen(true)}
+            />
+          </div>
+        )}
+
         {/* Switch member */}
         <div
           className="mt-3 overflow-hidden rounded-[14px] bg-white"
@@ -600,6 +617,11 @@ export function SettingsSheet({
         </button>
       </div>
     </div>
+
+    {feedbackViewerOpen && (
+      <FeedbackViewer onClose={() => setFeedbackViewerOpen(false)} />
+    )}
+    </>
   );
 }
 
