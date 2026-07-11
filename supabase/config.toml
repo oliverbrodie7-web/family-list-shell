@@ -11,6 +11,9 @@
 #
 # The GitHub Actions workflow runs `supabase functions deploy --project-ref ...`,
 # which reads this file and applies each function's settings on deploy.
+# project_id is required by the pinned Supabase CLI when this file exists;
+# it matches the --project-ref used in the workflow.
+project_id = "wifuhcqpmvixipxejanb"
 
 [functions.alexa-test]
 verify_jwt = false
