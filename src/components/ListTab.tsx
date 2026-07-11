@@ -122,15 +122,17 @@ export function ListTab({
       .eq("id", item.id);
   };
 
+  // Removing a price marks the row 'suppressed' (not null) so backfill never
+  // auto re-estimates it. A later manual save overwrites this and ends it.
   const removePrice = async (item: Item) => {
     setItems((arr) =>
       arr.map((i) =>
-        i.id === item.id ? { ...i, price_cents: null, price_source: null } : i,
+        i.id === item.id ? { ...i, price_cents: null, price_source: "suppressed" } : i,
       ),
     );
     await supabase
       .from("shopping_list_items")
-      .update({ price_cents: null, price_source: null, price_label: null })
+      .update({ price_cents: null, price_source: "suppressed", price_label: null })
       .eq("id", item.id);
   };
 
@@ -157,7 +159,7 @@ export function ListTab({
   useEffect(() => {
     if (loading || !pricingOn || backfilledRef.current) return;
     const candidates = items
-      .filter((i) => !i.is_checked && i.price_cents == null)
+      .filter((i) => !i.is_checked && i.price_cents == null && i.price_source == null)
       .slice(0, 5);
     if (candidates.length === 0) return;
     backfilledRef.current = true;
