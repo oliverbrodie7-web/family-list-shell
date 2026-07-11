@@ -24,12 +24,22 @@ import {
 import { supabase } from "./supabase";
 import { useMember } from "./member";
 import { ADVANCED_PASSWORD } from "./advancedConfig";
+import { ADVANCED_FEATURES } from "./advancedFeaturesRegistry";
 
 const showKey = (memberId: string) => `op_show_advanced_${memberId}`;
+const featureKey = (featureId: string, memberId: string) =>
+  `op_adv_feature_${featureId}_${memberId}`;
 
 function readLocalShow(memberId: string | null | undefined): boolean {
   if (!memberId || typeof window === "undefined") return false;
   return window.localStorage.getItem(showKey(memberId)) === "true";
+}
+
+// Per-feature preference DEFAULTS TO ON when nothing is stored, so adding a
+// feature to the registry (or shipping this system) changes nothing visibly.
+function readFeaturePref(featureId: string, memberId: string | null): boolean {
+  if (!memberId || typeof window === "undefined") return true;
+  return window.localStorage.getItem(featureKey(featureId, memberId)) !== "false";
 }
 
 interface AdvancedFeaturesValue {
@@ -44,6 +54,12 @@ interface AdvancedFeaturesValue {
   unlockHousehold: (password: string) => Promise<{ ok: boolean; error?: string }>;
   /** Toggle just THIS member's per-device visibility (no password). */
   setShowAdvanced: (next: boolean) => void;
+  /** Is this the owner household? (shopping_households.is_owner) */
+  isOwnerHousehold: boolean;
+  /** Per-feature gate: householdUnlocked AND showAdvanced AND this member's feature pref. */
+  isFeatureOn: (featureId: string) => boolean;
+  /** Set this member's per-feature preference (registry features only). */
+  setFeatureOn: (featureId: string, next: boolean) => void;
 }
 
 const AdvancedFeaturesContext = createContext<AdvancedFeaturesValue | undefined>(undefined);
@@ -60,12 +76,15 @@ export function AdvancedFeaturesProvider({
 
   const [loading, setLoading] = useState(true);
   const [householdUnlocked, setHouseholdUnlocked] = useState(false);
+  const [isOwnerHousehold, setIsOwnerHousehold] = useState(false);
   const [localShow, setLocalShow] = useState(false);
+  const [featurePrefs, setFeaturePrefs] = useState<Record<string, boolean>>({});
 
-  // Layer 1: household-level unlock flag.
+  // Layer 1: household-level flags (advanced unlock + owner household).
   useEffect(() => {
     if (!householdId) {
       setHouseholdUnlocked(false);
+      setIsOwnerHousehold(false);
       setLoading(false);
       return;
     }
@@ -73,12 +92,13 @@ export function AdvancedFeaturesProvider({
     setLoading(true);
     supabase
       .from("shopping_households")
-      .select("advanced_unlocked")
+      .select("advanced_unlocked, is_owner")
       .eq("id", householdId)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
         setHouseholdUnlocked(data?.advanced_unlocked === true);
+        setIsOwnerHousehold(data?.is_owner === true);
         setLoading(false);
       });
     return () => {
@@ -86,9 +106,12 @@ export function AdvancedFeaturesProvider({
     };
   }, [householdId]);
 
-  // Layer 2: this member's per-device visibility preference.
+  // Layer 2: this member's per-device visibility preference + per-feature prefs.
   useEffect(() => {
     setLocalShow(readLocalShow(memberId));
+    const prefs: Record<string, boolean> = {};
+    for (const f of ADVANCED_FEATURES) prefs[f.id] = readFeaturePref(f.id, memberId);
+    setFeaturePrefs(prefs);
   }, [memberId]);
 
   const setShowAdvanced = useCallback(
@@ -123,6 +146,23 @@ export function AdvancedFeaturesProvider({
 
   const showAdvanced = householdUnlocked && localShow;
 
+  // Per-feature setter: writes only this feature's key, so the master toggle
+  // never erases per-feature preferences (master off hides, doesn't forget).
+  const setFeatureOn = useCallback(
+    (featureId: string, next: boolean) => {
+      if (!memberId || typeof window === "undefined") return;
+      window.localStorage.setItem(featureKey(featureId, memberId), next ? "true" : "false");
+      setFeaturePrefs((prev) => ({ ...prev, [featureId]: next }));
+    },
+    [memberId],
+  );
+
+  const isFeatureOn = useCallback(
+    (featureId: string) =>
+      householdUnlocked && showAdvanced && (featurePrefs[featureId] ?? true),
+    [householdUnlocked, showAdvanced, featurePrefs],
+  );
+
   return (
     <AdvancedFeaturesContext.Provider
       value={{
@@ -132,6 +172,9 @@ export function AdvancedFeaturesProvider({
         showAdvanced,
         unlockHousehold,
         setShowAdvanced,
+        isOwnerHousehold,
+        isFeatureOn,
+        setFeatureOn,
       }}
     >
       {children}

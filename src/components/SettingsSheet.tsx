@@ -4,6 +4,7 @@ import { useMember } from "@/lib/member";
 import { useAuth } from "@/lib/auth";
 import { useHouseholdId } from "@/lib/household";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
+import { ADVANCED_FEATURES } from "@/lib/advancedFeaturesRegistry";
 import { FeedbackViewer } from "./FeedbackViewer";
 import { InviteSteps } from "./InviteSteps";
 import { JoinFamilyModal } from "./JoinFamilyModal";
@@ -45,8 +46,15 @@ export function SettingsSheet({
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const { householdUnlocked, localShow, showAdvanced, unlockHousehold, setShowAdvanced } =
-    useAdvancedFeatures();
+  const {
+    householdUnlocked,
+    localShow,
+    unlockHousehold,
+    setShowAdvanced,
+    isOwnerHousehold,
+    isFeatureOn,
+    setFeatureOn,
+  } = useAdvancedFeatures();
   const [feedbackViewerOpen, setFeedbackViewerOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [advOpen, setAdvOpen] = useState(false);
@@ -509,32 +517,70 @@ export function SettingsSheet({
               </form>
             )
           ) : (
-            <button
-              type="button"
-              onClick={() => setShowAdvanced(!localShow)}
-              aria-pressed={localShow}
-              className="flex w-full items-center justify-between gap-3"
-            >
-              <span className="text-[15px]" style={{ color: "var(--clay-ink)" }}>
-                Show advanced features
-              </span>
-              <span
-                className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
-                style={{
-                  background: localShow ? "var(--clay-accent)" : "var(--clay-border)",
-                }}
+            <>
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!localShow)}
+                aria-pressed={localShow}
+                className="flex w-full items-center justify-between gap-3"
               >
+                <span className="text-[15px]" style={{ color: "var(--clay-ink)" }}>
+                  Show advanced features
+                </span>
                 <span
-                  className="inline-block h-5 w-5 rounded-full bg-white transition"
-                  style={{ transform: localShow ? "translateX(22px)" : "translateX(2px)" }}
-                />
-              </span>
-            </button>
+                  className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition"
+                  style={{
+                    background: localShow ? "var(--clay-accent)" : "var(--clay-border)",
+                  }}
+                >
+                  <span
+                    className="inline-block h-5 w-5 rounded-full bg-white transition"
+                    style={{ transform: localShow ? "translateX(22px)" : "translateX(2px)" }}
+                  />
+                </span>
+              </button>
+
+              {/* Per-feature toggles — subordinate to the master switch */}
+              {localShow && (
+                <div
+                  className="ml-2 space-y-2.5 border-l-2 pl-3"
+                  style={{ borderColor: "var(--clay-border)" }}
+                >
+                  {ADVANCED_FEATURES.map((f) => {
+                    const on = isFeatureOn(f.id);
+                    return (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setFeatureOn(f.id, !on)}
+                        aria-pressed={on}
+                        className="flex w-full items-center justify-between gap-3"
+                      >
+                        <span className="text-[14px]" style={{ color: "var(--clay-muted)" }}>
+                          {f.name}
+                        </span>
+                        <span
+                          className="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition"
+                          style={{
+                            background: on ? "var(--clay-accent)" : "var(--clay-border)",
+                          }}
+                        >
+                          <span
+                            className="inline-block h-4 w-4 rounded-full bg-white transition"
+                            style={{ transform: on ? "translateX(18px)" : "translateX(2px)" }}
+                          />
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Feedback viewer — advanced only */}
-        {showAdvanced && (
+        {/* Feedback viewer — owner household only (independent of advanced state) */}
+        {isOwnerHousehold && (
           <div
             className="mt-3 overflow-hidden rounded-[14px] bg-white"
             style={{ border: "1px solid var(--clay-border)" }}

@@ -65,7 +65,8 @@ export function ListTab({
   const { session } = useAuth();
   const userId = session?.user?.id;
   const { members, member } = useMember();
-  const { showAdvanced } = useAdvancedFeatures();
+  const { isFeatureOn } = useAdvancedFeatures();
+  const pricingOn = isFeatureOn("pricing");
 
 
   const memberMap = useMemo(() => {
@@ -326,7 +327,7 @@ export function ListTab({
             transition={gentleSpring}
           />
         </div>
-        {showAdvanced && (hasUntickedPrice || hasTickedPrice) && (
+        {pricingOn && (hasUntickedPrice || hasTickedPrice) && (
           <div className="mt-2 flex items-baseline justify-between gap-2">
             {hasUntickedPrice ? (
               <p className="text-[13px] font-medium" style={{ color: "var(--clay-ink)" }}>
@@ -363,7 +364,7 @@ export function ListTab({
                 onAdd={(name) => addItemToCategory(c, name)}
                 openSwipeId={openSwipeId}
                 setOpenSwipeId={setOpenSwipeId}
-                showPrices={showAdvanced}
+                showPrices={pricingOn}
                 onPrice={setPricing}
               />
             );
@@ -390,7 +391,7 @@ export function ListTab({
               onToggleOpen={() => setTrolleyOpen((o) => !o)}
               onUntick={toggleChecked}
               onClear={() => setConfirmClear(true)}
-              showPrices={showAdvanced}
+              showPrices={pricingOn}
             />
           </motion.div>
         )}
@@ -398,7 +399,7 @@ export function ListTab({
 
       {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
 
-      {pricing && showAdvanced && (
+      {pricing && pricingOn && (
         <PriceSheet
           name={pricing.display_name}
           initialCents={pricing.price_cents}
