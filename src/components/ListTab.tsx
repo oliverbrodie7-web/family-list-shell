@@ -16,6 +16,7 @@ import { softSpring, snappySpring, gentleSpring } from "@/lib/motion";
 import { ShopCelebration } from "./ShopCelebration";
 import { TabSwitcher, type Tab } from "./TabSwitcher";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
+import { applyPriceEstimate } from "@/lib/priceLookup";
 import { PriceSheet } from "./PriceSheet";
 
 
@@ -29,6 +30,7 @@ interface Item {
   created_at: string;
   added_by_member_id: string | null;
   price_cents: number | null;
+  price_source: string | null;
 }
 
 const formatCents = (c: number) => `$${(c / 100).toFixed(2)}`;
@@ -65,7 +67,7 @@ export function ListTab({
   const { session } = useAuth();
   const userId = session?.user?.id;
   const { members, member } = useMember();
-  const { isFeatureOn } = useAdvancedFeatures();
+  const { isFeatureOn, supermarket } = useAdvancedFeatures();
   const pricingOn = isFeatureOn("pricing");
 
 
@@ -87,7 +89,7 @@ export function ListTab({
     const { data } = await supabase
       .from("shopping_list_items")
       .select(
-        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents",
+        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents, price_source",
       )
       .eq("household_id", householdId)
       .order("created_at", { ascending: true });
@@ -109,7 +111,11 @@ export function ListTab({
   };
 
   const savePrice = async (item: Item, cents: number) => {
-    setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, price_cents: cents } : i)));
+    setItems((arr) =>
+      arr.map((i) =>
+        i.id === item.id ? { ...i, price_cents: cents, price_source: "manual" } : i,
+      ),
+    );
     await supabase
       .from("shopping_list_items")
       .update({ price_cents: cents, price_source: "manual" })
@@ -117,12 +123,46 @@ export function ListTab({
   };
 
   const removePrice = async (item: Item) => {
-    setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, price_cents: null } : i)));
+    setItems((arr) =>
+      arr.map((i) =>
+        i.id === item.id ? { ...i, price_cents: null, price_source: null } : i,
+      ),
+    );
     await supabase
       .from("shopping_list_items")
       .update({ price_cents: null, price_source: null, price_label: null })
       .eq("id", item.id);
   };
+
+  // Fire-and-forget estimate for one item; patches local state on success,
+  // but never over a manual price (DB guard in applyPriceEstimate + local check).
+  const estimateItem = useCallback(
+    (id: string, name: string) => {
+      void applyPriceEstimate(id, name, supermarket).then((est) => {
+        if (!est) return;
+        setItems((arr) =>
+          arr.map((i) =>
+            i.id === id && i.price_source !== "manual"
+              ? { ...i, price_cents: est.price_cents, price_source: "estimate" }
+              : i,
+          ),
+        );
+      });
+    },
+    [supermarket],
+  );
+
+  // Backfill: on List tab load, estimate up to 5 unticked, priceless items.
+  const backfilledRef = useRef(false);
+  useEffect(() => {
+    if (loading || !pricingOn || backfilledRef.current) return;
+    const candidates = items
+      .filter((i) => !i.is_checked && i.price_cents == null)
+      .slice(0, 5);
+    if (candidates.length === 0) return;
+    backfilledRef.current = true;
+    for (const c of candidates) estimateItem(c.id, c.display_name);
+  }, [loading, pricingOn, items, estimateItem]);
 
   const clearTrolley = async () => {
     const checkedIds = items.filter((i) => i.is_checked).map((i) => i.id);
@@ -182,6 +222,7 @@ export function ListTab({
       created_at: nowIso,
       added_by_member_id: member?.id ?? null,
       price_cents: null,
+      price_source: null,
     };
     setItems((arr) => [...arr, temp]);
 
@@ -213,7 +254,7 @@ export function ListTab({
         added_by_member_id: member?.id ?? null,
       })
       .select(
-        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents",
+        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents, price_source",
       )
       .single();
 
@@ -225,6 +266,9 @@ export function ListTab({
     setItems((arr) =>
       arr.map((i) => (i.id === tempId ? (inserted as Item) : i)),
     );
+    if (pricingOn) {
+      estimateItem((inserted as Item).id, (inserted as Item).display_name);
+    }
   };
 
 
@@ -342,6 +386,11 @@ export function ListTab({
               </p>
             )}
           </div>
+        )}
+        {pricingOn && hasUntickedPrice && (
+          <p className="mt-1 text-[11px]" style={{ color: "var(--clay-muted)", opacity: 0.85 }}>
+            Prices are estimates based on typical supermarket products.
+          </p>
         )}
       </div>
 
@@ -860,6 +909,7 @@ function SwipeRow({
               className="shrink-0 px-0.5 text-[12px] tabular-nums"
               style={{ color: "var(--clay-muted)", opacity: checked ? 0.7 : 1 }}
             >
+              {item.price_source === "estimate" ? "~" : ""}
               {formatCents(item.price_cents)}
             </button>
           ) : (
@@ -1145,6 +1195,7 @@ function TrolleyCard({
                             className="shrink-0 text-[12px] tabular-nums"
                             style={{ color: "var(--clay-muted)", opacity: 0.75 }}
                           >
+                            {it.price_source === "estimate" ? "~" : ""}
                             {formatCents(it.price_cents)}
                           </span>
                         )}

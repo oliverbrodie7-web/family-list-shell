@@ -54,7 +54,10 @@ export function SettingsSheet({
     isOwnerHousehold,
     isFeatureOn,
     setFeatureOn,
+    supermarket,
+    setSupermarket,
   } = useAdvancedFeatures();
+  const [marketBusy, setMarketBusy] = useState(false);
   const [feedbackViewerOpen, setFeedbackViewerOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [advOpen, setAdvOpen] = useState(false);
@@ -578,6 +581,76 @@ export function SettingsSheet({
             </>
           )}
         </div>
+
+        {/* My supermarket — shown when the pricing feature is on */}
+        {isFeatureOn("pricing") && (
+          <div
+            className="mt-3 space-y-3 rounded-[14px] bg-white p-4"
+            style={{ border: "1px solid var(--clay-border)" }}
+          >
+            <div>
+              <h3 className="text-[16px] font-semibold" style={{ color: "var(--clay-ink)" }}>
+                My supermarket
+              </h3>
+              <p className="mt-1 text-[13px]" style={{ color: "var(--clay-muted)" }}>
+                Used for price estimates on your list.
+              </p>
+            </div>
+            <div className="space-y-2">
+              {[
+                { id: "woolworths", name: "Woolworths", note: null },
+                { id: "coles", name: "Coles", note: "Coming soon" },
+                { id: "aldi", name: "Aldi", note: "Manual prices" },
+              ].map((m) => {
+                const selected = supermarket === m.id;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    disabled={marketBusy}
+                    onClick={async () => {
+                      if (selected) return;
+                      setMarketBusy(true);
+                      await setSupermarket(m.id);
+                      setMarketBusy(false);
+                    }}
+                    className="flex w-full items-center justify-between gap-3 rounded-[12px] px-3.5 py-2.5 text-left transition"
+                    style={{
+                      border: selected
+                        ? "1.5px solid var(--clay-accent)"
+                        : "1px solid var(--clay-border)",
+                      background: selected ? "var(--clay-accent-soft)" : "#FFFFFF",
+                    }}
+                  >
+                    <span className="flex items-baseline gap-2">
+                      <span className="text-[15px]" style={{ color: "var(--clay-ink)" }}>
+                        {m.name}
+                      </span>
+                      {m.note && (
+                        <span className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
+                          {m.note}
+                        </span>
+                      )}
+                    </span>
+                    <span
+                      className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full"
+                      style={{
+                        border: selected
+                          ? "1.5px solid var(--clay-accent)"
+                          : "1.5px solid var(--clay-border)",
+                        background: selected ? "var(--clay-accent)" : "transparent",
+                      }}
+                    >
+                      {selected && (
+                        <span className="h-[7px] w-[7px] rounded-full bg-white" />
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Feedback viewer — owner household only (independent of advanced state) */}
         {isOwnerHousehold && (

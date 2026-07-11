@@ -56,6 +56,10 @@ interface AdvancedFeaturesValue {
   setShowAdvanced: (next: boolean) => void;
   /** Is this the owner household? (shopping_households.is_owner) */
   isOwnerHousehold: boolean;
+  /** The household's chosen supermarket (shopping_households.supermarket). */
+  supermarket: string;
+  /** Save the household's supermarket choice. */
+  setSupermarket: (next: string) => Promise<{ ok: boolean; error?: string }>;
   /** Per-feature gate: householdUnlocked AND showAdvanced AND this member's feature pref. */
   isFeatureOn: (featureId: string) => boolean;
   /** Set this member's per-feature preference (registry features only). */
@@ -77,6 +81,7 @@ export function AdvancedFeaturesProvider({
   const [loading, setLoading] = useState(true);
   const [householdUnlocked, setHouseholdUnlocked] = useState(false);
   const [isOwnerHousehold, setIsOwnerHousehold] = useState(false);
+  const [supermarket, setSupermarketState] = useState("woolworths");
   const [localShow, setLocalShow] = useState(false);
   const [featurePrefs, setFeaturePrefs] = useState<Record<string, boolean>>({});
 
@@ -92,13 +97,18 @@ export function AdvancedFeaturesProvider({
     setLoading(true);
     supabase
       .from("shopping_households")
-      .select("advanced_unlocked, is_owner")
+      .select("advanced_unlocked, is_owner, supermarket")
       .eq("id", householdId)
       .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
         setHouseholdUnlocked(data?.advanced_unlocked === true);
         setIsOwnerHousehold(data?.is_owner === true);
+        setSupermarketState(
+          typeof data?.supermarket === "string" && data.supermarket
+            ? data.supermarket
+            : "woolworths",
+        );
         setLoading(false);
       });
     return () => {
@@ -157,6 +167,23 @@ export function AdvancedFeaturesProvider({
     [memberId],
   );
 
+  const setSupermarket = useCallback(
+    async (next: string): Promise<{ ok: boolean; error?: string }> => {
+      if (!householdId) return { ok: false, error: "No household found" };
+      const { data, error } = await supabase
+        .from("shopping_households")
+        .update({ supermarket: next })
+        .eq("id", householdId)
+        .select("id");
+      if (error || !data || data.length === 0) {
+        return { ok: false, error: "Couldn't save — please try again." };
+      }
+      setSupermarketState(next);
+      return { ok: true };
+    },
+    [householdId],
+  );
+
   const isFeatureOn = useCallback(
     (featureId: string) =>
       householdUnlocked && showAdvanced && (featurePrefs[featureId] ?? true),
@@ -173,6 +200,8 @@ export function AdvancedFeaturesProvider({
         unlockHousehold,
         setShowAdvanced,
         isOwnerHousehold,
+        supermarket,
+        setSupermarket,
         isFeatureOn,
         setFeatureOn,
       }}

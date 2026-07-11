@@ -15,6 +15,8 @@ import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
 import { TabSwitcher, type Tab } from "./TabSwitcher";
+import { useAdvancedFeatures } from "@/lib/advancedFeatures";
+import { applyPriceEstimate } from "@/lib/priceLookup";
 
 import { softSpring, snappySpring } from "@/lib/motion";
 
@@ -41,6 +43,8 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
   const { member } = useMember();
   const userId = session?.user?.id;
   const memberName = member?.name ?? "Someone";
+  const { isFeatureOn, supermarket } = useAdvancedFeatures();
+  const pricingOn = isFeatureOn("pricing");
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState("");
   const [priority, setPriority] = useState(false);
@@ -217,6 +221,11 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     setRegularsTick((t) => t + 1);
     registerUndo((data as RecentItem).id, display_name);
 
+    // Fire-and-forget price estimate (advanced pricing only; never blocks adds).
+    if (pricingOn) {
+      void applyPriceEstimate((data as RecentItem).id, display_name, supermarket);
+    }
+
     if (householdId) {
       void notifyHousehold({
         householdId,
@@ -330,6 +339,12 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     for (const row of added) bumpRegular(row.display_name);
     setRegularsTick((t) => t + 1);
     for (const row of added) registerUndo(row.id, row.display_name);
+
+    if (pricingOn) {
+      for (const row of added) {
+        void applyPriceEstimate(row.id, row.display_name, supermarket);
+      }
+    }
 
 
     setRecent((r) => [...added.reverse(), ...r].slice(0, 6));
