@@ -15,6 +15,8 @@ import { useMember } from "@/lib/member";
 import { softSpring, snappySpring, gentleSpring } from "@/lib/motion";
 import { ShopCelebration } from "./ShopCelebration";
 import { TabSwitcher, type Tab } from "./TabSwitcher";
+import { useAdvancedFeatures } from "@/lib/advancedFeatures";
+import { PriceSheet } from "./PriceSheet";
 
 
 interface Item {
@@ -26,7 +28,10 @@ interface Item {
   category: string;
   created_at: string;
   added_by_member_id: string | null;
+  price_cents: number | null;
 }
+
+const formatCents = (c: number) => `$${(c / 100).toFixed(2)}`;
 
 const MEMBER_COLORS = ["#C2693F", "#6F8F5E", "#D38A2E", "#8E6E8A", "#A86A4B", "#5E8A8F"];
 
@@ -55,10 +60,12 @@ export function ListTab({
   const [confirmClear, setConfirmClear] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
+  const [pricing, setPricing] = useState<Item | null>(null);
   const prevActiveRef = useRef<number | null>(null);
   const { session } = useAuth();
   const userId = session?.user?.id;
   const { members, member } = useMember();
+  const { showAdvanced } = useAdvancedFeatures();
 
 
   const memberMap = useMemo(() => {
@@ -79,7 +86,7 @@ export function ListTab({
     const { data } = await supabase
       .from("shopping_list_items")
       .select(
-        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id",
+        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents",
       )
       .eq("household_id", householdId)
       .order("created_at", { ascending: true });
@@ -98,6 +105,22 @@ export function ListTab({
     }
     setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, is_checked: next } : i)));
     await supabase.from("shopping_list_items").update({ is_checked: next }).eq("id", item.id);
+  };
+
+  const savePrice = async (item: Item, cents: number) => {
+    setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, price_cents: cents } : i)));
+    await supabase
+      .from("shopping_list_items")
+      .update({ price_cents: cents, price_source: "manual" })
+      .eq("id", item.id);
+  };
+
+  const removePrice = async (item: Item) => {
+    setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, price_cents: null } : i)));
+    await supabase
+      .from("shopping_list_items")
+      .update({ price_cents: null, price_source: null, price_label: null })
+      .eq("id", item.id);
   };
 
   const clearTrolley = async () => {
@@ -157,6 +180,7 @@ export function ListTab({
       category,
       created_at: nowIso,
       added_by_member_id: member?.id ?? null,
+      price_cents: null,
     };
     setItems((arr) => [...arr, temp]);
 
@@ -188,7 +212,7 @@ export function ListTab({
         added_by_member_id: member?.id ?? null,
       })
       .select(
-        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id",
+        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents",
       )
       .single();
 
@@ -240,6 +264,12 @@ export function ListTab({
   const total = items.length;
   const done = checkedItems.length;
   const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+
+  // Manual pricing totals (advanced only). Line prices — never multiplied by quantity.
+  const untickedCents = activeItems.reduce((s, i) => s + (i.price_cents ?? 0), 0);
+  const hasUntickedPrice = activeItems.some((i) => i.price_cents != null);
+  const tickedCents = checkedItems.reduce((s, i) => s + (i.price_cents ?? 0), 0);
+  const hasTickedPrice = checkedItems.some((i) => i.price_cents != null);
 
   useEffect(() => {
     if (loading) return;
@@ -296,6 +326,22 @@ export function ListTab({
             transition={gentleSpring}
           />
         </div>
+        {showAdvanced && (hasUntickedPrice || hasTickedPrice) && (
+          <div className="mt-2 flex items-baseline justify-between gap-2">
+            {hasUntickedPrice ? (
+              <p className="text-[13px] font-medium" style={{ color: "var(--clay-ink)" }}>
+                Estimated total: {formatCents(untickedCents)}
+              </p>
+            ) : (
+              <span />
+            )}
+            {hasTickedPrice && (
+              <p className="text-[12px]" style={{ color: "var(--clay-muted)" }}>
+                {formatCents(tickedCents)} in the trolley
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <motion.div layout className="space-y-2">
@@ -317,6 +363,8 @@ export function ListTab({
                 onAdd={(name) => addItemToCategory(c, name)}
                 openSwipeId={openSwipeId}
                 setOpenSwipeId={setOpenSwipeId}
+                showPrices={showAdvanced}
+                onPrice={setPricing}
               />
             );
           })}
@@ -342,12 +390,33 @@ export function ListTab({
               onToggleOpen={() => setTrolleyOpen((o) => !o)}
               onUntick={toggleChecked}
               onClear={() => setConfirmClear(true)}
+              showPrices={showAdvanced}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
       {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
+
+      {pricing && showAdvanced && (
+        <PriceSheet
+          name={pricing.display_name}
+          initialCents={pricing.price_cents}
+          onSave={async (cents) => {
+            await savePrice(pricing, cents);
+            setPricing(null);
+          }}
+          onRemove={
+            pricing.price_cents != null
+              ? async () => {
+                  await removePrice(pricing);
+                  setPricing(null);
+                }
+              : undefined
+          }
+          onClose={() => setPricing(null)}
+        />
+      )}
 
       {confirmClear && (
         <ConfirmClearDialog
@@ -395,6 +464,8 @@ function AisleCard({
   onAdd,
   openSwipeId,
   setOpenSwipeId,
+  showPrices,
+  onPrice,
 }: {
   aisleKey: string;
   label: string;
@@ -407,6 +478,8 @@ function AisleCard({
   onAdd: (name: string) => void;
   openSwipeId: string | null;
   setOpenSwipeId: (id: string | null) => void;
+  showPrices: boolean;
+  onPrice: (i: Item) => void;
 }) {
   const [collapsed, setCollapsed] = useState<boolean>(() => !!readCollapsed()[aisleKey]);
   const [addOpen, setAddOpen] = useState(false);
@@ -594,6 +667,8 @@ function AisleCard({
                     onToggle={() => onToggle(it)}
                     onEdit={() => onEdit(it)}
                     onDelete={() => onDelete(it)}
+                    showPrice={showPrices}
+                    onPrice={() => onPrice(it)}
                   />
                 ))}
               </AnimatePresence>
@@ -617,6 +692,8 @@ function SwipeRow({
   onToggle,
   onEdit,
   onDelete,
+  showPrice,
+  onPrice,
 }: {
   item: Item;
   isFirst: boolean;
@@ -627,6 +704,8 @@ function SwipeRow({
   onToggle: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  showPrice: boolean;
+  onPrice: () => void;
 }) {
   const checked = item.is_checked;
   const priority = item.is_priority && !checked;
@@ -770,6 +849,29 @@ function SwipeRow({
             </span>
           )}
         </button>
+
+        {showPrice &&
+          (item.price_cents != null ? (
+            <button
+              type="button"
+              onClick={onPrice}
+              aria-label={`Edit price for ${item.display_name}`}
+              className="shrink-0 px-0.5 text-[12px] tabular-nums"
+              style={{ color: "var(--clay-muted)", opacity: checked ? 0.7 : 1 }}
+            >
+              {formatCents(item.price_cents)}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onPrice}
+              aria-label={`Add price for ${item.display_name}`}
+              className="flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full text-[11px] leading-none"
+              style={{ border: "1px solid var(--clay-border)", color: "#C9BBA8" }}
+            >
+              $
+            </button>
+          ))}
 
         {member && (
           <span
@@ -934,6 +1036,7 @@ function TrolleyCard({
   onToggleOpen,
   onUntick,
   onClear,
+  showPrices,
 }: {
   items: Item[];
   memberMap: Map<string, { name: string; initial: string; color: string }>;
@@ -941,6 +1044,7 @@ function TrolleyCard({
   onToggleOpen: () => void;
   onUntick: (i: Item) => void;
   onClear: () => void;
+  showPrices: boolean;
 }) {
   return (
     <motion.section
@@ -1035,6 +1139,14 @@ function TrolleyCard({
                             </span>
                           )}
                         </button>
+                        {showPrices && it.price_cents != null && (
+                          <span
+                            className="shrink-0 text-[12px] tabular-nums"
+                            style={{ color: "var(--clay-muted)", opacity: 0.75 }}
+                          >
+                            {formatCents(it.price_cents)}
+                          </span>
+                        )}
                         {member && (
                           <span
                             title={`Added by ${member.name}`}
