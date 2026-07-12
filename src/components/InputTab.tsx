@@ -15,6 +15,7 @@ import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
 import { normaliseItemName } from "@/lib/itemNormalise";
+import { useDuplicateNotice } from "./DuplicateNotice";
 import { TabSwitcher, type Tab } from "./TabSwitcher";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { applyPriceEstimate } from "@/lib/priceLookup";
@@ -46,6 +47,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
   const memberName = member?.name ?? "Someone";
   const { isFeatureOn, supermarket } = useAdvancedFeatures();
   const pricingOn = isFeatureOn("pricing");
+  const { showDuplicate, duplicateNotice } = useDuplicateNotice();
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState("");
   const [priority, setPriority] = useState(false);
@@ -192,7 +194,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     const existingNames = await fetchUntickedNames();
     const dupe = existingNames.find((n) => normaliseItemName(n) === norm);
     if (dupe) {
-      toast(`${dupe} is already on your list`, { duration: 2500 });
+      showDuplicate(dupe);
       return;
     }
 
@@ -973,6 +975,8 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
       {joinOpen && <JoinFamilyModal onClose={() => setJoinOpen(false)} />}
 
       {inviteOpen && <InviteModal onClose={() => setInviteOpen(false)} />}
+
+      {duplicateNotice}
 
     </div>
   );

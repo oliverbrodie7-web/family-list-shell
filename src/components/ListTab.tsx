@@ -18,6 +18,7 @@ import { TabSwitcher, type Tab } from "./TabSwitcher";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { applyPriceEstimate } from "@/lib/priceLookup";
 import { normaliseItemName } from "@/lib/itemNormalise";
+import { useDuplicateNotice } from "./DuplicateNotice";
 import { PriceSheet } from "./PriceSheet";
 
 
@@ -70,6 +71,7 @@ export function ListTab({
   const { members, member } = useMember();
   const { isFeatureOn, supermarket } = useAdvancedFeatures();
   const pricingOn = isFeatureOn("pricing");
+  const { showDuplicate, duplicateNotice } = useDuplicateNotice();
 
 
   const memberMap = useMemo(() => {
@@ -221,7 +223,7 @@ export function ListTab({
       (i) => !i.is_checked && normaliseItemName(i.display_name) === norm,
     );
     if (dupe) {
-      toast(`${dupe.display_name} is already on your list`, { duration: 2500 });
+      showDuplicate(dupe.display_name);
       return;
     }
 
@@ -462,6 +464,8 @@ export function ListTab({
       </AnimatePresence>
 
       {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
+
+      {duplicateNotice}
 
       {pricing && pricingOn && (
         <PriceSheet
