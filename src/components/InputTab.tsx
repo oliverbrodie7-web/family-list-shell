@@ -14,6 +14,7 @@ import { InviteModal } from "./InviteModal";
 import { notifyHousehold } from "@/lib/push";
 import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
+import { normaliseItemName } from "@/lib/itemNormalise";
 import { TabSwitcher, type Tab } from "./TabSwitcher";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { applyPriceEstimate } from "@/lib/priceLookup";
@@ -168,11 +169,33 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     }
   };
 
+  // Current UNTICKED item names for the household (duplicate gate). Ticked
+  // (in-trolley) items never block — re-adding those is a fresh need.
+  const fetchUntickedNames = async (): Promise<string[]> => {
+    if (!householdId) return [];
+    const { data } = await supabase
+      .from("shopping_list_items")
+      .select("display_name")
+      .eq("household_id", householdId)
+      .eq("is_checked", false);
+    return ((data ?? []) as { display_name: string }[]).map((r) => r.display_name);
+  };
+
   const insertSingle = async (
     raw: string,
     qty: number | null,
     isPriority: boolean,
   ) => {
+    // Duplicate gate: block BEFORE anything fires (no temp row, no
+    // categorisation, no insert, no price lookup, no undo chip).
+    const norm = normaliseItemName(raw);
+    const existingNames = await fetchUntickedNames();
+    const dupe = existingNames.find((n) => normaliseItemName(n) === norm);
+    if (dupe) {
+      toast(`${dupe} is already on your list`, { duration: 2500 });
+      return;
+    }
+
     const tempId = `temp-${Date.now()}-${Math.random()}`;
     setRecent((r) =>
       [
@@ -299,7 +322,40 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
       setBatchItems(null);
       return;
     }
-    const payload = rows.map((r) => {
+
+    // Duplicate gate: dedupe WITHIN the batch first (keep first occurrence),
+    // then drop entries already on the active (unticked) list.
+    const seen = new Set<string>();
+    const batchUnique = rows.filter((r) => {
+      const key = normaliseItemName(r.display_name.trim() || r.raw);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const existingSet = new Set(
+      (await fetchUntickedNames()).map((n) => normaliseItemName(n)),
+    );
+    const survivors = batchUnique.filter(
+      (r) => !existingSet.has(normaliseItemName(r.display_name.trim() || r.raw)),
+    );
+    const skipped = batchUnique.filter(
+      (r) => existingSet.has(normaliseItemName(r.display_name.trim() || r.raw)),
+    );
+    if (skipped.length > 0) {
+      const names = skipped.map((r) => r.display_name.trim() || r.raw).join(", ");
+      if (survivors.length === 0) {
+        toast(`Nothing added — already on your list: ${names}`, { duration: 3500 });
+      } else {
+        toast(`Skipped (already on your list): ${names}`, { duration: 3500 });
+      }
+    }
+    if (survivors.length === 0) {
+      setBatchItems(null);
+      setBulkOpen(false);
+      return;
+    }
+
+    const payload = survivors.map((r) => {
       const qtyNum =
         r.quantity.trim() === ""
           ? null

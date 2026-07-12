@@ -17,6 +17,7 @@ import { ShopCelebration } from "./ShopCelebration";
 import { TabSwitcher, type Tab } from "./TabSwitcher";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { applyPriceEstimate } from "@/lib/priceLookup";
+import { normaliseItemName } from "@/lib/itemNormalise";
 import { PriceSheet } from "./PriceSheet";
 
 
@@ -212,6 +213,18 @@ export function ListTab({
   const addItemToCategory = async (category: Category, raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed || !householdId) return;
+
+    // Duplicate gate: block before anything fires (no temp row, no
+    // categorisation, no insert, no price lookup).
+    const norm = normaliseItemName(trimmed);
+    const dupe = items.find(
+      (i) => !i.is_checked && normaliseItemName(i.display_name) === norm,
+    );
+    if (dupe) {
+      toast(`${dupe.display_name} is already on your list`, { duration: 2500 });
+      return;
+    }
+
     const tempId = `temp-${Date.now()}-${Math.random()}`;
     const nowIso = new Date().toISOString();
     const temp: Item = {
