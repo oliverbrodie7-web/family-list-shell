@@ -53,6 +53,7 @@ export const woolworths: PriceProvider = {
         stockcode:
           item.sku != null ? String(item.sku) : item.id != null ? String(item.id) : null,
         unitPriceText: typeof item.unit_price === "string" ? item.unit_price : null,
+        image: typeof item.image === "string" ? item.image : null,
         priceCents: Math.round(effectiveDollars * 100),
         wasPriceCents:
           discount != null && price != null ? Math.round(price * 100) : null,

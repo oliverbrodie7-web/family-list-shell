@@ -5,6 +5,8 @@ export type ProductHit = {
   size: string | null;
   stockcode: string | null;
   unitPriceText: string | null;
+  /** Product image URL, when the actor provides one. */
+  image: string | null;
   /** Effective shelf price in whole cents (discounted price when on special). */
   priceCents: number;
   /** Pre-special price in cents when the item is discounted, else null. */
