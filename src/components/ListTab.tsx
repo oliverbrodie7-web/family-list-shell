@@ -1072,19 +1072,33 @@ function SwipeRow({
 
         {showPrice &&
           (item.price_cents != null ? (
-            <button
-              type="button"
-              onClick={onPrice}
-              aria-label={`Edit price for ${item.display_name}`}
-              className="flex shrink-0 items-center gap-0.5 px-0.5 text-[12px] tabular-nums"
-              style={{ color: "var(--clay-muted)", opacity: checked ? 0.7 : 1 }}
-            >
-              {item.price_source === "pin" && (
-                <Pin size={9} aria-hidden style={{ color: "var(--clay-accent)" }} />
-              )}
-              {item.price_source === "estimate" ? "~" : ""}
-              {formatCents(item.price_cents)}
-            </button>
+            item.price_source === "pin" ? (
+              <button
+                type="button"
+                onClick={onPrice}
+                aria-label={`Edit price for ${item.display_name}`}
+                className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums"
+                style={{
+                  background: "var(--clay-accent-soft)",
+                  color: "var(--clay-accent)",
+                  opacity: checked ? 0.7 : 1,
+                }}
+              >
+                <Pin size={10} aria-hidden />
+                {formatCents(item.price_cents)}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onPrice}
+                aria-label={`Edit price for ${item.display_name}`}
+                className="flex shrink-0 items-center gap-0.5 px-0.5 text-[12px] tabular-nums"
+                style={{ color: "var(--clay-muted)", opacity: checked ? 0.7 : 1 }}
+              >
+                {item.price_source === "estimate" ? "~" : ""}
+                {formatCents(item.price_cents)}
+              </button>
+            )
           ) : (
             <button
               type="button"
@@ -1363,18 +1377,29 @@ function TrolleyCard({
                             </span>
                           )}
                         </button>
-                        {showPrices && it.price_cents != null && (
-                          <span
-                            className="flex shrink-0 items-center gap-0.5 text-[12px] tabular-nums"
-                            style={{ color: "var(--clay-muted)", opacity: 0.75 }}
-                          >
-                            {it.price_source === "pin" && (
-                              <Pin size={9} aria-hidden style={{ color: "var(--clay-accent)" }} />
-                            )}
-                            {it.price_source === "estimate" ? "~" : ""}
-                            {formatCents(it.price_cents)}
-                          </span>
-                        )}
+                        {showPrices &&
+                          it.price_cents != null &&
+                          (it.price_source === "pin" ? (
+                            <span
+                              className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums"
+                              style={{
+                                background: "var(--clay-accent-soft)",
+                                color: "var(--clay-accent)",
+                                opacity: 0.6,
+                              }}
+                            >
+                              <Pin size={10} aria-hidden />
+                              {formatCents(it.price_cents)}
+                            </span>
+                          ) : (
+                            <span
+                              className="flex shrink-0 items-center gap-0.5 text-[12px] tabular-nums"
+                              style={{ color: "var(--clay-muted)", opacity: 0.75 }}
+                            >
+                              {it.price_source === "estimate" ? "~" : ""}
+                              {formatCents(it.price_cents)}
+                            </span>
+                          ))}
                         {member && (
                           <span
                             title={`Added by ${member.name}`}

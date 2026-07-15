@@ -294,13 +294,19 @@ function ProductSection({
   if (pin) {
     return (
       <div
-        className="mt-3 rounded-[12px] bg-white p-3.5"
-        style={{ border: "1px solid var(--clay-border)" }}
+        className="mt-3 rounded-[12px] p-3.5"
+        style={{
+          background: "var(--clay-accent-soft)",
+          border: "1px solid var(--clay-accent)",
+        }}
       >
         <div className="flex items-start gap-2">
           <Pin size={13} className="mt-0.5 shrink-0" style={{ color: "var(--clay-accent)" }} />
           <div className="min-w-0 flex-1">
-            <p className="text-[15px] leading-snug" style={{ color: "var(--clay-ink)" }}>
+            <p
+              className="text-[15px] font-semibold leading-snug"
+              style={{ color: "var(--clay-ink)" }}
+            >
               {pin.product_name}
             </p>
             {pin.size && (
