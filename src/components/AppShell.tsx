@@ -14,6 +14,7 @@ import { CURRENT_VERSION } from "@/lib/currentVersion";
 import { supabase } from "@/lib/supabase";
 import { AdvancedFeaturesProvider, useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { InstallGate } from "./InstallGate";
+import { OfflineBar } from "./OfflineBar";
 import type { Tab } from "./TabSwitcher";
 
 // Subtle "advanced mode on" indicator for the top bar, beside the bell.
@@ -69,6 +70,7 @@ export function AppShell() {
     <AdvancedFeaturesProvider householdId={householdId}>
     <InstallGate>
     <div className="flex min-h-[100dvh] flex-col bg-white">
+      <OfflineBar />
       <header className="flex items-center justify-between gap-3 border-b border-neutral-100 px-5 pb-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
         <div className="min-w-0 flex-1">
           {tab === "list" && (

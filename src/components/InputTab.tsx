@@ -16,6 +16,8 @@ import { useMember } from "@/lib/member";
 import { bumpRegular, topRegulars, normalizeName } from "@/lib/regulars";
 import { normaliseItemName } from "@/lib/itemNormalise";
 import { useDuplicateNotice } from "./DuplicateNotice";
+import { useCenterNotice } from "./CenterNotice";
+import { safeWrite } from "@/lib/safeWrite";
 import { TabSwitcher, type Tab } from "./TabSwitcher";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { applyPriceEstimate } from "@/lib/priceLookup";
@@ -48,6 +50,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
   const { isFeatureOn, supermarket } = useAdvancedFeatures();
   const pricingOn = isFeatureOn("pricing");
   const { showDuplicate, duplicateNotice } = useDuplicateNotice();
+  const { showNotice, centerNotice } = useCenterNotice();
   const [text, setText] = useState("");
   const [quantity, setQuantity] = useState("");
   const [priority, setPriority] = useState(false);
@@ -173,14 +176,22 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
 
   // Current UNTICKED item names for the household (duplicate gate). Ticked
   // (in-trolley) items never block — re-adding those is a fresh need.
-  const fetchUntickedNames = async (): Promise<string[]> => {
-    if (!householdId) return [];
-    const { data } = await supabase
-      .from("shopping_list_items")
-      .select("display_name")
-      .eq("household_id", householdId)
-      .eq("is_checked", false);
-    return ((data ?? []) as { display_name: string }[]).map((r) => r.display_name);
+  // { ok:false } means the fetch failed (offline/error) — the caller must NOT
+  // insert blind; it fails honestly with the add notice instead.
+  const fetchUntickedNames = async (): Promise<{ ok: boolean; names: string[] }> => {
+    if (!householdId) return { ok: true, names: [] };
+    const res = await safeWrite(() =>
+      supabase
+        .from("shopping_list_items")
+        .select("display_name")
+        .eq("household_id", householdId)
+        .eq("is_checked", false),
+    );
+    if (!res.ok) return { ok: false, names: [] };
+    return {
+      ok: true,
+      names: ((res.data ?? []) as { display_name: string }[]).map((r) => r.display_name),
+    };
   };
 
   const insertSingle = async (
@@ -191,8 +202,13 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     // Duplicate gate: block BEFORE anything fires (no temp row, no
     // categorisation, no insert, no price lookup, no undo chip).
     const norm = normaliseItemName(raw);
-    const existingNames = await fetchUntickedNames();
-    const dupe = existingNames.find((n) => normaliseItemName(n) === norm);
+    const check = await fetchUntickedNames();
+    if (!check.ok) {
+      // Duplicate check couldn't be verified — never insert blind.
+      showNotice(`No connection. ${raw} was not added.`);
+      return;
+    }
+    const dupe = check.names.find((n) => normaliseItemName(n) === norm);
     if (dupe) {
       showDuplicate(dupe);
       return;
@@ -214,27 +230,30 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     );
 
     const { display_name, category } = await categorize(raw);
-    const { data, error: insertErr } = await supabase
-      .from("shopping_list_items")
-      .insert({
-        user_id: userId,
-        household_id: householdId,
-        raw_input: raw,
-        display_name,
-        category,
-        quantity: qty,
-        is_priority: isPriority,
-        is_checked: false,
-        added_by_member_id: member?.id ?? null,
-      })
-      .select("id, display_name, quantity, is_priority, category")
-      .single();
+    const ins = await safeWrite(() =>
+      supabase
+        .from("shopping_list_items")
+        .insert({
+          user_id: userId,
+          household_id: householdId,
+          raw_input: raw,
+          display_name,
+          category,
+          quantity: qty,
+          is_priority: isPriority,
+          is_checked: false,
+          added_by_member_id: member?.id ?? null,
+        })
+        .select("id, display_name, quantity, is_priority, category")
+        .single(),
+    );
 
-    if (insertErr || !data) {
-      setError(insertErr?.message ?? "Failed to add item");
+    if (!ins.ok || !ins.data) {
       setRecent((r) => r.filter((it) => it.id !== tempId));
+      showNotice(`No connection. ${display_name} was not added.`);
       return;
     }
+    const data = ins.data;
     setRecent((r) =>
       r.map((it) =>
         it.id === tempId
@@ -334,9 +353,14 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
       seen.add(key);
       return true;
     });
-    const existingSet = new Set(
-      (await fetchUntickedNames()).map((n) => normaliseItemName(n)),
-    );
+    const check = await fetchUntickedNames();
+    if (!check.ok) {
+      // Duplicate check couldn't be verified — never insert blind. Keep the
+      // sheet open so the pasted text isn't lost.
+      showNotice("No connection. Nothing was added.");
+      return;
+    }
+    const existingSet = new Set(check.names.map((n) => normaliseItemName(n)));
     const survivors = batchUnique.filter(
       (r) => !existingSet.has(normaliseItemName(r.display_name.trim() || r.raw)),
     );
@@ -375,22 +399,20 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
       };
     });
 
-    const { data, error: insertErr } = await supabase
-      .from("shopping_list_items")
-      .insert(payload)
-      .select("id, display_name, quantity, is_priority, category");
+    const ins = await safeWrite(() =>
+      supabase
+        .from("shopping_list_items")
+        .insert(payload)
+        .select("id, display_name, quantity, is_priority, category"),
+    );
 
-    if (insertErr) {
-      const msg =
-        insertErr.message ||
-        (insertErr as { hint?: string }).hint ||
-        "Bulk add failed";
-      setError(msg);
-      toast.error(`Bulk add failed: ${msg}`);
-      throw insertErr;
+    if (!ins.ok) {
+      // Insert nothing; keep the sheet open so the text isn't lost.
+      showNotice("No connection. Nothing was added.");
+      return;
     }
 
-    const added = (data ?? []).map((d) => ({
+    const added = ((ins.data as RecentItem[] | null) ?? []).map((d) => ({
       ...(d as RecentItem),
       categorizing: false,
     }));
@@ -977,6 +999,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
       {inviteOpen && <InviteModal onClose={() => setInviteOpen(false)} />}
 
       {duplicateNotice}
+      {centerNotice}
 
     </div>
   );

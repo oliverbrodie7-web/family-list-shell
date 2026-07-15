@@ -19,6 +19,8 @@ import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { applyPriceEstimate } from "@/lib/priceLookup";
 import { normaliseItemName } from "@/lib/itemNormalise";
 import { useDuplicateNotice } from "./DuplicateNotice";
+import { useCenterNotice } from "./CenterNotice";
+import { safeWrite } from "@/lib/safeWrite";
 import { PriceSheet } from "./PriceSheet";
 
 
@@ -72,6 +74,7 @@ export function ListTab({
   const { isFeatureOn, supermarket } = useAdvancedFeatures();
   const pricingOn = isFeatureOn("pricing");
   const { showDuplicate, duplicateNotice } = useDuplicateNotice();
+  const { showNotice, centerNotice } = useCenterNotice();
 
 
   const memberMap = useMemo(() => {
@@ -110,33 +113,62 @@ export function ListTab({
       try { navigator.vibrate?.(10); } catch { /* ignore */ }
     }
     setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, is_checked: next } : i)));
-    await supabase.from("shopping_list_items").update({ is_checked: next }).eq("id", item.id);
+    const res = await safeWrite(() =>
+      supabase.from("shopping_list_items").update({ is_checked: next }).eq("id", item.id),
+    );
+    if (!res.ok) {
+      // Revert the checkbox to its previous state.
+      setItems((arr) =>
+        arr.map((i) => (i.id === item.id ? { ...i, is_checked: item.is_checked } : i)),
+      );
+      showNotice("No connection. Change not saved.");
+    }
   };
 
-  const savePrice = async (item: Item, cents: number) => {
+  // Returns true on success so the caller can close the price sheet; on failure
+  // it reverts the price state and keeps the sheet open.
+  const savePrice = async (item: Item, cents: number): Promise<boolean> => {
+    const prev = { price_cents: item.price_cents, price_source: item.price_source };
     setItems((arr) =>
       arr.map((i) =>
         i.id === item.id ? { ...i, price_cents: cents, price_source: "manual" } : i,
       ),
     );
-    await supabase
-      .from("shopping_list_items")
-      .update({ price_cents: cents, price_source: "manual" })
-      .eq("id", item.id);
+    const res = await safeWrite(() =>
+      supabase
+        .from("shopping_list_items")
+        .update({ price_cents: cents, price_source: "manual" })
+        .eq("id", item.id),
+    );
+    if (!res.ok) {
+      setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, ...prev } : i)));
+      showNotice("No connection. Price not saved.");
+      return false;
+    }
+    return true;
   };
 
   // Removing a price marks the row 'suppressed' (not null) so backfill never
   // auto re-estimates it. A later manual save overwrites this and ends it.
-  const removePrice = async (item: Item) => {
+  const removePrice = async (item: Item): Promise<boolean> => {
+    const prev = { price_cents: item.price_cents, price_source: item.price_source };
     setItems((arr) =>
       arr.map((i) =>
         i.id === item.id ? { ...i, price_cents: null, price_source: "suppressed" } : i,
       ),
     );
-    await supabase
-      .from("shopping_list_items")
-      .update({ price_cents: null, price_source: "suppressed", price_label: null })
-      .eq("id", item.id);
+    const res = await safeWrite(() =>
+      supabase
+        .from("shopping_list_items")
+        .update({ price_cents: null, price_source: "suppressed", price_label: null })
+        .eq("id", item.id),
+    );
+    if (!res.ok) {
+      setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, ...prev } : i)));
+      showNotice("No connection. Price not saved.");
+      return false;
+    }
+    return true;
   };
 
   // Fire-and-forget estimate for one item; patches local state on success,
@@ -170,11 +202,21 @@ export function ListTab({
   }, [loading, pricingOn, items, estimateItem]);
 
   const clearTrolley = async () => {
-    const checkedIds = items.filter((i) => i.is_checked).map((i) => i.id);
+    const cleared = items.filter((i) => i.is_checked);
+    const checkedIds = cleared.map((i) => i.id);
     if (checkedIds.length === 0) return;
     setItems((arr) => arr.filter((i) => !i.is_checked));
     setConfirmClear(false);
-    await supabase.from("shopping_list_items").delete().in("id", checkedIds);
+    const res = await safeWrite(() =>
+      supabase.from("shopping_list_items").delete().in("id", checkedIds),
+    );
+    if (!res.ok) {
+      // Restore the items we optimistically cleared.
+      setItems((arr) =>
+        [...arr, ...cleared].sort((a, b) => a.created_at.localeCompare(b.created_at)),
+      );
+      showNotice("No connection. Nothing was cleared.");
+    }
   };
 
   const deleteItem = async (item: Item) => {
@@ -194,22 +236,39 @@ export function ListTab({
     });
     setTimeout(async () => {
       if (undone) return;
-      await supabase.from("shopping_list_items").delete().eq("id", item.id);
+      const res = await safeWrite(() =>
+        supabase.from("shopping_list_items").delete().eq("id", item.id),
+      );
+      if (!res.ok) {
+        // Never leave it deleted on screen if it wasn't deleted in the DB.
+        setItems((arr) =>
+          [...arr, item].sort((a, b) => a.created_at.localeCompare(b.created_at)),
+        );
+        showNotice(`No connection. ${item.display_name} was not deleted.`);
+      }
     }, 4200);
   };
 
   const saveEdit = async (updated: Item) => {
+    const prev = items.find((i) => i.id === updated.id);
     setItems((arr) => arr.map((i) => (i.id === updated.id ? updated : i)));
+    const res = await safeWrite(() =>
+      supabase
+        .from("shopping_list_items")
+        .update({
+          display_name: updated.display_name,
+          category: updated.category,
+          quantity: updated.quantity,
+          is_priority: updated.is_priority,
+        })
+        .eq("id", updated.id),
+    );
+    if (!res.ok) {
+      if (prev) setItems((arr) => arr.map((i) => (i.id === updated.id ? prev : i)));
+      showNotice("No connection. Change not saved.");
+      return; // keep the edit sheet open
+    }
     setEditing(null);
-    await supabase
-      .from("shopping_list_items")
-      .update({
-        display_name: updated.display_name,
-        category: updated.category,
-        quantity: updated.quantity,
-        is_priority: updated.is_priority,
-      })
-      .eq("id", updated.id);
   };
 
   const addItemToCategory = async (category: Category, raw: string) => {
@@ -257,29 +316,32 @@ export function ListTab({
       /* keep raw */
     }
 
-    const { data: inserted, error: insertErr } = await supabase
-      .from("shopping_list_items")
-      .insert({
-        user_id: userId,
-        household_id: householdId,
-        raw_input: trimmed,
-        display_name: cleanName,
-        category,
-        quantity: null,
-        is_priority: false,
-        is_checked: false,
-        added_by_member_id: member?.id ?? null,
-      })
-      .select(
-        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents, price_source",
-      )
-      .single();
+    const ins = await safeWrite(() =>
+      supabase
+        .from("shopping_list_items")
+        .insert({
+          user_id: userId,
+          household_id: householdId,
+          raw_input: trimmed,
+          display_name: cleanName,
+          category,
+          quantity: null,
+          is_priority: false,
+          is_checked: false,
+          added_by_member_id: member?.id ?? null,
+        })
+        .select(
+          "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents, price_source",
+        )
+        .single(),
+    );
 
-    if (insertErr || !inserted) {
+    if (!ins.ok || !ins.data) {
       setItems((arr) => arr.filter((i) => i.id !== tempId));
-      toast.error("Couldn't add item");
+      showNotice(`No connection. ${trimmed} was not added.`);
       return;
     }
+    const inserted = ins.data as Item;
     setItems((arr) =>
       arr.map((i) => (i.id === tempId ? (inserted as Item) : i)),
     );
@@ -466,20 +528,21 @@ export function ListTab({
       {editing && <EditSheet item={editing} onCancel={() => setEditing(null)} onSave={saveEdit} />}
 
       {duplicateNotice}
+      {centerNotice}
 
       {pricing && pricingOn && (
         <PriceSheet
           name={pricing.display_name}
           initialCents={pricing.price_cents}
           onSave={async (cents) => {
-            await savePrice(pricing, cents);
-            setPricing(null);
+            const ok = await savePrice(pricing, cents);
+            if (ok) setPricing(null);
           }}
           onRemove={
             pricing.price_cents != null
               ? async () => {
-                  await removePrice(pricing);
-                  setPricing(null);
+                  const ok = await removePrice(pricing);
+                  if (ok) setPricing(null);
                 }
               : undefined
           }
