@@ -1,0 +1,186 @@
+/* Warm Clay — matches Our Pantry's palette. System fonts only, no webfonts. */
+:root {
+  --clay-bg: #f7f1e8;
+  --clay-surface: #ffffff;
+  --clay-ink: #37302b;
+  --clay-muted: #9a8e7f;
+  --clay-border: #e7ddcf;
+  --clay-accent: #c2693f;
+  --clay-accent-soft: #f3e5d9;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 380px;
+  padding: 16px;
+  background: var(--clay-bg);
+  color: var(--clay-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+header h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+header .arrow {
+  color: var(--clay-accent);
+}
+
+.subtitle {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--clay-muted);
+}
+
+.card {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--clay-surface);
+  border: 1px solid var(--clay-border);
+  border-radius: 14px;
+}
+
+.label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--clay-muted);
+  margin-bottom: 6px;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  padding: 8px 10px;
+  border: 1px solid var(--clay-border);
+  border-radius: 10px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--clay-ink);
+  background: #fff;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--clay-accent);
+  box-shadow: 0 0 0 3px rgba(194, 105, 63, 0.15);
+}
+
+.hint {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--clay-muted);
+}
+
+.warning {
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: var(--clay-accent-soft);
+  border: 1px solid var(--clay-border);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--clay-ink);
+}
+
+.items-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--clay-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+#item-list {
+  list-style: none;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+#item-list li {
+  border-top: 1px solid var(--clay-border);
+}
+
+#item-list li:first-child {
+  border-top: none;
+}
+
+#item-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 2px;
+  cursor: pointer;
+}
+
+#item-list input[type="checkbox"] {
+  accent-color: var(--clay-accent);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+
+.item-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-qty {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--clay-muted);
+}
+
+#fill-btn {
+  margin-top: 12px;
+  width: 100%;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--clay-accent);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#fill-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.result {
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: var(--clay-surface);
+  border: 1px solid var(--clay-border);
+  border-radius: 12px;
+  font-size: 13px;
+  white-space: pre-line;
+}

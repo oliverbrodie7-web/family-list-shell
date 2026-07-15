@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Our Pantry to Woolies</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header>
+    <h1>Our Pantry <span class="arrow">&rarr;</span> Woolies</h1>
+    <p class="subtitle">Fill your Woolworths trolley from your pinned list.</p>
+  </header>
+
+  <p id="tab-warning" class="warning" hidden>
+    Open woolworths.com.au and sign in first.
+  </p>
+
+  <section class="card">
+    <label for="paste-box" class="label">Your list</label>
+    <textarea
+      id="paste-box"
+      rows="3"
+      placeholder="Paste your list here&hellip;"
+      spellcheck="false"
+    ></textarea>
+    <p id="paste-hint" class="hint">
+      In Our Pantry, tap <strong>Copy for Woolies</strong> on the List tab, then paste here.
+    </p>
+    <p id="parse-error" class="warning" hidden></p>
+    <p id="skip-note" class="hint" hidden></p>
+  </section>
+
+  <section id="items-card" class="card" hidden>
+    <div class="items-head">
+      <span class="label">Review before adding</span>
+      <button id="toggle-all" type="button" class="link-btn">Deselect all</button>
+    </div>
+    <ul id="item-list"></ul>
+  </section>
+
+  <button id="fill-btn" type="button" disabled>Add to trolley</button>
+
+  <p id="result" class="result" hidden></p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

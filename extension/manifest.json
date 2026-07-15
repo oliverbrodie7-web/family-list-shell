@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "Our Pantry to Woolies",
+  "version": "1.0",
+  "description": "Fills your Woolworths trolley from an Our Pantry shopping list. Paste the list copied from Our Pantry, review the items, and add them to your trolley in one go.",
+  "permissions": ["scripting"],
+  "host_permissions": ["https://www.woolworths.com.au/*"],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}
