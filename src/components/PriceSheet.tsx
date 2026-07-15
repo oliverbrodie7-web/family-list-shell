@@ -154,8 +154,12 @@ export function PriceSheet({
     try {
       const ok = await onPin(c);
       if (ok) {
-        setPin({ product_name: c.name, size: c.size });
-        setView("main");
+        // Pin is a complete action: the price is applied and the row already
+        // shows it with the pin indicator. Close the sheet so the now-stale
+        // price input can't be mis-tapped into a 'manual' override. Reopening
+        // prefills the input from the row's current (pinned) price.
+        onClose();
+        return;
       }
       // On failure the parent showed the notice + rolled back; stay in the picker.
     } finally {
