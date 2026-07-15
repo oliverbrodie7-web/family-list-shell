@@ -269,7 +269,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
 
     // Fire-and-forget price estimate (advanced pricing only; never blocks adds).
     if (pricingOn) {
-      void applyPriceEstimate((data as RecentItem).id, display_name, supermarket);
+      void applyPriceEstimate((data as RecentItem).id, display_name, supermarket, householdId);
     }
 
     if (householdId) {
@@ -426,7 +426,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
 
     if (pricingOn) {
       for (const row of added) {
-        void applyPriceEstimate(row.id, row.display_name, supermarket);
+        void applyPriceEstimate(row.id, row.display_name, supermarket, householdId);
       }
     }
 

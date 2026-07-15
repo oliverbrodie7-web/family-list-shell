@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
-import { Check, ShoppingCart, Trash2, X, Star, Flag, ChevronDown, Plus } from "lucide-react";
+import { Check, ShoppingCart, Trash2, X, Star, Flag, ChevronDown, Plus, Pin } from "lucide-react";
 import { toast } from "sonner";
 import {
   motion,
@@ -21,7 +21,7 @@ import { normaliseItemName } from "@/lib/itemNormalise";
 import { useDuplicateNotice } from "./DuplicateNotice";
 import { useCenterNotice } from "./CenterNotice";
 import { safeWrite } from "@/lib/safeWrite";
-import { PriceSheet } from "./PriceSheet";
+import { PriceSheet, type Candidate } from "./PriceSheet";
 
 
 interface Item {
@@ -35,6 +35,7 @@ interface Item {
   added_by_member_id: string | null;
   price_cents: number | null;
   price_source: string | null;
+  price_label: string | null;
 }
 
 const formatCents = (c: number) => `$${(c / 100).toFixed(2)}`;
@@ -95,7 +96,7 @@ export function ListTab({
     const { data } = await supabase
       .from("shopping_list_items")
       .select(
-        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents, price_source",
+        "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents, price_source, price_label",
       )
       .eq("household_id", householdId)
       .order("created_at", { ascending: true });
@@ -171,23 +172,104 @@ export function ListTab({
     return true;
   };
 
-  // Fire-and-forget estimate for one item; patches local state on success,
-  // but never over a manual price (DB guard in applyPriceEstimate + local check).
+  // Fire-and-forget estimate for one item; patches local state on success, but
+  // only over a null/'estimate' row (never manual/pin/suppressed — mirrors the
+  // DB guard). Sends householdId so the function can honour the household's pins;
+  // a pin hit comes back as source 'pin'.
   const estimateItem = useCallback(
     (id: string, name: string) => {
-      void applyPriceEstimate(id, name, supermarket).then((est) => {
+      void applyPriceEstimate(id, name, supermarket, householdId).then((est) => {
         if (!est) return;
         setItems((arr) =>
           arr.map((i) =>
-            i.id === id && i.price_source !== "manual"
-              ? { ...i, price_cents: est.price_cents, price_source: "estimate" }
+            i.id === id && (i.price_source == null || i.price_source === "estimate")
+              ? {
+                  ...i,
+                  price_cents: est.price_cents,
+                  price_source: est.source,
+                  price_label: est.matched_name,
+                }
               : i,
           ),
         );
       });
     },
-    [supermarket],
+    [supermarket, householdId],
   );
+
+  // Pin the exact product the user chose from the picker. Overrides any current
+  // price_source (suppressed/estimate/manual) — pinning is explicit. Writes the
+  // household pin, then the row price; rolls back and notifies on any failure.
+  const pinProduct = async (item: Item, c: Candidate): Promise<boolean> => {
+    if (!householdId) return false;
+    const norm = normaliseItemName(item.display_name);
+    const prev = {
+      price_cents: item.price_cents,
+      price_source: item.price_source,
+      price_label: item.price_label,
+    };
+    setItems((arr) =>
+      arr.map((i) =>
+        i.id === item.id
+          ? { ...i, price_cents: c.price_cents, price_source: "pin", price_label: c.name }
+          : i,
+      ),
+    );
+    // 1. Upsert the household pin (replaces any existing pin for this name).
+    const pinRes = await safeWrite(() =>
+      supabase.from("shopping_product_pins").upsert(
+        {
+          household_id: householdId,
+          supermarket,
+          name_normalised: norm,
+          product_name: c.name,
+          stockcode: c.stockcode,
+          size: c.size,
+          last_price_cents: c.price_cents,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "household_id,supermarket,name_normalised" },
+      ),
+    );
+    if (!pinRes.ok) {
+      setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, ...prev } : i)));
+      showNotice("No connection. Price not saved.");
+      return false;
+    }
+    // 2. Apply the price to THIS row — no estimate guard: a pin overrides all.
+    const rowRes = await safeWrite(() =>
+      supabase
+        .from("shopping_list_items")
+        .update({ price_cents: c.price_cents, price_source: "pin", price_label: c.name })
+        .eq("id", item.id),
+    );
+    if (!rowRes.ok) {
+      setItems((arr) => arr.map((i) => (i.id === item.id ? { ...i, ...prev } : i)));
+      showNotice("No connection. Price not saved.");
+      return false;
+    }
+    return true;
+  };
+
+  // Unpin: delete the household pin for this name; leave the current row price
+  // exactly as it is (do not clear, do not re-estimate).
+  const unpinProduct = async (item: Item): Promise<boolean> => {
+    if (!householdId) return false;
+    const norm = normaliseItemName(item.display_name);
+    const res = await safeWrite(() =>
+      supabase
+        .from("shopping_product_pins")
+        .delete()
+        .eq("household_id", householdId)
+        .eq("supermarket", supermarket)
+        .eq("name_normalised", norm),
+    );
+    if (!res.ok) {
+      showNotice("No connection. Change not saved.");
+      return false;
+    }
+    return true;
+  };
 
   // Backfill: on List tab load, estimate up to 5 unticked, priceless items.
   const backfilledRef = useRef(false);
@@ -299,6 +381,7 @@ export function ListTab({
       added_by_member_id: member?.id ?? null,
       price_cents: null,
       price_source: null,
+      price_label: null,
     };
     setItems((arr) => [...arr, temp]);
 
@@ -331,7 +414,7 @@ export function ListTab({
           added_by_member_id: member?.id ?? null,
         })
         .select(
-          "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents, price_source",
+          "id, display_name, quantity, is_priority, is_checked, category, created_at, added_by_member_id, price_cents, price_source, price_label",
         )
         .single(),
     );
@@ -534,6 +617,9 @@ export function ListTab({
         <PriceSheet
           name={pricing.display_name}
           initialCents={pricing.price_cents}
+          priceLabel={pricing.price_label}
+          householdId={householdId}
+          supermarket={supermarket}
           onSave={async (cents) => {
             const ok = await savePrice(pricing, cents);
             if (ok) setPricing(null);
@@ -546,6 +632,8 @@ export function ListTab({
                 }
               : undefined
           }
+          onPin={(c) => pinProduct(pricing, c)}
+          onUnpin={() => unpinProduct(pricing)}
           onClose={() => setPricing(null)}
         />
       )}
@@ -988,9 +1076,12 @@ function SwipeRow({
               type="button"
               onClick={onPrice}
               aria-label={`Edit price for ${item.display_name}`}
-              className="shrink-0 px-0.5 text-[12px] tabular-nums"
+              className="flex shrink-0 items-center gap-0.5 px-0.5 text-[12px] tabular-nums"
               style={{ color: "var(--clay-muted)", opacity: checked ? 0.7 : 1 }}
             >
+              {item.price_source === "pin" && (
+                <Pin size={9} aria-hidden style={{ color: "var(--clay-accent)" }} />
+              )}
               {item.price_source === "estimate" ? "~" : ""}
               {formatCents(item.price_cents)}
             </button>
@@ -1274,9 +1365,12 @@ function TrolleyCard({
                         </button>
                         {showPrices && it.price_cents != null && (
                           <span
-                            className="shrink-0 text-[12px] tabular-nums"
+                            className="flex shrink-0 items-center gap-0.5 text-[12px] tabular-nums"
                             style={{ color: "var(--clay-muted)", opacity: 0.75 }}
                           >
+                            {it.price_source === "pin" && (
+                              <Pin size={9} aria-hidden style={{ color: "var(--clay-accent)" }} />
+                            )}
                             {it.price_source === "estimate" ? "~" : ""}
                             {formatCents(it.price_cents)}
                           </span>
