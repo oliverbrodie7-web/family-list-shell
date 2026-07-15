@@ -105,12 +105,29 @@ Reply with ONLY the index number of your pick, or the single word NONE. No other
   }
 }
 
+// Candidate shape returned by mode 'candidates' AND stored in the cache row's
+// candidates column (identical shape both ways, so the client can't tell them
+// apart). Up to 8 of the filtered in-stock hits.
+function toCandidateShape(hits: ProductHit[]) {
+  return hits.slice(0, 8).map((h) => ({
+    stockcode: h.stockcode,
+    name: h.name,
+    size: h.size,
+    price_cents: h.priceCents,
+    was_price_cents: h.wasPriceCents,
+    unit_price_text: h.unitPriceText,
+    image: h.image,
+  }));
+}
+
 // Miss cache: record that this term has no everyday match, so it stops retrying
-// Apify on every app open until the row ages past 7 days.
+// Apify on every app open until the row ages past 7 days. Still carries the
+// shortlist (candidates) — a NONE is exactly when the user reaches for the picker.
 async function writeMissCache(
   admin: SupabaseClient,
   supermarket: string,
   queryNormalised: string,
+  candidates: ReturnType<typeof toCandidateShape>,
 ) {
   await admin.from("shopping_product_prices").upsert(
     {
@@ -121,6 +138,7 @@ async function writeMissCache(
       was_price_cents: null,
       unit_price_text: null,
       stockcode: null,
+      candidates,
       fetched_at: new Date().toISOString(),
     },
     { onConflict: "supermarket,query_normalised" },
@@ -181,22 +199,26 @@ async function resolvePrice(
     return { matched: false, payload: { unsupported: true, reason: "search_failed" } };
   }
 
+  // The shortlist is built once here and reused: stored on the price/miss row so
+  // mode 'candidates' can serve it later with no second Apify search.
+  const shortlist = toCandidateShape(hits);
+
   // Zero surviving hits after the in-stock filter → real miss → miss-cache it.
   if (hits.length === 0) {
-    await writeMissCache(admin, supermarket, queryNormalised);
+    await writeMissCache(admin, supermarket, queryNormalised, shortlist);
     return { matched: false, payload: { unsupported: true, reason: "no_match" } };
   }
 
-  // 3. Match picking. NONE → miss-cache. AI error/unparseable → fall back to hit 0.
+  // 3. Match picking. NONE → miss-cache (WITH the shortlist). AI error → hit 0.
   const pick = await pickBestHit(queryNormalised, hits);
   if (pick === "none") {
-    await writeMissCache(admin, supermarket, queryNormalised);
+    await writeMissCache(admin, supermarket, queryNormalised, shortlist);
     return { matched: false, payload: { unsupported: true, reason: "no_match" } };
   }
   const idx = pick === "error" ? 0 : pick;
   const winner = hits[idx] ?? hits[0];
 
-  // 4. Upsert the winner and return.
+  // 4. Upsert the winner AND the shortlist in the same write (no extra round trip).
   await admin.from("shopping_product_prices").upsert(
     {
       supermarket,
@@ -206,6 +228,7 @@ async function resolvePrice(
       was_price_cents: winner.wasPriceCents,
       unit_price_text: winner.unitPriceText,
       stockcode: winner.stockcode,
+      candidates: shortlist,
       fetched_at: new Date().toISOString(),
     },
     { onConflict: "supermarket,query_normalised" },
@@ -259,11 +282,36 @@ Deno.serve(async (req) => {
     const provider = PROVIDERS[supermarket];
     const queryNormalised = normaliseName(itemName);
 
-    // ---- MODE 'candidates': live search only, no pin, no cache, no AI. ----
+    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    // ---- MODE 'candidates': serve the cached shortlist if fresh, else live
+    //      search (no AI), returning up to 8 and writing the shortlist back. ----
     if (mode === "candidates") {
       if (!provider || !provider.supportsAutoPrices) {
         return json(200, { unsupported: true, reason: "provider" });
       }
+
+      // 1. A cached shortlist fresher than 7 days → serve it with NO Apify call.
+      const { data: cachedRow } = await admin
+        .from("shopping_product_prices")
+        .select("candidates, fetched_at")
+        .eq("supermarket", supermarket)
+        .eq("query_normalised", queryNormalised)
+        .maybeSingle();
+
+      if (
+        cachedRow &&
+        Array.isArray(cachedRow.candidates) &&
+        cachedRow.candidates.length > 0 &&
+        cachedRow.fetched_at &&
+        Date.now() - new Date(cachedRow.fetched_at).getTime() < CACHE_MAX_AGE_MS
+      ) {
+        return json(200, { candidates: cachedRow.candidates, cached: true });
+      }
+
+      // 2. Fall back to a live search (unchanged: in-stock filter, up to 8, no AI).
       let hits: ProductHit[] = [];
       try {
         hits = await provider.search(queryNormalised);
@@ -274,22 +322,24 @@ Deno.serve(async (req) => {
         );
         hits = [];
       }
-      const candidates = hits.slice(0, 8).map((h) => ({
-        stockcode: h.stockcode,
-        name: h.name,
-        size: h.size,
-        price_cents: h.priceCents,
-        was_price_cents: h.wasPriceCents,
-        unit_price_text: h.unitPriceText,
-        image: h.image,
-      }));
-      return json(200, { candidates });
+      const candidates = toCandidateShape(hits);
+
+      // Write the shortlist back so the next open is instant — but set ONLY the
+      // candidates column. On an existing row this preserves matched_name,
+      // price_cents, was_price_cents, unit_price_text, stockcode (and its
+      // fetched_at). No fetched_at is written here, so a brand-new candidates-only
+      // row is never mistaken for a fresh miss by the price flow.
+      if (candidates.length > 0) {
+        await admin.from("shopping_product_prices").upsert(
+          { supermarket, query_normalised: queryNormalised, candidates },
+          { onConflict: "supermarket,query_normalised" },
+        );
+      }
+
+      return json(200, { candidates, cached: false });
     }
 
     // ---- MODE 'price'. ----
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
 
     // 1. PIN FIRST — precedence over cache and search. Scoped to this household.
     let pinNeedsPrice = false;
