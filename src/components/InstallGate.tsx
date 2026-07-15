@@ -7,6 +7,12 @@ import { isInstalled, detectInstallEnv, type InstallEnv } from "@/lib/installDet
 // "install to Home Screen" guide. Installed users and mode "off" are never gated.
 // During the safe rollout (mode "advanced-only") only advanced-unlocked users
 // see the block, since it reads useAdvancedFeatures().showAdvanced.
+//
+// Platform matters: the gate only makes sense on phones (iOS Safari, Android
+// Chrome), where "add to Home Screen" gives an app icon + notifications. DESKTOP
+// — and ANY unrecognised/ambiguous platform — is deliberately never gated: there
+// is no Home-Screen step to follow there, and blocking desktop would also kill
+// the desktop-only "Copy for Woolies" flow. We err toward letting people in.
 export function InstallGate({ children }: { children: ReactNode }) {
   const { showAdvanced } = useAdvancedFeatures();
   const [installed] = useState<boolean>(() => isInstalled());
@@ -15,11 +21,15 @@ export function InstallGate({ children }: { children: ReactNode }) {
   if (INSTALL_GATE_MODE === "off") return <>{children}</>;
   if (installed) return <>{children}</>;
 
+  // Desktop / unknown ("other") → let them straight in, no wall.
+  if (env === "other") return <>{children}</>;
+
   const shouldGate =
     INSTALL_GATE_MODE === "everyone" ||
     (INSTALL_GATE_MODE === "advanced-only" && showAdvanced);
 
   if (!shouldGate) return <>{children}</>;
+  // Only iOS (ios-safari / ios-inapp) and Android reach here.
   return <InstallGateScreen env={env} />;
 }
 
@@ -99,7 +109,6 @@ function InstallGateScreen({ env }: { env: InstallEnv }) {
               onInstall={triggerInstall}
             />
           )}
-          {env === "other" && <OtherSteps />}
         </div>
 
       </div>
@@ -220,20 +229,6 @@ function AndroidSteps({
           </button>
         </div>
       )}
-    </Card>
-  );
-}
-
-function OtherSteps() {
-  return (
-    <Card>
-      <h2 className="mb-2 text-[16px] font-semibold" style={{ color: "var(--clay-ink)" }}>
-        Add Our Pantry to your Home Screen
-      </h2>
-      <p className="text-[15px] leading-snug" style={{ color: "var(--clay-ink)" }}>
-        To use Our Pantry, add it to your Home Screen (or install it) from your
-        browser's menu, then open it from the new icon.
-      </p>
     </Card>
   );
 }
