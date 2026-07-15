@@ -194,11 +194,13 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     };
   };
 
+  // Returns true only after the row is actually saved, so callers can gate their
+  // "[Name] added" success message on a real write (never before it resolves).
   const insertSingle = async (
     raw: string,
     qty: number | null,
     isPriority: boolean,
-  ) => {
+  ): Promise<boolean> => {
     // Duplicate gate: block BEFORE anything fires (no temp row, no
     // categorisation, no insert, no price lookup, no undo chip).
     const norm = normaliseItemName(raw);
@@ -206,12 +208,12 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     if (!check.ok) {
       // Duplicate check couldn't be verified — never insert blind.
       showNotice(`No connection. ${raw} was not added.`);
-      return;
+      return false;
     }
     const dupe = check.names.find((n) => normaliseItemName(n) === norm);
     if (dupe) {
       showDuplicate(dupe);
-      return;
+      return false;
     }
 
     const tempId = `temp-${Date.now()}-${Math.random()}`;
@@ -251,7 +253,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     if (!ins.ok || !ins.data) {
       setRecent((r) => r.filter((it) => it.id !== tempId));
       showNotice(`No connection. ${display_name} was not added.`);
-      return;
+      return false;
     }
     const data = ins.data;
     setRecent((r) =>
@@ -278,11 +280,12 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
         body: `${memberName} added ${display_name}`,
       });
     }
+    return true;
   };
 
-  const quickAdd = async (name: string) => {
-    if (!householdId || !userId) return;
-    void insertSingle(name, null, false);
+  const quickAdd = async (name: string): Promise<boolean> => {
+    if (!householdId || !userId) return false;
+    return insertSingle(name, null, false);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -315,16 +318,17 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     inputRef.current?.focus();
     setSubmitting(false);
 
-    notifyAdded(trimmed);
-    await insertSingle(trimmed, qty, isPriority);
+    const ok = await insertSingle(trimmed, qty, isPriority);
+    if (ok) notifyAdded(trimmed);
   };
 
-  const pickSuggestion = (name: string) => {
+  const pickSuggestion = async (name: string) => {
     setText("");
     setQuantity("");
     setPriority(false);
     inputRef.current?.focus();
-    void insertSingle(name, null, false);
+    const ok = await insertSingle(name, null, false);
+    if (ok) notifyAdded(name);
   };
 
   const toggleRecentPriority = async (id: string, next: boolean) => {
@@ -524,20 +528,33 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
     // Haptic buzz — brief for single, double-pulse for many.
     buzz(items.length === 1 ? 30 : [25, 60, 25]);
 
-    if (items.length === 1) {
-      notifyAdded(items[0]);
-    } else {
-      toast.success(`Added ${items.length} items`, { id: "add-feedback", duration: 2400 });
-    }
-
-    // Stagger inserts so items visibly cascade into "Just added".
-    for (let i = 0; i < items.length; i++) {
-      const it = items[i];
-      const isSingle = items.length === 1;
-      window.setTimeout(() => {
-        void insertSingle(it, isSingle ? qty : null, isSingle ? isPriority : false);
-      }, i * 140);
-    }
+    // Stagger inserts so items visibly cascade into "Just added". Success
+    // messaging fires only after the writes resolve, reflecting how many
+    // actually saved (failed ones already show their own "No connection" notice).
+    const isSingle = items.length === 1;
+    const inserts = items.map(
+      (it, i) =>
+        new Promise<boolean>((resolve) => {
+          window.setTimeout(() => {
+            insertSingle(it, isSingle ? qty : null, isSingle ? isPriority : false).then(
+              resolve,
+              () => resolve(false),
+            );
+          }, i * 140);
+        }),
+    );
+    void Promise.all(inserts).then((results) => {
+      const okCount = results.filter(Boolean).length;
+      if (okCount === 0) return;
+      if (isSingle) {
+        notifyAdded(items[0]);
+      } else {
+        toast.success(`Added ${okCount} ${okCount === 1 ? "item" : "items"}`, {
+          id: "add-feedback",
+          duration: 2400,
+        });
+      }
+    });
 
     // Bring the "Just added" area into view a beat after the first item lands.
     window.setTimeout(() => {
@@ -616,9 +633,9 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
   };
 
 
-  const chipAdd = (name: string) => {
-    notifyAdded(name);
-    quickAdd(name);
+  const chipAdd = async (name: string) => {
+    const ok = await quickAdd(name);
+    if (ok) notifyAdded(name);
   };
 
 
@@ -681,8 +698,7 @@ export function InputTab({ householdId, tab, onTabChange }: { householdId: strin
                     <SuggestionRow
                       label={s}
                       onAdd={() => {
-                        notifyAdded(s);
-                        pickSuggestion(s);
+                        void pickSuggestion(s);
                       }}
                     />
                   </li>
