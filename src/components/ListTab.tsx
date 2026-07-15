@@ -68,6 +68,8 @@ export function ListTab({
   const [celebrate, setCelebrate] = useState(false);
   const [openSwipeId, setOpenSwipeId] = useState<string | null>(null);
   const [pricing, setPricing] = useState<Item | null>(null);
+  // Normalised names the household has pinned (for "Copy for Woolies" visibility).
+  const [pinnedNames, setPinnedNames] = useState<Set<string>>(new Set());
   const prevActiveRef = useRef<number | null>(null);
   const { session } = useAuth();
   const userId = session?.user?.id;
@@ -107,6 +109,92 @@ export function ListTab({
   useEffect(() => {
     if (active) fetchItems();
   }, [active, fetchItems]);
+
+  // Load the household's pinned names when the tab is active (pricing only).
+  // Best-effort: on failure the copy button simply doesn't show. No writes.
+  useEffect(() => {
+    if (!active || !pricingOn || !householdId) return;
+    let cancelled = false;
+    supabase
+      .from("shopping_product_pins")
+      .select("name_normalised")
+      .eq("household_id", householdId)
+      .eq("supermarket", supermarket)
+      .then(({ data, error }) => {
+        if (cancelled || error) return;
+        setPinnedNames(
+          new Set(
+            ((data ?? []) as { name_normalised: string }[]).map((r) => r.name_normalised),
+          ),
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [active, pricingOn, householdId, supermarket]);
+
+  // Copy the household's pinned products for the current list to the clipboard,
+  // in the shape a Woolworths browser extension can consume. Read-only.
+  const copyForWoolies = async () => {
+    if (!householdId) return;
+    const res = await safeWrite(() =>
+      supabase
+        .from("shopping_product_pins")
+        .select("name_normalised, product_name, stockcode")
+        .eq("household_id", householdId)
+        .eq("supermarket", supermarket),
+    );
+    if (!res.ok) {
+      showNotice("No connection. Couldn't copy your list.");
+      return;
+    }
+    const pins = (res.data ?? []) as {
+      name_normalised: string;
+      product_name: string;
+      stockcode: string | null;
+    }[];
+    const pinByName = new Map(pins.map((p) => [p.name_normalised, p]));
+
+    // Match UNTICKED items; combine duplicate normalised names into one entry
+    // with quantities summed (a stockcode must never appear twice).
+    const combined = new Map<string, { stockcode: number; quantity: number; name: string }>();
+    let unmatched = 0;
+    for (const it of items.filter((i) => !i.is_checked)) {
+      const norm = normaliseItemName(it.display_name);
+      const pin = pinByName.get(norm);
+      const stock = pin ? Number(pin.stockcode) : NaN;
+      if (!pin || !Number.isFinite(stock) || stock <= 0) {
+        unmatched++;
+        continue;
+      }
+      const qty = it.quantity && it.quantity > 0 ? it.quantity : 1;
+      const existing = combined.get(norm);
+      if (existing) existing.quantity += qty;
+      else combined.set(norm, { stockcode: stock, quantity: qty, name: pin.product_name });
+    }
+
+    const entries = [...combined.values()];
+    if (entries.length === 0) {
+      showNotice("No pinned items to copy yet.");
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(entries));
+    } catch {
+      showNotice("Couldn't copy — your browser blocked clipboard access.", 4000);
+      return;
+    }
+
+    const n = entries.length;
+    const noun = n === 1 ? "item" : "items";
+    showNotice(
+      unmatched === 0
+        ? `Copied ${n} ${noun}. Pick what to add in the extension.`
+        : `Copied ${n} ${noun}, ${unmatched} not pinned yet. Pick what to add in the extension.`,
+      4000,
+    );
+  };
 
   const toggleChecked = async (item: Item) => {
     const next = !item.is_checked;
@@ -248,6 +336,7 @@ export function ListTab({
       showNotice("No connection. Price not saved.");
       return false;
     }
+    setPinnedNames((s) => new Set(s).add(norm));
     return true;
   };
 
@@ -268,6 +357,11 @@ export function ListTab({
       showNotice("No connection. Change not saved.");
       return false;
     }
+    setPinnedNames((s) => {
+      const n = new Set(s);
+      n.delete(norm);
+      return n;
+    });
     return true;
   };
 
@@ -446,6 +540,12 @@ export function ListTab({
   const activeItems = items.filter((i) => !i.is_checked);
   const checkedItems = items.filter((i) => i.is_checked);
 
+  // "Copy for Woolies" shows only when at least one UNTICKED item has a pin.
+  const hasCopyable =
+    pricingOn &&
+    !!householdId &&
+    activeItems.some((i) => pinnedNames.has(normaliseItemName(i.display_name)));
+
   const groupBy = (arr: Item[]) => {
     const g = new Map<Category, Item[]>();
     for (const c of CATEGORIES) g.set(c, []);
@@ -553,6 +653,18 @@ export function ListTab({
           <p className="mt-1 text-[11px]" style={{ color: "var(--clay-muted)", opacity: 0.85 }}>
             Prices are estimates based on typical supermarket products.
           </p>
+        )}
+        {hasCopyable && (
+          <div className="mt-2">
+            <button
+              type="button"
+              onClick={copyForWoolies}
+              className="text-[12px] font-medium underline"
+              style={{ color: "var(--clay-accent)", textUnderlineOffset: "3px" }}
+            >
+              Copy for Woolies
+            </button>
+          </div>
         )}
       </div>
 

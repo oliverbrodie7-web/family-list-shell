@@ -10,7 +10,7 @@ import { snappySpring } from "@/lib/motion";
 const DISMISS_MS = 2800;
 
 export function useCenterNotice(): {
-  showNotice: (message: string) => void;
+  showNotice: (message: string, durationMs?: number) => void;
   centerNotice: ReactNode;
 } {
   const [message, setMessage] = useState<string | null>(null);
@@ -23,10 +23,11 @@ export function useCenterNotice(): {
     [],
   );
 
-  const showNotice = useCallback((m: string) => {
+  // durationMs is optional; callers that omit it keep the default dismiss time.
+  const showNotice = useCallback((m: string, durationMs = DISMISS_MS) => {
     setMessage(m);
     if (timerRef.current) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => setMessage(null), DISMISS_MS);
+    timerRef.current = window.setTimeout(() => setMessage(null), durationMs);
   }, []);
 
   return { showNotice, centerNotice: <CenterNoticeOverlay message={message} /> };
