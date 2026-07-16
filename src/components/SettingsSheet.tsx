@@ -6,6 +6,7 @@ import { useHouseholdId } from "@/lib/household";
 import { useAdvancedFeatures } from "@/lib/advancedFeatures";
 import { ADVANCED_FEATURES } from "@/lib/advancedFeaturesRegistry";
 import { FeedbackViewer } from "./FeedbackViewer";
+import { HelpGuide } from "./HelpGuide";
 import { InviteSteps } from "./InviteSteps";
 import { JoinFamilyModal } from "./JoinFamilyModal";
 import { supabase } from "@/lib/supabase";
@@ -58,6 +59,7 @@ export function SettingsSheet({
   const [marketBusy, setMarketBusy] = useState(false);
   const [feedbackViewerOpen, setFeedbackViewerOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   if (!member) return null;
   const color = memberColor(member.id);
@@ -203,6 +205,18 @@ export function SettingsSheet({
               Signed in as {member.name}
             </p>
           </div>
+        </div>
+
+        {/* How to use Our Pantry — basic, always visible to everyone */}
+        <div
+          className="mt-4 overflow-hidden rounded-[14px] bg-white"
+          style={{ border: "1px solid var(--clay-border)" }}
+        >
+          <SheetRow
+            label="How to use Our Pantry"
+            first
+            onClick={() => setHelpOpen(true)}
+          />
         </div>
 
         {/* Notifications */}
@@ -697,6 +711,8 @@ export function SettingsSheet({
     )}
 
     {joinOpen && <JoinFamilyModal onClose={() => setJoinOpen(false)} />}
+
+    {helpOpen && <HelpGuide onClose={() => setHelpOpen(false)} />}
     </>
   );
 }
